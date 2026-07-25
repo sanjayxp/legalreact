@@ -56,7 +56,7 @@ export default function Jobs() {
     <>
       <div className="flex items-center justify-between">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h2 className="text-[19px] font-extrabold text-ink-900">Jobs</h2>
+          <h2 className="text-[18px] font-extrabold text-ink-900">Jobs</h2>
           <p className="mt-1 text-[13.5px] text-ink-500">Postings shown on the public Jobs &amp; Learning page.</p>
         </motion.div>
         <Button onClick={() => setEditing(EMPTY)}><Plus size={15} /> New job</Button>

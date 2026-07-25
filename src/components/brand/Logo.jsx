@@ -1,8 +1,8 @@
 export default function Logo({ dark = false, size = 'md' }) {
   const sizes = {
-    sm: { mark: 30, text: 'text-[16px]', gap: 'gap-2' },
-    md: { mark: 36, text: 'text-[19px]', gap: 'gap-2.5' },
-    lg: { mark: 46, text: 'text-[24px]', gap: 'gap-3' },
+    sm: { mark: 30, text: 'text-[15px]', gap: 'gap-2' },
+    md: { mark: 36, text: 'text-[18px]', gap: 'gap-2.5' },
+    lg: { mark: 46, text: 'text-[23px]', gap: 'gap-3' },
   };
   const s = sizes[size];
   return (

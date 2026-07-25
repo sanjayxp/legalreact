@@ -45,7 +45,7 @@ export default function Team() {
     <>
       <div className="flex items-center justify-between">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Team</h1>
+          <h1 className="font-heading text-[23px] font-extrabold text-ink-900">Team</h1>
           <p className="mt-1 text-[14px] text-ink-500">Shown on the public About Us page.</p>
         </motion.div>
         <Button onClick={() => setEditing(EMPTY)}><Plus size={15} /> Add member</Button>
@@ -58,7 +58,7 @@ export default function Team() {
           {team.map((m) => (
             <Card key={m.id}>
               {m.photo_url ? <img src={m.photo_url} alt="" className="h-16 w-16 rounded-full object-cover" /> : <div className="grid h-16 w-16 place-items-center rounded-full bg-brand-50 text-xl font-bold text-brand-600">{m.full_name.charAt(0)}</div>}
-              <h3 className="mt-3 text-[14.5px] font-bold text-ink-900">{m.full_name}</h3>
+              <h3 className="mt-3 text-[13.5px] font-bold text-ink-900">{m.full_name}</h3>
               <div className="text-[12.5px] text-ink-500">{m.title}</div>
               {m.status === 'hidden' && <Badge tone="gray" className="mt-2">Hidden</Badge>}
               <div className="mt-3 flex gap-3">

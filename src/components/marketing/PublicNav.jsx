@@ -24,7 +24,7 @@ export default function PublicNav() {
   const name = profile?.full_name || user?.email || '';
 
   const linkClass = ({ isActive }) =>
-    `relative pb-1.5 text-[17px] font-semibold transition-colors ${isActive ? 'text-brand-600' : 'text-ink-700 hover:text-brand-600'}`;
+    `relative pb-1.5 text-[15px] font-semibold transition-colors ${isActive ? 'text-brand-600' : 'text-ink-700 hover:text-brand-600'}`;
 
   return (
     <header className="sticky top-0 z-50 border-b border-ink-100 bg-white/95 backdrop-blur">
@@ -45,17 +45,17 @@ export default function PublicNav() {
         <div className="ml-auto hidden items-center gap-4 lg:flex">
           {isLoggedIn ? (
             <>
-              <Link to={dashboardPath} className="flex items-center gap-2.5 text-[15px] font-semibold text-ink-700 hover:text-brand-600">
+              <Link to={dashboardPath} className="flex items-center gap-2.5 text-[14px] font-semibold text-ink-700 hover:text-brand-600">
                 <Avatar name={name} size={30} />
                 Dashboard
               </Link>
-              <button onClick={signOut} className="flex items-center gap-1.5 text-[14px] font-semibold text-ink-500 hover:text-coral-500">
+              <button onClick={signOut} className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-500 hover:text-coral-500">
                 <LogOut size={15} /> Sign out
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="text-[16px] font-semibold text-ink-700 hover:text-brand-600">
+              <Link to="/login" className="text-[15px] font-semibold text-ink-700 hover:text-brand-600">
                 Log in
               </Link>
               <Link to="/login#register">
@@ -72,18 +72,18 @@ export default function PublicNav() {
         <div className="border-t border-ink-100 bg-white px-5 py-4 lg:hidden">
           <div className="flex flex-col gap-3">
             {LINKS.map((l) => (
-              <NavLink key={l.to} to={l.to} end={l.end} onClick={() => setOpen(false)} className={({ isActive }) => `py-1.5 text-[16px] font-semibold ${isActive ? 'text-brand-600' : 'text-ink-700'}`}>
+              <NavLink key={l.to} to={l.to} end={l.end} onClick={() => setOpen(false)} className={({ isActive }) => `py-1.5 text-[15px] font-semibold ${isActive ? 'text-brand-600' : 'text-ink-700'}`}>
                 {l.label}
               </NavLink>
             ))}
             {isLoggedIn ? (
               <>
-                <Link to={dashboardPath} onClick={() => setOpen(false)} className="py-1.5 text-[16px] font-semibold text-ink-700">Dashboard</Link>
-                <button onClick={signOut} className="py-1.5 text-left text-[16px] font-semibold text-coral-500">Sign out</button>
+                <Link to={dashboardPath} onClick={() => setOpen(false)} className="py-1.5 text-[15px] font-semibold text-ink-700">Dashboard</Link>
+                <button onClick={signOut} className="py-1.5 text-left text-[15px] font-semibold text-coral-500">Sign out</button>
               </>
             ) : (
               <>
-                <Link to="/login" className="py-1.5 text-[16px] font-semibold text-ink-700">Log in</Link>
+                <Link to="/login" className="py-1.5 text-[15px] font-semibold text-ink-700">Log in</Link>
                 <Link to="/login#register"><Button className="mt-1 w-full">Get started</Button></Link>
               </>
             )}

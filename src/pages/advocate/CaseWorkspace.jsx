@@ -131,7 +131,7 @@ export default function CaseWorkspace() {
         <ArrowLeft size={14} /> All cases
       </Link>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
-        <h1 className="font-heading text-[24px] font-extrabold text-ink-900">{caseRow.case_title}</h1>
+        <h1 className="font-heading text-[23px] font-extrabold text-ink-900">{caseRow.case_title}</h1>
         <p className="mt-1 text-[13.5px] text-ink-500">{[caseRow.case_number, caseRow.court_name].filter(Boolean).join(' · ')}</p>
       </motion.div>
 

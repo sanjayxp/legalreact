@@ -73,7 +73,7 @@ export default function Leads() {
   return (
     <AdminShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Leads</h1>
+        <h1 className="font-heading text-[23px] font-extrabold text-ink-900">Leads</h1>
         <p className="mt-1 text-[14px] text-ink-500">Every enquiry captured from the public site.</p>
       </motion.div>
 

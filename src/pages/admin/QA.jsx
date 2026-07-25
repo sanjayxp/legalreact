@@ -34,7 +34,7 @@ export default function QA() {
   return (
     <AdminShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Q&amp;A moderation</h1>
+        <h1 className="font-heading text-[23px] font-extrabold text-ink-900">Q&amp;A moderation</h1>
         <p className="mt-1 text-[14px] text-ink-500">Moderate public forum questions and advocate answers.</p>
       </motion.div>
 
@@ -45,7 +45,7 @@ export default function QA() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Badge tone="blue">{q.topic}</Badge>
-                <h3 className="mt-1.5 text-[15px] font-bold text-ink-900">{q.title}</h3>
+                <h3 className="mt-1.5 text-[14px] font-bold text-ink-900">{q.title}</h3>
                 <div className="mt-0.5 text-[12px] text-ink-400">
                   {new Date(q.created_at).toLocaleDateString('en-IN')} · {q.views ?? 0} views · {q.answers?.length ?? 0} answers
                 </div>

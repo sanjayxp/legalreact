@@ -82,7 +82,7 @@ export default function Cases() {
   return (
     <AdvocateShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[26px] font-extrabold text-ink-900">My cases</h1>
+        <h1 className="font-heading text-[25px] font-extrabold text-ink-900">My cases</h1>
         <p className="mt-1 text-[14.5px] text-ink-500">Track hearings, orders, and filings across your active matters.</p>
       </motion.div>
 

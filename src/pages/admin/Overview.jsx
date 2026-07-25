@@ -65,7 +65,7 @@ export default function Overview() {
   return (
     <AdminShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[26px] font-extrabold text-ink-900">Admin overview</h1>
+        <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Admin overview</h1>
         <p className="mt-1 text-[14.5px] text-ink-500">The full pulse of the platform, in one place.</p>
       </motion.div>
 
@@ -79,14 +79,14 @@ export default function Overview() {
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         <div>
-          <h2 className="text-[16px] font-bold text-ink-900">Manage</h2>
+          <h2 className="text-[15px] font-bold text-ink-900">Manage</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {CARDS.map((c, i) => (
               <motion.div key={c.to} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <Link to={c.to}>
                   <Card hover className="h-full">
                     <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600"><c.icon size={18} /></div>
-                    <h3 className="mt-3.5 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">{c.label} <ArrowRight size={13} /></h3>
+                    <h3 className="mt-3.5 flex items-center gap-1.5 text-[14px] font-bold text-ink-900">{c.label} <ArrowRight size={13} /></h3>
                     <p className="mt-1.5 text-[13px] leading-relaxed text-ink-500">{c.desc}</p>
                     {c.to === '/admin/people' && pending.length > 0 && (
                       <Badge tone="amber" className="mt-3">{pending.length} advocate{pending.length === 1 ? '' : 's'} waiting</Badge>

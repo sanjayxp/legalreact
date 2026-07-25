@@ -37,7 +37,7 @@ export default function TrackCase() {
       <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
         <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">eCourts network</span>
-          <h1 className="mt-2 text-[36px] font-extrabold text-ink-900 sm:text-[44px]">Track Your Case</h1>
+          <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Track Your Case</h1>
           <p className="mt-3 text-[16px] text-ink-500">Enter your case's CNR (Case Number Record) to pull the latest status directly from the official eCourts data network — no login required.</p>
         </div>
       </section>
@@ -62,7 +62,7 @@ export default function TrackCase() {
         {result && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
             <Card>
-              <h2 className="text-[19px] font-extrabold text-ink-900">{result.case_title}</h2>
+              <h2 className="text-[18px] font-extrabold text-ink-900">{result.case_title}</h2>
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Fact icon={Landmark} label="Court" value={result.court_name} />
                 <Fact icon={FileText} label="Case / CNR number" value={result.case_number} />

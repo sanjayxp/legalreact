@@ -40,7 +40,7 @@ export default function ClientDashboard() {
   return (
     <ClientShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[26px] font-extrabold text-ink-900">
+        <h1 className="font-heading text-[25px] font-extrabold text-ink-900">
           Welcome back{firstName ? `, ${firstName}` : ''}
         </h1>
         <p className="mt-1 text-[14.5px] text-ink-500">Here's what's happening with your legal matters.</p>
@@ -71,7 +71,7 @@ export default function ClientDashboard() {
               <div className={`grid h-10 w-10 place-items-center rounded-xl ${accentClasses[c.accent]}`}>
                 <c.icon size={19} />
               </div>
-              <h3 className="mt-4 text-[15.5px] font-bold text-ink-900">{c.title}</h3>
+              <h3 className="mt-4 text-[14.5px] font-bold text-ink-900">{c.title}</h3>
               <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-500">{c.body}</p>
               <Badge tone="gray" className="mt-4">
                 Coming soon

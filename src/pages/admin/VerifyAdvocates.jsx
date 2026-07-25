@@ -75,7 +75,7 @@ export default function VerifyAdvocates() {
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="text-[19px] font-extrabold text-ink-900">Verify advocates</h2>
+        <h2 className="text-[18px] font-extrabold text-ink-900">Verify advocates</h2>
         <p className="mt-1 text-[13.5px] text-ink-500">Review Bar Council submissions and manage advocate profiles.</p>
       </motion.div>
 

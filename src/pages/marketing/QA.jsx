@@ -35,7 +35,7 @@ export default function QA() {
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Community</span>
-              <h1 className="mt-2 text-[36px] font-extrabold text-ink-900 sm:text-[44px]">Legal Q&amp;A</h1>
+              <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Legal Q&amp;A</h1>
               <p className="mt-2 max-w-lg text-[16px] text-ink-500">Ask a legal question for free — verified advocates answer in plain language.</p>
             </div>
             <Button size="lg" onClick={() => setAskOpen(true)}><Plus size={17} /> Ask a question</Button>
@@ -75,7 +75,7 @@ export default function QA() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <Badge tone="blue">{q.topic}</Badge>
-                        <h3 className="mt-2 text-[16.5px] font-bold text-ink-900">{q.title}</h3>
+                        <h3 className="mt-2 text-[15.5px] font-bold text-ink-900">{q.title}</h3>
                         <p className="mt-1 line-clamp-2 text-[14px] text-ink-500">{q.body}</p>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1.5 text-[12.5px] text-ink-400">
