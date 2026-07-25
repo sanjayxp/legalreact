@@ -462,7 +462,7 @@ export async function uploadResume(jobId, file) {
 // ---------- LEGAL Q&A (public forum) ----------
 export async function listQuestionsPublic(topic) {
   let q = supabase.from('questions').select('*, answers(count)').order('created_at', { ascending: false });
-  if (topic && topic !== 'all') q = q.eq('topic', topic);
+  if (topic && topic !== 'all') q = q.ilike('topic', topic); // case-insensitive: some seeded topics are lowercase
   const { data, error } = await q;
   if (error) throw error;
   return data || [];

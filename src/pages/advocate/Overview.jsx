@@ -117,8 +117,8 @@ export default function Overview() {
   const unpaidTotal = invoices.filter((i) => i.status === 'unpaid').reduce((s, i) => s + Number(i.amount), 0);
 
   // ---- Q&A opportunities: recent questions in this advocate's practice areas ----
-  const myAreas = new Set(advProfile?.practice_areas || []);
-  const opportunities = questions.filter((q) => myAreas.has(q.topic)).slice(0, 3);
+  const myAreas = new Set((advProfile?.practice_areas || []).map((a) => a.toLowerCase()));
+  const opportunities = questions.filter((q) => myAreas.has((q.topic || '').toLowerCase())).slice(0, 3);
 
   return (
     <AdvocateShell>
@@ -222,8 +222,8 @@ export default function Overview() {
         </Card>
       </div>
 
-      {/* ---- Q&A opportunities: build visibility by answering ---- */}
-      {advProfile?.practice_areas?.length > 0 && (
+      {/* ---- Q&A opportunities: build visibility by answering (verified advocates only) ---- */}
+      {isApproved && advProfile?.practice_areas?.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-6">
           <Card>
             <div className="flex items-center justify-between">
