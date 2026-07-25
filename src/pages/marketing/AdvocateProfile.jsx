@@ -70,7 +70,7 @@ export default function AdvocateProfile() {
               <Avatar src={advocate.photo_url} name={advocate.profiles?.full_name} size={88} />
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-[26px] font-extrabold text-ink-900">{advocate.profiles?.full_name}</h1>
+                  <h1 className="text-[25px] font-extrabold text-ink-900">{advocate.profiles?.full_name}</h1>
                   <BadgeCheck size={20} className="text-brand-500" />
                 </div>
                 <div className="mt-1 text-[15.5px] text-ink-500">{advocate.headline}</div>

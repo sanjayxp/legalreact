@@ -44,7 +44,7 @@ export default function Documents() {
     return (
       <AdvocateShell>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-heading text-[26px] font-extrabold text-ink-900">Document generator</h1>
+          <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Document generator</h1>
           <p className="mt-1 text-[14.5px] text-ink-500">Pick a starting-point draft — review and adapt before sending.</p>
         </motion.div>
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -52,7 +52,7 @@ export default function Documents() {
             <motion.div key={t.key} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <Card hover className="h-full cursor-pointer" onClick={() => pickTemplate(t.key)}>
                 <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600"><FileText size={18} /></div>
-                <h3 className="mt-3.5 text-[15px] font-bold text-ink-900">{t.title}</h3>
+                <h3 className="mt-3.5 text-[14px] font-bold text-ink-900">{t.title}</h3>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-ink-500">{t.blurb}</p>
               </Card>
             </motion.div>
@@ -68,7 +68,7 @@ export default function Documents() {
         <button onClick={() => setTemplateKey(null)} className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-ink-500 hover:text-brand-600">
           <ArrowLeft size={14} /> All templates
         </button>
-        <h1 className="mt-2 font-heading text-[22px] font-extrabold text-ink-900">{template.title}</h1>
+        <h1 className="mt-2 font-heading text-[21px] font-extrabold text-ink-900">{template.title}</h1>
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2 print:block">

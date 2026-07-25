@@ -51,7 +51,7 @@ export default function Advocates() {
       <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Directory</span>
-          <h1 className="mt-2 text-[36px] font-extrabold text-ink-900 sm:text-[44px]">Find a Verified Advocate</h1>
+          <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Find a Verified Advocate</h1>
           <p className="mt-2 max-w-lg text-[16px] text-ink-500">Browse Bar Council-verified advocates by practice area and city — no account needed to look.</p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

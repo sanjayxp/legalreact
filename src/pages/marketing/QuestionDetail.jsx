@@ -95,7 +95,7 @@ export default function QuestionDetail() {
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
           <Badge tone="blue">{question.topic}</Badge>
-          <h1 className="mt-3 text-[28px] font-extrabold text-ink-900">{question.title}</h1>
+          <h1 className="mt-3 text-[27px] font-extrabold text-ink-900">{question.title}</h1>
           <div className="mt-2 flex items-center gap-3 text-[13px] text-ink-400">
             <span>{new Date(question.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</span>
             <span className="flex items-center gap-1"><Eye size={13} /> {question.views ?? 0} views</span>
@@ -108,7 +108,7 @@ export default function QuestionDetail() {
           <Card className="mt-8">
             {advVerification === 'approved' ? (
               <>
-                <h3 className="mb-2 text-[14.5px] font-bold text-ink-900">Post an answer</h3>
+                <h3 className="mb-2 text-[13.5px] font-bold text-ink-900">Post an answer</h3>
                 <Textarea rows={4} value={answerBody} onChange={(e) => setAnswerBody(e.target.value)} placeholder="Share plain-language guidance — this is public and helps build your visibility." />
                 {answerMsg && <div className="mt-2"><Toast text={answerMsg} kind="err" /></div>}
                 <Button size="sm" className="mt-3" onClick={handleAnswer} disabled={answering}>
@@ -127,7 +127,7 @@ export default function QuestionDetail() {
         )}
 
         <div className="mt-10">
-          <h2 className="text-[18px] font-bold text-ink-900">{answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}</h2>
+          <h2 className="text-[17px] font-bold text-ink-900">{answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}</h2>
           {answers.length === 0 && <div className="mt-4"><EmptyState icon={<Gavel size={26} />} title="No answers yet" sub="Verified advocates will answer here soon." /></div>}
           <div className="mt-4 space-y-4">
             {answers.map((a) => (

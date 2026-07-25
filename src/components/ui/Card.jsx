@@ -16,7 +16,7 @@ export default function Card({ className = '', children, hover = false, ...props
 export function CardHeading({ title, sub }) {
   return (
     <div className="mb-4">
-      <h2 className="text-[16px] font-bold text-ink-900">{title}</h2>
+      <h2 className="text-[15px] font-bold text-ink-900">{title}</h2>
       {sub && <p className="mt-0.5 text-[13px] text-ink-500">{sub}</p>}
     </div>
   );

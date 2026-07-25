@@ -45,7 +45,7 @@ export default function Clients() {
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Clients</h1>
+        <h1 className="font-heading text-[23px] font-extrabold text-ink-900">Clients</h1>
         <p className="mt-1 text-[14px] text-ink-500">All registered client accounts.</p>
       </motion.div>
 

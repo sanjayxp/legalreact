@@ -51,12 +51,12 @@ export default function Admins() {
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Admins</h1>
+        <h1 className="font-heading text-[23px] font-extrabold text-ink-900">Admins</h1>
         <p className="mt-1 text-[14px] text-ink-500">Manage admin accounts.</p>
       </motion.div>
 
       <Card className="mt-5">
-        <h2 className="mb-3 text-[15px] font-bold text-ink-900">Promote an account</h2>
+        <h2 className="mb-3 text-[14px] font-bold text-ink-900">Promote an account</h2>
         <div className="flex gap-2">
           <Input placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleFind()} />
           <Button onClick={handleFind} disabled={searching}><Search size={14} /> Find</Button>
@@ -78,7 +78,7 @@ export default function Admins() {
       </Card>
 
       <Card className="mt-5">
-        <h2 className="mb-3 text-[15px] font-bold text-ink-900">Current admins</h2>
+        <h2 className="mb-3 text-[14px] font-bold text-ink-900">Current admins</h2>
         <div className="space-y-2">
           {admins.map((a) => (
             <div key={a.id} className="flex items-center justify-between rounded-lg bg-ink-50 px-3.5 py-2.5 text-[13.5px]">

@@ -126,7 +126,7 @@ export default function Login() {
         {/* Left — hero */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="hidden lg:block">
           <div className="relative rounded-3xl bg-gradient-to-br from-brand-50 via-white to-brand-50 p-10">
-            <h1 className="font-heading text-[40px] font-extrabold leading-[1.1] text-ink-900">
+            <h1 className="font-heading text-[39px] font-extrabold leading-[1.1] text-ink-900">
               Legal Help
               <br />
               <span className="text-brand-500">Beyond Borders</span>
@@ -204,7 +204,7 @@ export default function Login() {
             <div>
               {mode === 'login' ? (
                 <motion.div key="login" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
-                  <h2 className="text-[19px] font-bold text-ink-900">Welcome back</h2>
+                  <h2 className="text-[18px] font-bold text-ink-900">Welcome back</h2>
                   <p className="mt-0.5 text-[13.5px] text-ink-500">Log in to your LegalConnects account.</p>
 
                   <Label>Email</Label>
@@ -234,7 +234,7 @@ export default function Login() {
                 </motion.div>
               ) : (
                 <motion.div key="reg" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
-                  <h2 className="text-[19px] font-bold text-ink-900">Create your account</h2>
+                  <h2 className="text-[18px] font-bold text-ink-900">Create your account</h2>
                   <p className="mt-0.5 text-[13.5px] text-ink-500">Free to join. No credit card required.</p>
 
                   <div className="mt-4 grid grid-cols-2 gap-2">

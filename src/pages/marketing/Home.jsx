@@ -73,7 +73,7 @@ export default function Home() {
             <span className="inline-flex items-center gap-2 rounded-full bg-brand-100 px-4 py-1.5 text-[14px] font-bold text-brand-700">
               Bar Council-verified advocates, pan-India
             </span>
-            <h1 className="mt-5 text-[46px] font-extrabold leading-[1.1] text-ink-900 sm:text-[58px]">
+            <h1 className="mt-5 text-[45px] font-extrabold leading-[1.1] text-ink-900 sm:text-[57px]">
               Legal Help
               <br />
               <span className="text-brand-500">Beyond the Guesswork</span>
@@ -163,14 +163,14 @@ export default function Home() {
       <section id="how-it-works" className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <div className="max-w-xl">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">How it works</span>
-          <h2 className="mt-2 text-[34px] font-extrabold text-ink-900 sm:text-[42px]">A simpler way to find legal help</h2>
+          <h2 className="mt-2 text-[33px] font-extrabold text-ink-900 sm:text-[41px]">A simpler way to find legal help</h2>
           <p className="mt-3 text-[16.5px] text-ink-500">Three steps, no retainer required to start.</p>
         </div>
         <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
           {STEPS.map((s, i) => (
             <motion.div key={s.n} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
               <div className="text-[46px] font-extrabold text-brand-100">{s.n}</div>
-              <h3 className="mt-1 text-[19px] font-bold text-ink-900">{s.title}</h3>
+              <h3 className="mt-1 text-[18px] font-bold text-ink-900">{s.title}</h3>
               <p className="mt-2.5 text-[15.5px] leading-relaxed text-ink-500">{s.body}</p>
             </motion.div>
           ))}
@@ -182,7 +182,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-xl">
             <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Practice areas</span>
-            <h2 className="mt-2 text-[34px] font-extrabold text-ink-900 sm:text-[42px]">Every practice area, one place to start</h2>
+            <h2 className="mt-2 text-[33px] font-extrabold text-ink-900 sm:text-[41px]">Every practice area, one place to start</h2>
           </div>
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {PRACTICE_AREAS.map((a, i) => (
@@ -207,7 +207,7 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 to-brand-800 p-10 text-white">
             <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
             <MessageCircleQuestion size={26} className="text-gold-300" />
-            <h3 className="mt-5 text-[26px] font-extrabold">Looking for legal help?</h3>
+            <h3 className="mt-5 text-[25px] font-extrabold text-white">Looking for legal help?</h3>
             <p className="mt-3 max-w-sm text-[15.5px] leading-relaxed text-white/75">
               Post your matter or browse verified advocates by city and practice area. Ask the community a question for free, book a paid consultation when you're ready.
             </p>
@@ -220,7 +220,7 @@ export default function Home() {
 
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-10">
             <CalendarCheck2 size={26} className="text-brand-600" />
-            <h3 className="mt-5 text-[26px] font-extrabold text-ink-900">Practising and taking new clients?</h3>
+            <h3 className="mt-5 text-[25px] font-extrabold text-ink-900">Practising and taking new clients?</h3>
             <p className="mt-3 max-w-sm text-[15.5px] leading-relaxed text-ink-500">
               Get a public profile, a booking calendar with real availability, a case workspace, and a private client &amp; billing register — after Bar Council verification.
             </p>
@@ -236,7 +236,7 @@ export default function Home() {
       {/* ---- Final CTA ---- */}
       <section className="border-t border-ink-100 bg-brand-50/50 py-20">
         <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
-          <h2 className="text-[32px] font-extrabold text-ink-900 sm:text-[40px]">
+          <h2 className="text-[31px] font-extrabold text-ink-900 sm:text-[39px]">
             Legal help shouldn't feel like a gamble.
           </h2>
           <p className="mt-3 text-[16.5px] text-ink-500">Start with a free question, or book a consultation when you're ready.</p>

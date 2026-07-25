@@ -50,7 +50,7 @@ export default function AdminLogin() {
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
           <Logo dark size="lg" />
-          <h1 className="mt-4 font-heading text-[19px] font-semibold text-white">Admin console</h1>
+          <h1 className="mt-4 font-heading text-[18px] font-semibold text-white">Admin console</h1>
           <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-white/50">
             <ShieldCheck size={13} /> Restricted area — admin accounts only
           </p>

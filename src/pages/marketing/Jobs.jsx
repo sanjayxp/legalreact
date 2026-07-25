@@ -38,7 +38,7 @@ export default function Jobs() {
       <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Careers &amp; growth</span>
-          <h1 className="mt-2 text-[36px] font-extrabold text-ink-900 sm:text-[44px]">Jobs &amp; Learning</h1>
+          <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Jobs &amp; Learning</h1>
           <p className="mt-2 max-w-lg text-[16px] text-ink-500">Legal roles at firms and chambers, plus courses and webinars to build your practice.</p>
         </div>
       </section>

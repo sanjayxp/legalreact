@@ -44,7 +44,7 @@ export default function ForAdvocates() {
             <span className="inline-flex items-center gap-2 rounded-full bg-brand-100 px-4 py-1.5 text-[14px] font-bold text-brand-700">
               For practising advocates
             </span>
-            <h1 className="mt-5 text-[42px] font-extrabold leading-[1.1] text-ink-900 sm:text-[52px]">
+            <h1 className="mt-5 text-[41px] font-extrabold leading-[1.1] text-ink-900 sm:text-[51px]">
               Practice management,
               <br />
               <span className="text-brand-500">plus new clients.</span>
@@ -88,14 +88,14 @@ export default function ForAdvocates() {
       <section className="mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <div className="max-w-xl">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">What you get</span>
-          <h2 className="mt-2 text-[34px] font-extrabold text-ink-900 sm:text-[42px]">Everything to run your practice, in one place</h2>
+          <h2 className="mt-2 text-[33px] font-extrabold text-ink-900 sm:text-[41px]">Everything to run your practice, in one place</h2>
         </div>
         <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
             <motion.div key={f.title} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 6) * 0.05 }}>
               <Card hover className="h-full">
                 <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-500 text-white"><f.icon size={19} /></div>
-                <h3 className="mt-4 text-[16px] font-bold text-ink-900">{f.title}</h3>
+                <h3 className="mt-4 text-[15px] font-bold text-ink-900">{f.title}</h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-ink-500">{f.body}</p>
               </Card>
             </motion.div>
@@ -107,7 +107,7 @@ export default function ForAdvocates() {
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-xl">
             <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Verification</span>
-            <h2 className="mt-2 text-[34px] font-extrabold text-ink-900 sm:text-[42px]">From sign-up to visible, in four steps</h2>
+            <h2 className="mt-2 text-[33px] font-extrabold text-ink-900 sm:text-[41px]">From sign-up to visible, in four steps</h2>
           </div>
           <div className="mt-14 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s, i) => (
@@ -116,7 +116,7 @@ export default function ForAdvocates() {
                   <div className="grid h-11 w-11 place-items-center rounded-full bg-white text-brand-600 shadow-sm"><s.icon size={18} /></div>
                   <div className="text-[28px] font-extrabold text-brand-200">{s.n}</div>
                 </div>
-                <h3 className="mt-3 text-[16px] font-bold text-ink-900">{s.title}</h3>
+                <h3 className="mt-3 text-[15px] font-bold text-ink-900">{s.title}</h3>
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-500">{s.body}</p>
               </motion.div>
             ))}
@@ -126,7 +126,7 @@ export default function ForAdvocates() {
 
       <section className="border-t border-ink-100 py-20">
         <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
-          <h2 className="text-[32px] font-extrabold text-ink-900 sm:text-[40px]">Ready to take on new clients?</h2>
+          <h2 className="text-[31px] font-extrabold text-ink-900 sm:text-[39px]">Ready to take on new clients?</h2>
           <p className="mt-3 text-[16.5px] text-ink-500">Free to join. Verification usually takes 2 working days.</p>
           <Link to="/login#register" className="mt-7 inline-block">
             <Button size="lg">Join as an advocate <ArrowRight size={17} /></Button>
