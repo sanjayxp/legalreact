@@ -1,0 +1,513 @@
+// ============================================================
+// LegalConnects — CMS data helpers (ported 1:1 from app/js/cms.js)
+// ============================================================
+import { supabase } from './supabase';
+
+// ---------- JOBS ----------
+export async function listJobsAdmin() {
+  const { data, error } = await supabase.from('jobs').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function saveJob(job) {
+  const { id, ...fields } = job;
+  if (id) {
+    const { error } = await supabase.from('jobs').update(fields).eq('id', id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('jobs').insert(fields);
+    if (error) throw error;
+  }
+}
+export async function deleteJob(id) {
+  const { error } = await supabase.from('jobs').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function countApplications(jobId) {
+  const { count, error } = await supabase.from('job_applications').select('id', { count: 'exact', head: true }).eq('job_id', jobId);
+  if (error) throw error;
+  return count || 0;
+}
+export async function listJobApplicants(jobId) {
+  const { data, error } = await supabase.from('job_applications').select('*').eq('job_id', jobId).order('applied_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// ---------- COURSES ----------
+export async function listCoursesAdmin() {
+  const { data, error } = await supabase.from('courses').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function saveCourse(course) {
+  const { id, ...fields } = course;
+  if (id) {
+    const { error } = await supabase.from('courses').update(fields).eq('id', id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('courses').insert(fields);
+    if (error) throw error;
+  }
+}
+export async function deleteCourse(id) {
+  const { error } = await supabase.from('courses').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function countEnrollments(courseId) {
+  const { count, error } = await supabase.from('course_enrollments').select('id', { count: 'exact', head: true }).eq('course_id', courseId);
+  if (error) throw error;
+  return count || 0;
+}
+export async function listCourseEnrollees(courseId) {
+  const { data, error } = await supabase.from('course_enrollments').select('*').eq('course_id', courseId).order('enrolled_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// ---------- TEAM MEMBERS ----------
+export async function listTeamAdmin() {
+  const { data, error } = await supabase.from('team_members').select('*').order('display_order', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function saveTeamMember(member) {
+  const { id, ...fields } = member;
+  if (id) {
+    const { error } = await supabase.from('team_members').update(fields).eq('id', id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('team_members').insert(fields);
+    if (error) throw error;
+  }
+}
+export async function deleteTeamMember(id) {
+  const { error } = await supabase.from('team_members').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- ADVOCATE PROFILES ----------
+export async function getAdvocateProfile(userId) {
+  const { data, error } = await supabase.from('advocate_profiles').select('*').eq('id', userId).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function upsertAdvocateProfile(userId, fields, isFirstSubmit) {
+  if (isFirstSubmit) {
+    const { error } = await supabase.from('advocate_profiles').insert({ id: userId, ...fields });
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('advocate_profiles').update(fields).eq('id', userId);
+    if (error) throw error;
+  }
+}
+export async function listPendingAdvocates() {
+  const { data, error } = await supabase
+    .from('advocate_profiles')
+    .select('*, profiles!advocate_profiles_id_fkey(full_name, phone)')
+    .eq('verification_status', 'pending')
+    .order('submitted_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function listAllAdvocates() {
+  const { data, error } = await supabase
+    .from('advocate_profiles')
+    .select('*, profiles!advocate_profiles_id_fkey(full_name, phone)')
+    .order('submitted_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function listIncompleteAdvocateSignups() {
+  const { data: started, error: e1 } = await supabase.from('advocate_profiles').select('id');
+  if (e1) throw e1;
+  const startedIds = new Set((started || []).map((a) => a.id));
+  const { data: accounts, error: e2 } = await supabase.from('profiles').select('*').eq('role', 'advocate').order('created_at', { ascending: false });
+  if (e2) throw e2;
+  return (accounts || []).filter((p) => !startedIds.has(p.id));
+}
+export async function reviewAdvocateProfile(userId, status, reviewerId) {
+  const { error } = await supabase
+    .from('advocate_profiles')
+    .update({ verification_status: status, reviewed_at: new Date().toISOString(), reviewed_by: reviewerId })
+    .eq('id', userId);
+  if (error) throw error;
+}
+export async function adminUpdateAdvocateProfile(userId, fields) {
+  const { error } = await supabase.from('advocate_profiles').update(fields).eq('id', userId);
+  if (error) throw error;
+}
+export async function deleteAdvocateProfile(userId) {
+  const { error } = await supabase.from('advocate_profiles').delete().eq('id', userId);
+  if (error) throw error;
+}
+
+// ---------- CLIENTS (admin, read-only on profiles) ----------
+export async function listClients() {
+  const { data, error } = await supabase.from('profiles').select('*').eq('role', 'client').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// ---------- ADMIN ACCOUNTS ----------
+export async function listAdmins() {
+  const { data, error } = await supabase.from('profiles').select('*').eq('role', 'admin').order('created_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function findProfileByEmail(email) {
+  const { data, error } = await supabase.from('profiles').select('*').ilike('email', email.trim()).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function promoteToAdmin(userId) {
+  const { error } = await supabase.from('profiles').update({ role: 'admin' }).eq('id', userId);
+  if (error) throw error;
+}
+export async function updateOwnName(userId, fullName) {
+  const { error } = await supabase.from('profiles').update({ full_name: fullName }).eq('id', userId);
+  if (error) throw error;
+}
+
+// ---------- BOOKINGS ----------
+export async function getAvailability(advocateId) {
+  const { data, error } = await supabase.from('advocate_availability').select('*').eq('advocate_id', advocateId).order('weekday', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function setAvailability(advocateId, days) {
+  const { error: delErr } = await supabase.from('advocate_availability').delete().eq('advocate_id', advocateId);
+  if (delErr) throw delErr;
+  if (!days.length) return;
+  const rows = days.map((d) => ({ advocate_id: advocateId, ...d }));
+  const { error } = await supabase.from('advocate_availability').insert(rows);
+  if (error) throw error;
+}
+export async function listTimeOff(advocateId) {
+  const { data, error } = await supabase.from('advocate_time_off').select('*').eq('advocate_id', advocateId).order('off_date', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function addTimeOff(advocateId, offDate, note) {
+  const { error } = await supabase.from('advocate_time_off').insert({ advocate_id: advocateId, off_date: offDate, note: note || null });
+  if (error) throw error;
+}
+export async function deleteTimeOff(timeOffId) {
+  const { error } = await supabase.from('advocate_time_off').delete().eq('id', timeOffId);
+  if (error) throw error;
+}
+export async function listMySlots(advocateId) {
+  const { data, error } = await supabase.from('booking_slots').select('*').eq('advocate_id', advocateId).order('slot_start', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function confirmBookingRequest(requestId) {
+  const { data, error } = await supabase.rpc('confirm_booking_request', { p_request_id: requestId });
+  if (error) throw new Error(error.message || 'Could not confirm that request.');
+  return data;
+}
+export async function declineBookingRequest(requestId) {
+  const { data, error } = await supabase.rpc('decline_booking_request', { p_request_id: requestId });
+  if (error) throw new Error(error.message || 'Could not decline that request.');
+  return data;
+}
+export async function updateSlotStatus(slotId, status) {
+  const { error } = await supabase.from('booking_slots').update({ status, updated_at: new Date().toISOString() }).eq('id', slotId);
+  if (error) throw error;
+}
+export async function deleteSlot(slotId) {
+  const { error } = await supabase.from('booking_slots').delete().eq('id', slotId);
+  if (error) throw error;
+}
+
+// ---------- UPLOADS ----------
+export async function uploadPhoto(bucket, path, file) {
+  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+export async function uploadBarCertificate(userId, file) {
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const path = `${userId}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from('bar-certificates').upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  return path;
+}
+export async function getBarCertificateSignedUrl(path) {
+  const { data, error } = await supabase.storage.from('bar-certificates').createSignedUrl(path, 300);
+  if (error) throw error;
+  return data.signedUrl;
+}
+export async function getResumeSignedUrl(path) {
+  const { data, error } = await supabase.storage.from('job-resumes').createSignedUrl(path, 300);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+// ---------- Q&A MODERATION ----------
+export async function listQuestionsForModeration() {
+  const { data, error } = await supabase
+    .from('questions')
+    .select('*, answers(id, body, upvote_count, created_at, profiles:advocate_id(full_name))')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function deleteAnswer(id) {
+  const { error } = await supabase.from('answers').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function deleteQuestion(id) {
+  const { error: e1 } = await supabase.from('answers').delete().eq('question_id', id);
+  if (e1) throw e1;
+  const { error } = await supabase.from('questions').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function countMyAnswers(advocateId) {
+  const { count, error } = await supabase.from('answers').select('id', { count: 'exact', head: true }).eq('advocate_id', advocateId);
+  if (error) throw error;
+  return count || 0;
+}
+
+// ---------- LEADS (admin) ----------
+export async function listLeads() {
+  const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function listApprovedAdvocatesForAssignment() {
+  const { data, error } = await supabase
+    .from('advocate_profiles')
+    .select('id, profiles!advocate_profiles_id_fkey(full_name)')
+    .eq('verification_status', 'approved');
+  if (error) throw error;
+  return data || [];
+}
+export async function updateLead(id, fields) {
+  const { error } = await supabase.from('leads').update(fields).eq('id', id);
+  if (error) throw error;
+}
+export async function deleteLead(id) {
+  const { error } = await supabase.from('leads').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- CASE TRACKING ----------
+export async function listMyCases(advocateId) {
+  const { data, error } = await supabase.from('court_cases').select('*').eq('advocate_id', advocateId).order('next_hearing_date', { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function createCase(advocateId, fields) {
+  const { error } = await supabase.from('court_cases').insert({ advocate_id: advocateId, source: 'manual', ...fields });
+  if (error) throw error;
+}
+export async function deleteCase(caseId) {
+  const { error } = await supabase.from('court_cases').delete().eq('id', caseId);
+  if (error) throw error;
+}
+export async function getCase(caseId) {
+  const { data, error } = await supabase.from('court_cases').select('*').eq('id', caseId).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function lookupCaseByCNR(cnr) {
+  const { data, error } = await supabase.functions.invoke('ecourts-lookup', { body: { cnr } });
+  if (error) {
+    let msg = 'Could not look up that CNR. Please try again.';
+    try {
+      const body = await error.context.json();
+      if (body?.error) msg = body.error;
+    } catch (_) {
+      /* fall back to generic message */
+    }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data.data;
+}
+
+// ---------- CASE WORKSPACE ----------
+export async function listCaseEvents(caseId) {
+  const { data, error } = await supabase
+    .from('case_events')
+    .select('*')
+    .eq('case_id', caseId)
+    .order('event_date', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function addCaseEvent(caseId, advocateId, fields) {
+  const { error } = await supabase.from('case_events').insert({ case_id: caseId, advocate_id: advocateId, ...fields });
+  if (error) throw error;
+}
+export async function deleteCaseEvent(id) {
+  const { error } = await supabase.from('case_events').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function setCaseLabels(caseId, labels) {
+  const { error } = await supabase.from('court_cases').update({ labels, updated_at: new Date().toISOString() }).eq('id', caseId);
+  if (error) throw error;
+}
+export async function listCaseDocuments(caseId) {
+  const { data, error } = await supabase.from('case_documents').select('*').eq('case_id', caseId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function uploadCaseDocument(caseId, advocateId, file) {
+  const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `${advocateId}/${caseId}/${Date.now()}_${safe}`;
+  const { error: upErr } = await supabase.storage.from('case-docs').upload(path, file);
+  if (upErr) throw upErr;
+  const { error } = await supabase.from('case_documents').insert({ case_id: caseId, advocate_id: advocateId, file_name: file.name, file_path: path });
+  if (error) throw error;
+}
+export async function caseDocumentUrl(filePath) {
+  const { data, error } = await supabase.storage.from('case-docs').createSignedUrl(filePath, 3600);
+  if (error) throw error;
+  return data.signedUrl;
+}
+export async function deleteCaseDocument(doc) {
+  await supabase.storage.from('case-docs').remove([doc.file_path]);
+  const { error } = await supabase.from('case_documents').delete().eq('id', doc.id);
+  if (error) throw error;
+}
+
+// ---------- CLIENT MANAGEMENT (advocate's private register) ----------
+export async function listMyClients(advocateId) {
+  const { data, error } = await supabase.from('advocate_clients').select('*').eq('advocate_id', advocateId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function addClient(advocateId, fields) {
+  const { data, error } = await supabase.from('advocate_clients').insert({ advocate_id: advocateId, ...fields }).select().single();
+  if (error) throw error;
+  return data;
+}
+export async function updateClient(id, fields) {
+  const { error } = await supabase.from('advocate_clients').update(fields).eq('id', id);
+  if (error) throw error;
+}
+export async function deleteClient(id) {
+  const { error } = await supabase.from('advocate_clients').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function linkCaseToClient(caseId, registerClientId) {
+  const { error } = await supabase.from('court_cases').update({ register_client_id: registerClientId }).eq('id', caseId);
+  if (error) throw error;
+}
+export async function listClientCases(advocateId, registerClientId) {
+  const { data, error } = await supabase
+    .from('court_cases')
+    .select('id, case_title, next_hearing_date, stage')
+    .eq('advocate_id', advocateId)
+    .eq('register_client_id', registerClientId);
+  if (error) throw error;
+  return data || [];
+}
+export async function logClientUpdate(advocateId, clientId, caseId, message, channel) {
+  const { error } = await supabase.from('client_updates').insert({ advocate_id: advocateId, client_id: clientId, case_id: caseId || null, message, channel });
+  if (error) throw error;
+}
+export async function listClientUpdates(clientId) {
+  const { data, error } = await supabase.from('client_updates').select('*').eq('client_id', clientId).order('sent_at', { ascending: false }).limit(20);
+  if (error) throw error;
+  return data || [];
+}
+export async function listMyInvoices(advocateId) {
+  const { data, error } = await supabase.from('invoices').select('*, advocate_clients(full_name)').eq('advocate_id', advocateId).order('issued_on', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function addInvoice(advocateId, fields) {
+  const { error } = await supabase.from('invoices').insert({ advocate_id: advocateId, ...fields });
+  if (error) throw error;
+}
+export async function setInvoiceStatus(id, status) {
+  const patch = { status };
+  if (status === 'paid') patch.paid_on = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase.from('invoices').update(patch).eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- PUBLIC LISTINGS (jobs & courses) ----------
+export async function listJobsPublic() {
+  const { data, error } = await supabase.from('jobs').select('*').eq('status', 'active').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function listCoursesPublic() {
+  const { data, error } = await supabase.from('courses').select('*').eq('status', 'active').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function submitJobApplication(app) {
+  const { error } = await supabase.from('job_applications').insert(app);
+  if (error) throw error;
+}
+export async function submitCourseEnrollment(enroll) {
+  const { error } = await supabase.from('course_enrollments').insert(enroll);
+  if (error) throw error;
+}
+export async function uploadResume(jobId, file) {
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+  const path = `${jobId}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from('job-resumes').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+  return path;
+}
+
+// ---------- LEGAL Q&A (public forum) ----------
+export async function listQuestionsPublic(topic) {
+  let q = supabase.from('questions').select('*, answers(count)').order('created_at', { ascending: false });
+  if (topic && topic !== 'all') q = q.eq('topic', topic);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+}
+export async function getQuestionDetail(questionId) {
+  const { data: question, error: qErr } = await supabase.from('questions').select('*').eq('id', questionId).maybeSingle();
+  if (qErr) throw qErr;
+  if (!question) return null;
+  const { data: answers, error: aErr } = await supabase
+    .from('answers')
+    .select('*, profiles!answers_advocate_id_fkey(full_name)')
+    .eq('question_id', questionId)
+    .order('upvote_count', { ascending: false });
+  if (aErr) throw aErr;
+  const advocateIds = [...new Set((answers || []).map((a) => a.advocate_id))];
+  let advocateInfo = {};
+  if (advocateIds.length) {
+    const { data: profs, error: pErr } = await supabase.from('advocate_profiles').select('id, headline, practice_areas').in('id', advocateIds);
+    if (pErr) throw pErr;
+    (profs || []).forEach((p) => { advocateInfo[p.id] = p; });
+  }
+  const answersWithProfiles = (answers || []).map((a) => ({ ...a, advocate_profiles: advocateInfo[a.advocate_id] || null }));
+  const answerIds = answersWithProfiles.map((a) => a.id);
+  let comments = [];
+  if (answerIds.length) {
+    const { data: c, error: cErr } = await supabase.from('answer_comments').select('*').in('answer_id', answerIds).order('created_at', { ascending: true });
+    if (cErr) throw cErr;
+    comments = c || [];
+  }
+  return { question, answers: answersWithProfiles, comments };
+}
+export async function incrementQuestionViews(questionId) {
+  const { error } = await supabase.rpc('increment_question_views', { q_id: questionId });
+  if (error) throw error;
+}
+export async function submitQuestion({ topic, title, body, budget, client_id }) {
+  const { data, error } = await supabase.from('questions').insert({ topic, title, body, budget, client_id: client_id || null }).select().maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function upvoteAnswer(answerId) {
+  const { error } = await supabase.rpc('increment_answer_upvotes', { a_id: answerId });
+  if (error) throw error;
+}
+export async function addAnswerComment(answerId, authorRole, authorId, body) {
+  const { error } = await supabase.from('answer_comments').insert({ answer_id: answerId, author_role: authorRole, author_id: authorId || null, body });
+  if (error) throw error;
+}
