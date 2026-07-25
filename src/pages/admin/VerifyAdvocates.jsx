@@ -11,7 +11,6 @@ import {
   getBarCertificateSignedUrl,
   uploadPhoto,
 } from '../../lib/cms';
-import AdminShell from '../../components/layout/AdminShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -21,7 +20,7 @@ import { Input, Textarea, Label, FormRow } from '../../components/ui/Field';
 import { Chip } from '../../components/ui/Misc';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
-const AREAS = ['Civil', 'Criminal', 'Family', 'Corporate', 'Property & Real Estate', 'Tax', 'Labour & Employment', 'IP', 'Cyber Law', 'Consumer', 'Immigration'];
+import { PRACTICE_AREAS as AREAS } from '../../lib/practiceAreas';
 
 export default function VerifyAdvocates() {
   const { user } = useAuth();
@@ -63,7 +62,7 @@ export default function VerifyAdvocates() {
     try { window.open(await getBarCertificateSignedUrl(path), '_blank'); } catch { alert('Could not open certificate.'); }
   }
 
-  if (loading) return <AdminShell><Spinner /></AdminShell>;
+  if (loading) return <Spinner />;
 
   const tabs = [
     { key: 'all', label: 'All', count: counts.all },
@@ -74,10 +73,10 @@ export default function VerifyAdvocates() {
   ];
 
   return (
-    <AdminShell pendingCount={counts.pending}>
+    <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Verify advocates</h1>
-        <p className="mt-1 text-[14px] text-ink-500">Review Bar Council submissions and manage advocate profiles.</p>
+        <h2 className="text-[19px] font-extrabold text-ink-900">Verify advocates</h2>
+        <p className="mt-1 text-[13.5px] text-ink-500">Review Bar Council submissions and manage advocate profiles.</p>
       </motion.div>
 
       <div className="mt-5"><Tabs tabs={tabs} active={tab} onChange={setTab} /></div>
@@ -145,7 +144,7 @@ export default function VerifyAdvocates() {
       </div>
 
       <AdvocateEditModal advocate={editing} onClose={() => setEditing(null)} onSaved={load} />
-    </AdminShell>
+    </>
   );
 }
 

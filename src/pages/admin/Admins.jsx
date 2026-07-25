@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Search, ShieldCheck } from 'lucide-react';
 import { listAdmins, findProfileByEmail, promoteToAdmin } from '../../lib/cms';
 import { useAuth } from '../../lib/auth';
-import AdminShell from '../../components/layout/AdminShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -47,10 +46,10 @@ export default function Admins() {
     load();
   }
 
-  if (loading) return <AdminShell><Spinner /></AdminShell>;
+  if (loading) return <Spinner />;
 
   return (
-    <AdminShell>
+    <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Admins</h1>
         <p className="mt-1 text-[14px] text-ink-500">Manage admin accounts.</p>
@@ -91,6 +90,6 @@ export default function Admins() {
           ))}
         </div>
       </Card>
-    </AdminShell>
+    </>
   );
 }

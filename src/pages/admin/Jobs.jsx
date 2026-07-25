@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Plus, Pencil, Trash2, Users, Briefcase } from 'lucide-react';
 import { listJobsAdmin, saveJob, deleteJob, countApplications, listJobApplicants, uploadPhoto, getResumeSignedUrl } from '../../lib/cms';
 import { colorFor } from '../../lib/colorFor';
-import AdminShell from '../../components/layout/AdminShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -51,14 +50,14 @@ export default function Jobs() {
     setApplicants(await listJobApplicants(job.id));
   }
 
-  if (loading) return <AdminShell><Spinner /></AdminShell>;
+  if (loading) return <Spinner />;
 
   return (
-    <AdminShell>
+    <>
       <div className="flex items-center justify-between">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Jobs</h1>
-          <p className="mt-1 text-[14px] text-ink-500">Postings shown on Jobs &amp; Learning.</p>
+          <h2 className="text-[19px] font-extrabold text-ink-900">Jobs</h2>
+          <p className="mt-1 text-[13.5px] text-ink-500">Postings shown on the public Jobs &amp; Learning page.</p>
         </motion.div>
         <Button onClick={() => setEditing(EMPTY)}><Plus size={15} /> New job</Button>
       </div>
@@ -117,7 +116,7 @@ export default function Jobs() {
           {applicants.length === 0 && <div className="text-[13px] text-ink-400">No applicants yet.</div>}
         </div>
       </Modal>
-    </AdminShell>
+    </>
   );
 }
 

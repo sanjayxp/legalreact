@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Search, Pencil, Trash2, Users } from 'lucide-react';
 import { listClients } from '../../lib/cms';
 import { supabase } from '../../lib/supabase';
-import AdminShell from '../../components/layout/AdminShell';
 import Card from '../../components/ui/Card';
 import { Input } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
@@ -41,10 +40,10 @@ export default function Clients() {
     load();
   }
 
-  if (loading) return <AdminShell><Spinner /></AdminShell>;
+  if (loading) return <Spinner />;
 
   return (
-    <AdminShell>
+    <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Clients</h1>
         <p className="mt-1 text-[14px] text-ink-500">All registered client accounts.</p>
@@ -84,6 +83,6 @@ export default function Clients() {
           </table>
         )}
       </Card>
-    </AdminShell>
+    </>
   );
 }

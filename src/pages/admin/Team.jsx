@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Pencil, Trash2, UsersRound } from 'lucide-react';
 import { listTeamAdmin, saveTeamMember, deleteTeamMember, uploadPhoto } from '../../lib/cms';
-import AdminShell from '../../components/layout/AdminShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -40,10 +39,10 @@ export default function Team() {
     load();
   }
 
-  if (loading) return <AdminShell><Spinner /></AdminShell>;
+  if (loading) return <Spinner />;
 
   return (
-    <AdminShell>
+    <>
       <div className="flex items-center justify-between">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="font-heading text-[24px] font-extrabold text-ink-900">Team</h1>
@@ -72,7 +71,7 @@ export default function Team() {
       )}
 
       <TeamEditor member={editing} onClose={() => setEditing(null)} onSave={handleSave} />
-    </AdminShell>
+    </>
   );
 }
 

@@ -511,3 +511,85 @@ export async function addAnswerComment(answerId, authorRole, authorId, body) {
   const { error } = await supabase.from('answer_comments').insert({ answer_id: answerId, author_role: authorRole, author_id: authorId || null, body });
   if (error) throw error;
 }
+export async function submitAnswer(questionId, advocateId, body) {
+  const { error } = await supabase.from('answers').insert({ question_id: questionId, advocate_id: advocateId, body });
+  if (error) throw error;
+}
+
+// ---------- PUBLIC ADVOCATE DIRECTORY (no login required) ----------
+export async function listApprovedAdvocatesPublic() {
+  const { data, error } = await supabase
+    .from('advocate_profiles')
+    .select('*, profiles!advocate_profiles_id_fkey(full_name)')
+    .eq('verification_status', 'approved')
+    .order('updated_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+export async function getApprovedAdvocatePublic(id) {
+  const { data, error } = await supabase
+    .from('advocate_profiles')
+    .select('*, profiles!advocate_profiles_id_fkey(full_name)')
+    .eq('id', id)
+    .eq('verification_status', 'approved')
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function incrementProfileView(advocateProfileId) {
+  const { error } = await supabase.rpc('increment_profile_view', { profile_id: advocateProfileId });
+  if (error) throw error;
+}
+// Public "request this advocate" capture — lands in the same admin Leads
+// queue as other public-site enquiries, pre-assigned to this advocate.
+export async function requestAdvocateLead({ advocate_id, client_name, phone, email, matter }) {
+  const { error } = await supabase.from('leads').insert({
+    advocate_id,
+    client_name,
+    phone,
+    email: email || null,
+    matter: matter || null,
+    source: 'booking',
+    status: 'new',
+  });
+  if (error) throw error;
+}
+
+// ---------- ADMIN ACTIVITY FEED ----------
+// Merges the last N events across the tables an admin cares about into one
+// timeline, so the overview page reflects "everything happening" rather
+// than just static totals.
+export async function listRecentActivity(limit = 15) {
+  const [signups, leads, questions, submissions] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, role, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('leads').select('id, client_name, matter, source, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('questions').select('id, title, topic, created_at').order('created_at', { ascending: false }).limit(limit),
+    supabase.from('advocate_profiles').select('id, submitted_at, profiles!advocate_profiles_id_fkey(full_name)').order('submitted_at', { ascending: false }).limit(limit),
+  ]);
+
+  const events = [
+    ...(signups.data || []).map((r) => ({
+      type: 'signup', id: r.id, at: r.created_at,
+      title: `${r.full_name || 'Someone'} signed up as ${r.role}`,
+      href: r.role === 'advocate' ? '/admin/people?tab=advocates' : '/admin/people?tab=clients',
+    })),
+    ...(leads.data || []).map((r) => ({
+      type: 'lead', id: r.id, at: r.created_at,
+      title: `New lead — ${r.client_name || 'unnamed'}${r.matter ? `: ${r.matter}` : ''}`,
+      href: '/admin/leads',
+    })),
+    ...(questions.data || []).map((r) => ({
+      type: 'question', id: r.id, at: r.created_at,
+      title: `New question — ${r.title}`,
+      href: '/admin/qa',
+    })),
+    ...(submissions.data || []).map((r) => ({
+      type: 'submission', id: r.id, at: r.submitted_at,
+      title: `${r.profiles?.full_name || 'An advocate'} submitted a profile for review`,
+      href: '/admin/people?tab=advocates',
+    })),
+  ].filter((e) => e.at);
+
+  events.sort((a, b) => new Date(b.at) - new Date(a.at));
+  return events.slice(0, limit);
+}

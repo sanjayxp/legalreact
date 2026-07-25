@@ -7,6 +7,8 @@ import QuestionDetail from './pages/marketing/QuestionDetail';
 import PublicJobs from './pages/marketing/Jobs';
 import TrackCase from './pages/marketing/TrackCase';
 import ForAdvocates from './pages/marketing/ForAdvocates';
+import Advocates from './pages/marketing/Advocates';
+import PublicAdvocateProfile from './pages/marketing/AdvocateProfile';
 import Login from './pages/auth/Login';
 import ClientDashboard from './pages/client/ClientDashboard';
 
@@ -22,12 +24,8 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AdminOverview from './pages/admin/Overview';
 import AdminLeads from './pages/admin/Leads';
 import AdminQA from './pages/admin/QA';
-import AdminJobs from './pages/admin/Jobs';
-import AdminCourses from './pages/admin/Courses';
-import AdminTeam from './pages/admin/Team';
-import AdminClients from './pages/admin/Clients';
-import AdminAdmins from './pages/admin/Admins';
-import AdminVerifyAdvocates from './pages/admin/VerifyAdvocates';
+import AdminJobsLearning from './pages/admin/JobsLearning';
+import AdminPeople from './pages/admin/People';
 
 export default function App() {
   return (
@@ -48,12 +46,13 @@ export default function App() {
       <Route path="/admin" element={<RequireRole role="admin"><AdminOverview /></RequireRole>} />
       <Route path="/admin/leads" element={<RequireRole role="admin"><AdminLeads /></RequireRole>} />
       <Route path="/admin/qa" element={<RequireRole role="admin"><AdminQA /></RequireRole>} />
-      <Route path="/admin/jobs" element={<RequireRole role="admin"><AdminJobs /></RequireRole>} />
-      <Route path="/admin/courses" element={<RequireRole role="admin"><AdminCourses /></RequireRole>} />
-      <Route path="/admin/team" element={<RequireRole role="admin"><AdminTeam /></RequireRole>} />
-      <Route path="/admin/clients" element={<RequireRole role="admin"><AdminClients /></RequireRole>} />
-      <Route path="/admin/admins" element={<RequireRole role="admin"><AdminAdmins /></RequireRole>} />
-      <Route path="/admin/verify-advocates" element={<RequireRole role="admin"><AdminVerifyAdvocates /></RequireRole>} />
+      <Route path="/admin/jobs" element={<RequireRole role="admin"><AdminJobsLearning /></RequireRole>} />
+      <Route path="/admin/people" element={<RequireRole role="admin"><AdminPeople /></RequireRole>} />
+      <Route path="/admin/courses" element={<Navigate to="/admin/jobs?tab=courses" replace />} />
+      <Route path="/admin/team" element={<Navigate to="/admin/people?tab=team" replace />} />
+      <Route path="/admin/clients" element={<Navigate to="/admin/people?tab=clients" replace />} />
+      <Route path="/admin/admins" element={<Navigate to="/admin/people?tab=admins" replace />} />
+      <Route path="/admin/verify-advocates" element={<Navigate to="/admin/people?tab=advocates" replace />} />
 
       <Route path="/" element={<Home />} />
       <Route path="/qa" element={<PublicQA />} />
@@ -61,6 +60,8 @@ export default function App() {
       <Route path="/jobs" element={<PublicJobs />} />
       <Route path="/track-case" element={<TrackCase />} />
       <Route path="/for-advocates" element={<ForAdvocates />} />
+      <Route path="/advocates" element={<Advocates />} />
+      <Route path="/advocates/:id" element={<PublicAdvocateProfile />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

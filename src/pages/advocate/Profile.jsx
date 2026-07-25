@@ -16,8 +16,8 @@ import { Input, Textarea, Label, FormRow } from '../../components/ui/Field';
 import { Chip } from '../../components/ui/Misc';
 import Button from '../../components/ui/Button';
 import { Toast, Spinner } from '../../components/ui/Misc';
+import { PRACTICE_AREAS as AREAS } from '../../lib/practiceAreas';
 
-const AREAS = ['Civil', 'Criminal', 'Family', 'Corporate', 'Property & Real Estate', 'Tax', 'Labour & Employment', 'IP', 'Cyber Law', 'Consumer', 'Immigration'];
 const MODES = [
   { key: 'video', label: '🎥 Video' },
   { key: 'phone', label: '📞 Phone' },

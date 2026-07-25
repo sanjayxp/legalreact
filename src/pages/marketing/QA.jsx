@@ -11,8 +11,7 @@ import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import { Input, Textarea, Label, Select } from '../../components/ui/Field';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
-
-const TOPICS = ['Civil', 'Criminal', 'Family', 'Corporate', 'Property & Real Estate', 'Tax', 'Labour & Employment', 'IP', 'Cyber Law', 'Consumer', 'Immigration'];
+import { PRACTICE_AREAS as TOPICS } from '../../lib/practiceAreas';
 
 export default function QA() {
   const [loading, setLoading] = useState(true);

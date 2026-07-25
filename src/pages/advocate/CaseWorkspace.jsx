@@ -170,7 +170,12 @@ export default function CaseWorkspace() {
           </Card>
 
           <Card>
-            <CardHeading title="Documents" />
+            <div className="flex items-center justify-between">
+              <CardHeading title="Documents" />
+              <Link to="/dashboard/advocate/documents" className="mb-4 flex items-center gap-1 text-[12.5px] font-semibold text-brand-600 hover:underline">
+                <FileText size={13} /> Generate a document
+              </Link>
+            </div>
             <div className="flex items-center gap-2">
               <input type="file" onChange={(e) => setDocFile(e.target.files[0])} className="flex-1 text-[13px]" />
               <Button size="sm" onClick={handleUploadDoc}><Upload size={14} /> Upload</Button>

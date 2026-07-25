@@ -1,21 +1,29 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { signOut } from '../../lib/auth';
+import { listPendingAdvocates } from '../../lib/cms';
 import Logo from '../brand/Logo';
 
 const NAV = [
   { to: '/admin', label: 'Overview', end: true },
   { to: '/admin/leads', label: 'Leads' },
   { to: '/admin/qa', label: 'Q&A' },
-  { to: '/admin/jobs', label: 'Jobs' },
-  { to: '/admin/courses', label: 'Courses' },
-  { to: '/admin/team', label: 'Team' },
-  { to: '/admin/verify-advocates', label: 'Advocates' },
-  { to: '/admin/clients', label: 'Clients' },
-  { to: '/admin/admins', label: 'Admins' },
+  { to: '/admin/jobs', label: 'Jobs & Learning' },
+  { to: '/admin/people', label: 'People', badge: true },
 ];
 
-export default function AdminShell({ children, pendingCount = 0 }) {
+export default function AdminShell({ children }) {
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    let mounted = true;
+    listPendingAdvocates()
+      .then((rows) => { if (mounted) setPendingCount(rows.length); })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="min-h-screen bg-ink-50/40">
       <header className="sticky top-0 z-50 bg-ink-900">
@@ -34,7 +42,7 @@ export default function AdminShell({ children, pendingCount = 0 }) {
                 }
               >
                 {item.label}
-                {item.to === '/admin' && pendingCount > 0 && (
+                {item.badge && pendingCount > 0 && (
                   <span className="rounded-full bg-coral-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
                     {pendingCount}
                   </span>
@@ -61,7 +69,7 @@ export default function AdminShell({ children, pendingCount = 0 }) {
                 }`
               }
             >
-              {item.label}
+              {item.label}{item.badge && pendingCount > 0 ? ` (${pendingCount})` : ''}
             </NavLink>
           ))}
         </nav>

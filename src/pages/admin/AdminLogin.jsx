@@ -87,7 +87,7 @@ export default function AdminLogin() {
         <div className="mt-5 flex justify-center gap-4 text-[12.5px] text-white/40">
           <Link to="/login" className="hover:text-white/70">← Normal login</Link>
           <span>·</span>
-          <a href="https://legalconnects.netlify.app" className="hover:text-white/70">Public site</a>
+          <Link to="/" className="hover:text-white/70">Public site</Link>
         </div>
       </motion.div>
     </div>

@@ -82,7 +82,7 @@ export default function Home() {
               Ask a question, get matched with a verified advocate by practice area and city, and book a consultation — video, phone, or in person. Free to start.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link to="/login#register">
+              <Link to="/advocates">
                 <Button size="lg">
                   Find an advocate <ArrowRight size={17} />
                 </Button>
@@ -187,7 +187,7 @@ export default function Home() {
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {PRACTICE_AREAS.map((a, i) => (
               <motion.div key={a.name} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 4) * 0.05 }}>
-                <Link to="/login#register">
+                <Link to={`/advocates?area=${encodeURIComponent(a.name)}`}>
                   <Card hover className="flex h-full items-start gap-3 !p-5">
                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-500 text-white">
                       <a.icon size={17} />

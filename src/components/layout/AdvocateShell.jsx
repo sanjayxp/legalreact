@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -12,13 +13,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { signOut } from '../../lib/auth';
+import { listMySlots } from '../../lib/cms';
 import { Avatar } from '../ui/Misc';
 import Logo from '../brand/Logo';
 
 const NAV = [
   { to: '/dashboard/advocate', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/advocate/profile', label: 'Profile', icon: UserRound },
-  { to: '/dashboard/advocate/bookings', label: 'Leads & Bookings', icon: Inbox },
+  { to: '/dashboard/advocate/bookings', label: 'Leads & Bookings', icon: Inbox, badge: true },
   { to: '/dashboard/advocate/cases', label: 'My Cases', icon: Gavel },
   { to: '/dashboard/advocate/clients', label: 'Clients', icon: Users },
   { to: '/dashboard/advocate/documents', label: 'Documents', icon: FileText },
@@ -27,6 +29,14 @@ const NAV = [
 export default function AdvocateShell({ children }) {
   const { profile, user } = useAuth();
   const name = profile?.full_name || user?.email || '';
+  const [leadCount, setLeadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    listMySlots(user.id)
+      .then((rows) => setLeadCount(rows.filter((s) => s.status === 'requested').length))
+      .catch(() => {});
+  }, [user]);
 
   return (
     <div className="flex min-h-screen bg-ink-50/40">
@@ -54,18 +64,19 @@ export default function AdvocateShell({ children }) {
               }
             >
               <item.icon size={16} />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.badge && leadCount > 0 && (
+                <span className="rounded-full bg-coral-500 px-1.5 py-0.5 text-[10px] font-bold text-white">{leadCount}</span>
+              )}
             </NavLink>
           ))}
-          <a
-            href="https://legalconnects.netlify.app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/"
             className="mt-2 flex items-center gap-2.5 rounded-lg border-t border-ink-100 px-3 py-2.5 pt-4 text-[13.5px] font-semibold text-ink-500 hover:text-brand-600"
           >
             <Globe size={16} />
             Visit Website
-          </a>
+          </Link>
         </nav>
 
         <button
