@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* ApplyBoard-inspired palette */
+  --color-brand-50: #f5f8ff;
+  --color-brand-100: #e6edff;
+  --color-brand-200: #c3d6ff;
+  --color-brand-300: #93b4fd;
+  --color-brand-400: #5a89f7;
+  --color-brand-500: #1e6deb;
+  --color-brand-600: #0d54c9;
+  --color-brand-700: #0a41a0;
+  --color-brand-800: #0a337c;
+  --color-brand-900: #0b2b62;
+
+  --color-gold-50: #fff8ec;
+  --color-gold-100: #ffecc7;
+  --color-gold-200: #ffd68a;
+  --color-gold-300: #ffb238;
+  --color-gold-400: #ff9d1f;
+  --color-gold-500: #e8830a;
+  --color-gold-600: #c26a05;
+  --color-gold-700: #965208;
+
+  --color-ink-50: #f6f7f9;
+  --color-ink-100: #e9eaef;
+  --color-ink-300: #a9adbd;
+  --color-ink-500: #636a83;
+  --color-ink-700: #434a63;
+  --color-ink-800: #363b51;
+  --color-ink-900: #292e3e;
+
+  --color-paper: #fbfbfd;
+
+  --color-sun-400: #ffb238;
+  --color-sun-500: #ff9d1f;
+  --color-coral-400: #ff7a8a;
+  --color-coral-500: #f2456b;
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --shadow-card-hover: 0 4px 10px rgba(15, 23, 42, 0.06), 0 16px 36px rgba(15, 23, 42, 0.1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--color-ink-800);
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    color: var(--color-ink-900);
+  }
+}
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-ink-900);
+}
+
+/* Decorative organic blob shapes, ApplyBoard style */
+.blob-shape {
+  border-radius: 40% 60% 55% 45% / 45% 40% 60% 55%;
+}
+.blob-shape-2 {
+  border-radius: 60% 40% 45% 55% / 55% 60% 40% 45%;
+}
+
+.gradient-coral {
+  background: linear-gradient(135deg, #ff7a8a 0%, #f2456b 100%);
+}
+.gradient-sun {
+  background: linear-gradient(135deg, #ffce6f 0%, #ff9d1f 100%);
+}
+.gradient-brand {
+  background: linear-gradient(135deg, #5a89f7 0%, #1e6deb 100%);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-ink-100);
+  border-radius: 999px;
+}
