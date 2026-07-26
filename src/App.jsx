@@ -9,6 +9,13 @@ import TrackCase from './pages/marketing/TrackCase';
 import ForAdvocates from './pages/marketing/ForAdvocates';
 import Advocates from './pages/marketing/Advocates';
 import PublicAdvocateProfile from './pages/marketing/AdvocateProfile';
+import About from './pages/marketing/About';
+import Privacy from './pages/marketing/Privacy';
+import Terms from './pages/marketing/Terms';
+import Disclaimer from './pages/marketing/Disclaimer';
+import RefundPolicy from './pages/marketing/RefundPolicy';
+import Contact from './pages/marketing/Contact';
+import Careers from './pages/marketing/Careers';
 import Login from './pages/auth/Login';
 import ClientDashboard from './pages/client/ClientDashboard';
 
@@ -62,6 +69,13 @@ export default function App() {
       <Route path="/for-advocates" element={<ForAdvocates />} />
       <Route path="/advocates" element={<Advocates />} />
       <Route path="/advocates/:id" element={<PublicAdvocateProfile />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/disclaimer" element={<Disclaimer />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/careers" element={<Careers />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
