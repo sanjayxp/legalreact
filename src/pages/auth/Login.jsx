@@ -122,7 +122,7 @@ export default function Login() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-5 py-10 lg:grid-cols-2 lg:py-16">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-10 px-5 py-10 lg:grid-cols-2 lg:py-16">
         {/* Left — hero */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="hidden lg:block">
           <div className="relative rounded-3xl bg-gradient-to-br from-brand-50 via-white to-brand-50 p-10">
