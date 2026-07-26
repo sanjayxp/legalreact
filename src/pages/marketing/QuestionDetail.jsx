@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ThumbsUp, Eye, Gavel, Send } from 'lucide-react';
-import { getQuestionDetail, incrementQuestionViews, upvoteAnswer, submitAnswer, getAdvocateProfile } from '../../lib/cms';
+import { getQuestionDetail, incrementQuestionViews, upvoteAnswer, submitAnswer, getAdvocateProfile, addAnswerComment } from '../../lib/cms';
 import { useAuth } from '../../lib/auth';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
@@ -22,6 +22,9 @@ export default function QuestionDetail() {
   const [answerBody, setAnswerBody] = useState('');
   const [answering, setAnswering] = useState(false);
   const [answerMsg, setAnswerMsg] = useState('');
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [commentBusy, setCommentBusy] = useState(null);
+  const [commentErr, setCommentErr] = useState({});
 
   async function load() {
     setLoading(true);
@@ -43,6 +46,23 @@ export default function QuestionDetail() {
     await upvoteAnswer(answerId);
     setVotedIds(new Set([...votedIds, answerId]));
     setData((d) => ({ ...d, answers: d.answers.map((a) => (a.id === answerId ? { ...a, upvote_count: (a.upvote_count || 0) + 1 } : a)) }));
+  }
+
+  async function handlePostComment(answerId) {
+    const body = (commentDrafts[answerId] || '').trim();
+    if (!body) return;
+    setCommentBusy(answerId);
+    setCommentErr((m) => ({ ...m, [answerId]: '' }));
+    try {
+      const role = ['advocate', 'client'].includes(profile?.role) ? profile.role : 'anonymous';
+      await addAnswerComment(answerId, role, session ? user.id : null, body);
+      setCommentDrafts((m) => ({ ...m, [answerId]: '' }));
+      await load();
+    } catch (e) {
+      setCommentErr((m) => ({ ...m, [answerId]: e.message || 'Could not post your reply.' }));
+    } finally {
+      setCommentBusy(null);
+    }
   }
 
   async function handleAnswer() {
@@ -82,8 +102,9 @@ export default function QuestionDetail() {
     );
   }
 
-  const { question, answers } = data;
+  const { question, answers, comments = [] } = data;
   const canAnswer = session && profile?.role === 'advocate';
+  const COMMENT_AUTHOR_LABEL = { advocate: 'Advocate', client: 'Client', anonymous: 'Anonymous' };
 
   return (
     <div className="bg-white">
@@ -149,6 +170,28 @@ export default function QuestionDetail() {
                 >
                   <ThumbsUp size={14} /> {a.upvote_count || 0} helpful
                 </button>
+
+                <div className="mt-4 space-y-3 border-t border-ink-50 pt-4">
+                  {comments.filter((c) => c.answer_id === a.id).map((c) => (
+                    <div key={c.id} className="text-[13.5px]">
+                      <span className="font-bold text-ink-800">{COMMENT_AUTHOR_LABEL[c.author_role] || 'Anonymous'}</span>{' '}
+                      <span className="text-ink-600">{c.body}</span>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <input
+                      value={commentDrafts[a.id] || ''}
+                      onChange={(e) => setCommentDrafts((m) => ({ ...m, [a.id]: e.target.value }))}
+                      onKeyDown={(e) => e.key === 'Enter' && handlePostComment(a.id)}
+                      placeholder="Add a reply — no login needed"
+                      className="flex-1 rounded-lg border border-ink-100 px-3 py-2 text-[13px] outline-none focus:border-brand-400"
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => handlePostComment(a.id)} disabled={commentBusy === a.id}>
+                      {commentBusy === a.id ? '…' : 'Reply'}
+                    </Button>
+                  </div>
+                  {commentErr[a.id] && <div className="text-[12px] text-coral-500">{commentErr[a.id]}</div>}
+                </div>
               </Card>
             ))}
           </div>
