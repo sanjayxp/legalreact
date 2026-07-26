@@ -66,6 +66,15 @@ export async function listCourseEnrollees(courseId) {
 }
 
 // ---------- TEAM MEMBERS ----------
+export async function listTeamPublic() {
+  const { data, error } = await supabase
+    .from('team_members')
+    .select('*')
+    .eq('status', 'active')
+    .order('display_order', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
 export async function listTeamAdmin() {
   const { data, error } = await supabase.from('team_members').select('*').order('display_order', { ascending: true });
   if (error) throw error;
