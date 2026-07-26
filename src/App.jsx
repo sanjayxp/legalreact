@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { RequireRole } from './components/layout/RouteGuards';
 
 import Home from './pages/marketing/Home';
@@ -34,8 +35,25 @@ import AdminQA from './pages/admin/QA';
 import AdminJobsLearning from './pages/admin/JobsLearning';
 import AdminPeople from './pages/admin/People';
 
+// React Router doesn't scroll to an in-page anchor on navigation the way a
+// full page load does — this restores that for links like /#how-it-works.
+function ScrollToHash() {
+  const { hash, pathname } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const id = hash.slice(1);
+    const timer = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [hash, pathname]);
+  return null;
+}
+
 export default function App() {
   return (
+    <>
+    <ScrollToHash />
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/admin/login" element={<AdminLogin />} />
@@ -78,5 +96,6 @@ export default function App() {
       <Route path="/careers" element={<Careers />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

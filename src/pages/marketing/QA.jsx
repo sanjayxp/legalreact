@@ -79,7 +79,7 @@ export default function QA() {
                         <p className="mt-1 line-clamp-2 text-[14px] text-ink-500">{q.body}</p>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-1.5 text-[12.5px] text-ink-400">
-                        <span className="flex items-center gap-1"><Eye size={13} /> {q.views ?? 0}</span>
+                        <span className="flex items-center gap-1"><Eye size={13} /> {q.view_count ?? 0}</span>
                         <span className="flex items-center gap-1"><MessageSquare size={13} /> {q.answers?.[0]?.count ?? 0}</span>
                       </div>
                     </div>

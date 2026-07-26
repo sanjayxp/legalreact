@@ -210,6 +210,18 @@ export async function listMySlots(advocateId) {
   if (error) throw error;
   return data || [];
 }
+// Client — their own bookings, matched by the email on their account
+// (booking_slots has no client_id since booking never requires login).
+export async function listMyBookingsByEmail(email) {
+  if (!email) return [];
+  const { data, error } = await supabase
+    .from('booking_slots')
+    .select('*, advocate_profiles(id, photo_url, profiles!advocate_profiles_id_fkey(full_name))')
+    .ilike('client_email', email)
+    .order('slot_start', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
 export async function confirmBookingRequest(requestId) {
   const { data, error } = await supabase.rpc('confirm_booking_request', { p_request_id: requestId });
   if (error) throw new Error(error.message || 'Could not confirm that request.');

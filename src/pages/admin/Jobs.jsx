@@ -143,8 +143,8 @@ function JobEditor({ job, onClose, onSave }) {
         </Select></div>
       </FormRow>
       <FormRow>
-        <div><Label>Experience / PQE</Label><Input value={form.experience_level} onChange={(e) => setForm({ ...form, experience_level: e.target.value })} /></div>
-        <div><Label>Salary range</Label><Input value={form.salary_range} onChange={(e) => setForm({ ...form, salary_range: e.target.value })} /></div>
+        <div><Label>Experience / PQE</Label><Input placeholder="e.g. 3-5 years" value={form.experience_level} onChange={(e) => setForm({ ...form, experience_level: e.target.value })} /></div>
+        <div><Label>Salary range</Label><Input placeholder="e.g. ₹8L - ₹12L per annum" value={form.salary_range} onChange={(e) => setForm({ ...form, salary_range: e.target.value })} /></div>
       </FormRow>
       <Label>Description</Label>
       <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
