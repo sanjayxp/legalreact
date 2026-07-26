@@ -564,6 +564,38 @@ export async function requestAdvocateLead({ advocate_id, client_name, phone, ema
   if (error) throw error;
 }
 
+// ---------- PUBLIC BOOKING FLOW (no login required) ----------
+// Computed on the fly server-side (weekly hours minus time-off minus
+// confirmed bookings) — never reads booking_slots rows directly, so no
+// other client's name/email/phone is ever exposed to the browser.
+export async function listOpenSlotsPublic(advocateId, fromDate, toDate) {
+  const { data, error } = await supabase.rpc('list_open_slots', {
+    p_advocate_id: advocateId,
+    p_from: fromDate,
+    p_to: toDate,
+  });
+  if (error) throw error;
+  return data || [];
+}
+
+// Public — request a slot. Re-validated against real availability
+// server-side. Multiple clients can request the same time; only one will
+// end up confirmed.
+export async function requestSlot(advocateId, slotStart, slotEnd, { mode, client_name, client_email, client_phone, client_notes }) {
+  const { data, error } = await supabase.rpc('request_booking_slot', {
+    p_advocate_id: advocateId,
+    p_slot_start: slotStart,
+    p_slot_end: slotEnd,
+    p_mode: mode,
+    p_client_name: client_name,
+    p_client_email: client_email || null,
+    p_client_phone: client_phone,
+    p_client_notes: client_notes || null,
+  });
+  if (error) throw new Error(error.message || 'Could not send that request.');
+  return data;
+}
+
 // ---------- ADMIN ACTIVITY FEED ----------
 // Merges the last N events across the tables an admin cares about into one
 // timeline, so the overview page reflects "everything happening" rather

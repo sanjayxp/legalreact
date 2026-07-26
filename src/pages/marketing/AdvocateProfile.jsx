@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, BadgeCheck, IndianRupee, Video, Phone, Building2, Briefcase, GraduationCap, ArrowLeft } from 'lucide-react';
-import { getApprovedAdvocatePublic, incrementProfileView, requestAdvocateLead } from '../../lib/cms';
+import { getApprovedAdvocatePublic, incrementProfileView, requestAdvocateLead, listOpenSlotsPublic, requestSlot } from '../../lib/cms';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import Card, { CardHeading } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
-import { Input, Textarea, Label } from '../../components/ui/Field';
+import { Input, Textarea, Label, Select } from '../../components/ui/Field';
 import { Avatar, EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 const MODE_META = {
@@ -17,6 +17,13 @@ const MODE_META = {
   phone: { icon: Phone, label: 'Phone call' },
   inperson: { icon: Building2, label: 'In person' },
 };
+
+function formatSlot(slot) {
+  const d = new Date(slot.slot_start);
+  const day = d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+  return `${day} · ${time}`;
+}
 
 export default function AdvocateProfile() {
   const { id } = useParams();
@@ -157,8 +164,8 @@ export default function AdvocateProfile() {
                 <div className="mt-4 text-[13px] text-ink-500">Consults in {advocate.languages.join(', ')}</div>
               )}
 
-              <Button className="mt-6 w-full" size="lg" onClick={() => setRequestOpen(true)}>Request a consultation</Button>
-              <p className="mt-2.5 text-center text-[11.5px] text-ink-400">We'll pass your details to {advocate.profiles?.full_name?.split(' ')[0]} — no payment now.</p>
+              <Button className="mt-6 w-full" size="lg" onClick={() => setRequestOpen(true)}>Check availability</Button>
+              <p className="mt-2.5 text-center text-[11.5px] text-ink-400">Pick a real open time slot — no payment now.</p>
             </Card>
           </div>
         </motion.div>
@@ -170,34 +177,120 @@ export default function AdvocateProfile() {
   );
 }
 
+const MODE_LABEL = { video: '🎥 Video call', phone: '📞 Phone call', inperson: '🤝 In person' };
+
 function RequestModal({ advocate, open, onClose }) {
-  const [form, setForm] = useState({ client_name: '', phone: '', email: '', matter: '' });
+  const [step, setStep] = useState(1);
+  const [slotsLoading, setSlotsLoading] = useState(true);
+  const [slots, setSlots] = useState([]);
+  const [slotsErr, setSlotsErr] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [form, setForm] = useState({ client_name: '', phone: '', email: '', notes: '', mode: '' });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
-  const [done, setDone] = useState(false);
 
-  useEffect(() => { setForm({ client_name: '', phone: '', email: '', matter: '' }); setMsg(''); setDone(false); }, [open]);
+  const modes = (advocate.consultation_modes && advocate.consultation_modes.length) ? advocate.consultation_modes : ['video', 'phone', 'inperson'];
+
+  useEffect(() => {
+    if (!open) return;
+    setStep(1);
+    setSelectedSlot(null);
+    setForm({ client_name: '', phone: '', email: '', notes: '', mode: modes[0] });
+    setMsg('');
+    setSlotsErr('');
+    setSlotsLoading(true);
+    (async () => {
+      try {
+        const from = new Date().toISOString().slice(0, 10);
+        const to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+        const data = await listOpenSlotsPublic(advocate.id, from, to);
+        setSlots(data);
+      } catch {
+        setSlotsErr("Couldn't load availability. Please try again in a moment.");
+      } finally {
+        setSlotsLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  function pickSlot(slot) {
+    setSelectedSlot(slot);
+    setMsg('');
+    setStep(2);
+  }
 
   async function handleSubmit() {
-    if (!form.client_name.trim() || !form.phone.trim()) { setMsg('Please share your name and phone number.'); return; }
+    if (!form.client_name.trim() || !form.phone.trim()) { setMsg('Name and phone are needed so the advocate can reach you.'); return; }
+    if (!selectedSlot) { setMsg('Please go back and pick a time slot.'); return; }
     setBusy(true);
     setMsg('');
+    requestAdvocateLead({
+      advocate_id: advocate.id,
+      client_name: form.client_name,
+      phone: form.phone,
+      email: form.email,
+      matter: `${form.notes || 'Consultation request'} [${form.mode}]`,
+    }).catch(() => {});
     try {
-      await requestAdvocateLead({ advocate_id: advocate.id, ...form });
-      setDone(true);
+      await requestSlot(advocate.id, selectedSlot.slot_start, selectedSlot.slot_end, {
+        mode: form.mode,
+        client_name: form.client_name,
+        client_email: form.email,
+        client_phone: form.phone,
+        client_notes: form.notes,
+      });
+      setStep(3);
     } catch (e) {
-      setMsg(e.message || 'Could not send your request — please try again.');
+      setMsg(e.message || 'Something went wrong. Please try picking another slot.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={`Request a consultation — ${advocate.profiles?.full_name}`}>
-      {done ? (
-        <Toast text="Request sent! The advocate's office will reach out to confirm timing." kind="ok" />
-      ) : (
+    <Modal open={open} onClose={onClose} title={`Book a consultation — ${advocate.profiles?.full_name}`}>
+      {step === 1 && (
         <>
+          <p className="text-[13.5px] text-ink-500">Pick an open time in the next 14 days.</p>
+          <div className="mt-3.5 max-h-80 space-y-2 overflow-y-auto">
+            {slotsLoading ? (
+              <Spinner className="py-8" />
+            ) : slotsErr ? (
+              <Toast text={slotsErr} kind="err" />
+            ) : slots.length === 0 ? (
+              <Toast text="This advocate has no open slots right now. Please check back soon." kind="err" />
+            ) : (
+              slots.map((s) => (
+                <button
+                  key={s.slot_start}
+                  onClick={() => pickSlot(s)}
+                  className="flex w-full items-center justify-between rounded-xl border border-ink-100 px-4 py-3 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
+                >
+                  <span className="text-[14px] font-bold text-ink-900">{formatSlot(s)}</span>
+                  <span className="text-[12.5px] font-bold text-brand-600">Select</span>
+                </button>
+              ))
+            )}
+          </div>
+          <Button variant="ghost" className="mt-4 w-full" onClick={onClose}>Cancel</Button>
+        </>
+      )}
+
+      {step === 2 && selectedSlot && (
+        <>
+          <div className="flex items-center gap-3 rounded-xl bg-brand-50 px-4 py-3">
+            <Avatar name={advocate.profiles?.full_name} size={36} />
+            <div>
+              <div className="text-[13.5px] font-bold text-ink-900">{advocate.profiles?.full_name}</div>
+              <div className="text-[12.5px] text-ink-500">{formatSlot(selectedSlot)}</div>
+            </div>
+          </div>
+
+          <Label required>Consultation mode</Label>
+          <Select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })}>
+            {modes.map((m) => <option key={m} value={m}>{MODE_LABEL[m] || m}</option>)}
+          </Select>
           <Label required>Your name</Label>
           <Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} />
           <Label required>Phone</Label>
@@ -205,9 +298,25 @@ function RequestModal({ advocate, open, onClose }) {
           <Label hint="(optional)">Email</Label>
           <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <Label hint="(optional)">What's this about?</Label>
-          <Textarea rows={3} value={form.matter} onChange={(e) => setForm({ ...form, matter: e.target.value })} placeholder="A brief description helps the advocate prepare." />
+          <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="A brief description helps the advocate prepare." />
+          <p className="mt-3 text-[11px] leading-relaxed text-ink-400">
+            By requesting this slot you consent to LegalConnects sharing these details with this advocate to arrange your consultation, as described in our <a href="/privacy" className="underline">Privacy Policy</a>.
+          </p>
           {msg && <div className="mt-3"><Toast text={msg} kind="err" /></div>}
-          <Button className="mt-5 w-full" onClick={handleSubmit} disabled={busy}>{busy ? 'Sending…' : 'Send request'}</Button>
+          <div className="mt-5 flex gap-3">
+            <Button variant="ghost" className="flex-1" onClick={() => setStep(1)}>Back</Button>
+            <Button className="flex-1" onClick={handleSubmit} disabled={busy}>{busy ? 'Sending…' : 'Request this slot'}</Button>
+          </div>
+        </>
+      )}
+
+      {step === 3 && selectedSlot && (
+        <>
+          <Toast
+            text={`${advocate.profiles?.full_name} has been notified of your request for ${formatSlot(selectedSlot)}. You'll hear back once they confirm.`}
+            kind="ok"
+          />
+          <Button className="mt-5 w-full" onClick={onClose}>Done</Button>
         </>
       )}
     </Modal>
