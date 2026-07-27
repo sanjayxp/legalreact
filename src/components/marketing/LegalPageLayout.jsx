@@ -1,14 +1,16 @@
 import { AlertTriangle } from 'lucide-react';
 import PublicNav from './PublicNav';
 import Footer from './Footer';
+import HeroBanner from './HeroBanner';
 
 export default function LegalPageLayout({ eyebrow, title, updated, intro, children }) {
   return (
     <div className="bg-white">
       <PublicNav />
 
-      <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-14">
-        <div className="mx-auto max-w-3xl px-5 sm:px-8">
+      <section className="relative overflow-hidden border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-14">
+        <HeroBanner colors={['gradient-brand', 'gradient-brand']} layout={1} />
+        <div className="relative mx-auto max-w-3xl px-5 sm:px-8">
           {eyebrow && <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">{eyebrow}</span>}
           <h1 className="mt-2 text-[32px] font-extrabold text-ink-900 sm:text-[39px]">{title}</h1>
           {updated && <p className="mt-2 text-[13px] text-ink-400">Last updated: {updated}</p>}

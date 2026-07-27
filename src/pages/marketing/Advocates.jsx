@@ -6,6 +6,7 @@ import { listApprovedAdvocatesPublic } from '../../lib/cms';
 import { PRACTICE_AREAS } from '../../lib/practiceAreas';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import HeroBanner from '../../components/marketing/HeroBanner';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import { Input, Select } from '../../components/ui/Field';
@@ -110,8 +111,9 @@ export default function Advocates() {
     <div className="bg-white">
       <PublicNav />
 
-      <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <section className="relative overflow-hidden border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
+        <HeroBanner colors={['gradient-coral', 'gradient-brand']} layout={1} />
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Directory</span>
           <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Find a Verified Advocate</h1>
           <p className="mt-2 max-w-lg text-[16px] text-ink-500">Browse Bar Council-verified advocates by practice area and city — no account needed to look.</p>

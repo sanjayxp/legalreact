@@ -1,6 +1,7 @@
 import { Briefcase } from 'lucide-react';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import HeroBanner from '../../components/marketing/HeroBanner';
 import { Placeholder } from '../../components/marketing/LegalPageLayout';
 
 export default function Careers() {
@@ -8,8 +9,9 @@ export default function Careers() {
     <div className="bg-white">
       <PublicNav />
 
-      <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-20">
-        <div className="mx-auto max-w-2xl px-5 text-center sm:px-8">
+      <section className="relative overflow-hidden border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-20">
+        <HeroBanner colors={['gradient-sun', 'gradient-coral']} layout={1} />
+        <div className="relative mx-auto max-w-2xl px-5 text-center sm:px-8">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand-500 text-white">
             <Briefcase size={24} />
           </div>

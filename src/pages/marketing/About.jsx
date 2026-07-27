@@ -4,6 +4,7 @@ import { ExternalLink, ShieldCheck, Scale, Users } from 'lucide-react';
 import { listTeamPublic } from '../../lib/cms';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import HeroBanner from '../../components/marketing/HeroBanner';
 import { Spinner, EmptyState } from '../../components/ui/Misc';
 
 const VALUES = [
@@ -24,8 +25,9 @@ export default function About() {
     <div className="bg-white">
       <PublicNav />
 
-      <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
-        <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
+      <section className="relative overflow-hidden border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
+        <HeroBanner colors={['gradient-brand', 'gradient-coral']} layout={2} />
+        <div className="relative mx-auto max-w-3xl px-5 text-center sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">About us</span>
           <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Legal help, minus the guesswork</h1>
           <p className="mt-3 text-[16px] leading-relaxed text-ink-500">

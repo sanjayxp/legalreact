@@ -5,6 +5,7 @@ import { MessageCircleQuestion, Eye, MessageSquare, Plus } from 'lucide-react';
 import { listQuestionsPublic, submitQuestion } from '../../lib/cms';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import HeroBanner from '../../components/marketing/HeroBanner';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -30,8 +31,9 @@ export default function QA() {
     <div className="bg-white">
       <PublicNav />
 
-      <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <section className="relative overflow-hidden border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
+        <HeroBanner colors={['gradient-brand', 'gradient-sun']} layout={1} />
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Community</span>

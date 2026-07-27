@@ -5,6 +5,7 @@ import { listJobsPublic, listCoursesPublic, submitJobApplication, submitCourseEn
 import { colorFor } from '../../lib/colorFor';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import HeroBanner from '../../components/marketing/HeroBanner';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -35,8 +36,9 @@ export default function Jobs() {
     <div className="bg-white">
       <PublicNav />
 
-      <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <section className="relative overflow-hidden border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
+        <HeroBanner colors={['gradient-sun', 'gradient-brand']} layout={3} />
+        <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Careers &amp; growth</span>
           <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Jobs &amp; Learning</h1>
           <p className="mt-2 max-w-lg text-[16px] text-ink-500">Legal roles at firms and chambers, plus courses and webinars to build your practice.</p>

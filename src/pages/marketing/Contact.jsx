@@ -1,6 +1,7 @@
 import { Mail, Phone, MapPin, ShieldCheck } from 'lucide-react';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import HeroBanner from '../../components/marketing/HeroBanner';
 import Card from '../../components/ui/Card';
 import { Placeholder } from '../../components/marketing/LegalPageLayout';
 
@@ -9,8 +10,9 @@ export default function Contact() {
     <div className="bg-white">
       <PublicNav />
 
-      <section className="border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
-        <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
+      <section className="relative overflow-hidden border-b border-ink-100 bg-gradient-to-b from-brand-50 via-white to-white py-16">
+        <HeroBanner colors={['gradient-coral', 'gradient-sun']} layout={2} />
+        <div className="relative mx-auto max-w-3xl px-5 text-center sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Contact</span>
           <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">We're here to help</h1>
           <p className="mt-3 text-[16px] text-ink-500">Reach out for support, partnership enquiries, or data requests — the details below are placeholders pending final setup.</p>
