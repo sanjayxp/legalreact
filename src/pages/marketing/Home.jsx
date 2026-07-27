@@ -17,6 +17,7 @@ import {
   CalendarCheck2,
   BadgeCheck,
   FileCheck2,
+  Globe2,
 } from 'lucide-react';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
@@ -137,6 +138,22 @@ export default function Home() {
             >
               <BadgeCheck size={16} className="text-brand-500" />
               <span className="text-[12.5px] font-bold text-ink-800">Bar Council Verified</span>
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut', delay: 0.6 }}
+              className="absolute left-2 -top-4 flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 shadow-lg"
+            >
+              <Globe2 size={16} className="text-brand-500" />
+              <span className="text-[12.5px] font-bold text-ink-800">Pan-India Coverage</span>
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 3.6, ease: 'easeInOut', delay: 1.2 }}
+              className="absolute right-10 -bottom-4 flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 shadow-lg"
+            >
+              <MessageCircleQuestion size={16} className="text-brand-500" />
+              <span className="text-[12.5px] font-bold text-ink-800">Free to Ask</span>
             </motion.div>
           </motion.div>
         </div>
