@@ -135,7 +135,7 @@ export default function AdvocateProfile() {
             )}
           </div>
 
-          <div>
+          <div className="hidden lg:block">
             <Card className="sticky top-24">
               {advocate.consultation_fee && (
                 <div className="flex items-baseline gap-1">
@@ -170,6 +170,20 @@ export default function AdvocateProfile() {
           </div>
         </motion.div>
       </div>
+
+      {/* Mobile-only sticky booking bar — the fee + CTA would otherwise sit
+          below the entire bio/experience/education stack on small screens. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-ink-100 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] lg:hidden">
+        {advocate.consultation_fee ? (
+          <div className="flex items-baseline gap-0.5">
+            <IndianRupee size={15} className="text-ink-900" />
+            <span className="text-[17px] font-extrabold text-ink-900">{advocate.consultation_fee}</span>
+            <span className="text-[11px] text-ink-400">/30min</span>
+          </div>
+        ) : <span />}
+        <Button onClick={() => setRequestOpen(true)}>Check availability</Button>
+      </div>
+      <div className="h-20 lg:hidden" />
 
       <RequestModal advocate={advocate} open={requestOpen} onClose={() => setRequestOpen(false)} />
       <Footer />

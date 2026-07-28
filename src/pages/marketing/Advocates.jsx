@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, MapPin, BadgeCheck, Gavel, IndianRupee, X, Video, Phone, Building2 } from 'lucide-react';
+import { Search, MapPin, BadgeCheck, Gavel, IndianRupee, X, Video, Phone, Building2, SlidersHorizontal } from 'lucide-react';
 import { listApprovedAdvocatesPublic } from '../../lib/cms';
 import { PRACTICE_AREAS } from '../../lib/practiceAreas';
 import PublicNav from '../../components/marketing/PublicNav';
@@ -9,6 +9,8 @@ import Footer from '../../components/marketing/Footer';
 import HeroBanner from '../../components/marketing/HeroBanner';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
+import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
 import { Input, Select } from '../../components/ui/Field';
 import { EmptyState, Spinner, Avatar } from '../../components/ui/Misc';
 
@@ -55,6 +57,7 @@ export default function Advocates() {
   const [minExperience, setMinExperience] = useState('0');
   const [modes, setModes] = useState(new Set());
   const [maxFee, setMaxFee] = useState('any');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -107,6 +110,58 @@ export default function Advocates() {
     setMaxFee('any');
   }
 
+  const filterFields = (
+    <>
+      <FilterGroup label="City">
+        <Select value={city} onChange={(e) => setCity(e.target.value)}>
+          <option value="all">All cities</option>
+          {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="State">
+        <Select value={state} onChange={(e) => setState(e.target.value)}>
+          <option value="all">All states</option>
+          {states.map((s) => <option key={s} value={s}>{s}</option>)}
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="Experience">
+        <Select value={minExperience} onChange={(e) => setMinExperience(e.target.value)}>
+          {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="Consultation fee">
+        <Select value={maxFee} onChange={(e) => setMaxFee(e.target.value)}>
+          {FEE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup label="Consultation mode">
+        <div className="space-y-2">
+          {Object.entries(MODE_META).map(([key, meta]) => (
+            <label key={key} className="flex items-center gap-2 text-[13.5px] text-ink-700">
+              <input type="checkbox" className="accent-brand-500" checked={modes.has(key)} onChange={() => setModes((prev) => toggleInSet(prev, key))} />
+              <meta.icon size={14} className="text-ink-400" /> {meta.label}
+            </label>
+          ))}
+        </div>
+      </FilterGroup>
+
+      <FilterGroup label="Practice area">
+        <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+          {PRACTICE_AREAS.map((p) => (
+            <label key={p} className="flex items-center gap-2 text-[13.5px] text-ink-700">
+              <input type="checkbox" className="accent-brand-500" checked={areas.has(p)} onChange={() => setAreas((prev) => toggleInSet(prev, p))} />
+              {p}
+            </label>
+          ))}
+        </div>
+      </FilterGroup>
+    </>
+  );
+
   return (
     <div className="bg-white">
       <PublicNav />
@@ -121,13 +176,25 @@ export default function Advocates() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        <div className="relative mb-6">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-300" />
-          <Input className="pl-10" placeholder="Search by name, city, or headline…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="mb-6 flex gap-3">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-300" />
+            <Input className="pl-10" placeholder="Search by name, city, or headline…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <button
+            onClick={() => setMobileFiltersOpen(true)}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-ink-100 px-4 text-[13.5px] font-semibold text-ink-700 hover:border-brand-300 hover:text-brand-600 lg:hidden"
+          >
+            <SlidersHorizontal size={15} />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="grid h-4 w-4 place-items-center rounded-full bg-brand-500 text-[10px] font-bold text-white">{activeFilterCount}</span>
+            )}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
-          <aside className="lg:sticky lg:top-24 lg:self-start">
+          <aside className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
             <Card className="!p-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-[14px] font-bold text-ink-900">Filters</h3>
@@ -137,54 +204,7 @@ export default function Advocates() {
                   </button>
                 )}
               </div>
-
-              <FilterGroup label="City">
-                <Select value={city} onChange={(e) => setCity(e.target.value)}>
-                  <option value="all">All cities</option>
-                  {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-                </Select>
-              </FilterGroup>
-
-              <FilterGroup label="State">
-                <Select value={state} onChange={(e) => setState(e.target.value)}>
-                  <option value="all">All states</option>
-                  {states.map((s) => <option key={s} value={s}>{s}</option>)}
-                </Select>
-              </FilterGroup>
-
-              <FilterGroup label="Experience">
-                <Select value={minExperience} onChange={(e) => setMinExperience(e.target.value)}>
-                  {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </Select>
-              </FilterGroup>
-
-              <FilterGroup label="Consultation fee">
-                <Select value={maxFee} onChange={(e) => setMaxFee(e.target.value)}>
-                  {FEE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </Select>
-              </FilterGroup>
-
-              <FilterGroup label="Consultation mode">
-                <div className="space-y-2">
-                  {Object.entries(MODE_META).map(([key, meta]) => (
-                    <label key={key} className="flex items-center gap-2 text-[13.5px] text-ink-700">
-                      <input type="checkbox" className="accent-brand-500" checked={modes.has(key)} onChange={() => setModes((prev) => toggleInSet(prev, key))} />
-                      <meta.icon size={14} className="text-ink-400" /> {meta.label}
-                    </label>
-                  ))}
-                </div>
-              </FilterGroup>
-
-              <FilterGroup label="Practice area">
-                <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
-                  {PRACTICE_AREAS.map((p) => (
-                    <label key={p} className="flex items-center gap-2 text-[13.5px] text-ink-700">
-                      <input type="checkbox" className="accent-brand-500" checked={areas.has(p)} onChange={() => setAreas((prev) => toggleInSet(prev, p))} />
-                      {p}
-                    </label>
-                  ))}
-                </div>
-              </FilterGroup>
+              {filterFields}
             </Card>
           </aside>
 
@@ -239,6 +259,20 @@ export default function Advocates() {
           </div>
         </div>
       </section>
+
+      <Modal open={mobileFiltersOpen} onClose={() => setMobileFiltersOpen(false)} title="Filters" width="max-w-md">
+        <div className="max-h-[65vh] overflow-y-auto pr-1">
+          {filterFields}
+        </div>
+        <div className="mt-5 flex gap-3">
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" className="flex-1" onClick={clearFilters}>Clear ({activeFilterCount})</Button>
+          )}
+          <Button className="flex-1" onClick={() => setMobileFiltersOpen(false)}>
+            Show {filtered.length} result{filtered.length === 1 ? '' : 's'}
+          </Button>
+        </div>
+      </Modal>
 
       <Footer />
     </div>
