@@ -113,7 +113,7 @@ export async function upsertAdvocateProfile(userId, fields, isFirstSubmit) {
 export async function listPendingAdvocates() {
   const { data, error } = await supabase
     .from('advocate_profiles')
-    .select('*, profiles!advocate_profiles_id_fkey(full_name, phone)')
+    .select('*, profiles!advocate_profiles_id_fkey(full_name, phone, email)')
     .eq('verification_status', 'pending')
     .order('submitted_at', { ascending: true });
   if (error) throw error;
@@ -122,7 +122,7 @@ export async function listPendingAdvocates() {
 export async function listAllAdvocates() {
   const { data, error } = await supabase
     .from('advocate_profiles')
-    .select('*, profiles!advocate_profiles_id_fkey(full_name, phone)')
+    .select('*, profiles!advocate_profiles_id_fkey(full_name, phone, email)')
     .order('submitted_at', { ascending: false });
   if (error) throw error;
   return data || [];

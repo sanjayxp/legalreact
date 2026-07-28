@@ -1,16 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Pencil, Trash2, Users } from 'lucide-react';
+import { Search, Pencil, Trash2, Users, Mail, Phone, Calendar } from 'lucide-react';
 import { listClients } from '../../lib/cms';
 import { supabase } from '../../lib/supabase';
 import Card from '../../components/ui/Card';
-import { Input } from '../../components/ui/Field';
-import { EmptyState, Spinner } from '../../components/ui/Misc';
+import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import { Input, Label } from '../../components/ui/Field';
+import { Avatar, EmptyState, Spinner } from '../../components/ui/Misc';
 
 export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
+  const [viewing, setViewing] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -25,18 +29,16 @@ export default function Clients() {
     return clients.filter((c) => [c.full_name, c.email, c.phone].filter(Boolean).join(' ').toLowerCase().includes(s));
   }, [clients, search]);
 
-  async function handleEdit(c) {
-    const name = window.prompt('Full name:', c.full_name || '');
-    if (name === null) return;
-    const phone = window.prompt('Phone:', c.phone || '');
-    if (phone === null) return;
-    await supabase.from('profiles').update({ full_name: name, phone }).eq('id', c.id);
+  async function handleSaveEdit(fields) {
+    await supabase.from('profiles').update(fields).eq('id', editing.id);
+    setEditing(null);
     load();
   }
   async function handleDelete(c) {
     if (!window.confirm(`Delete ${c.full_name || c.email}? This removes their profile row (auth credential purged separately).`)) return;
     if (!window.confirm('Are you absolutely sure? This cannot be undone.')) return;
     await supabase.from('profiles').delete().eq('id', c.id);
+    setViewing(null);
     load();
   }
 
@@ -66,14 +68,14 @@ export default function Clients() {
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id} className="border-b border-ink-50 last:border-0">
+                <tr key={c.id} className="cursor-pointer border-b border-ink-50 last:border-0 hover:bg-ink-50/60" onClick={() => setViewing(c)}>
                   <td className="px-4 py-3 font-bold text-ink-900">{c.full_name || '—'}</td>
                   <td className="px-4 py-3 text-ink-600">{c.email}</td>
                   <td className="px-4 py-3 text-ink-600">{c.phone || '—'}</td>
                   <td className="px-4 py-3 text-ink-500">{new Date(c.created_at).toLocaleDateString('en-IN')}</td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => handleEdit(c)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
+                    <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => setEditing(c)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
                       <button onClick={() => handleDelete(c)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                     </div>
                   </td>
@@ -83,6 +85,50 @@ export default function Clients() {
           </table>
         )}
       </Card>
+
+      <Modal open={!!viewing} onClose={() => setViewing(null)} title="Client details">
+        {viewing && (
+          <>
+            <div className="flex items-center gap-4">
+              <Avatar name={viewing.full_name || viewing.email} size={56} />
+              <div>
+                <div className="text-[16px] font-extrabold text-ink-900">{viewing.full_name || '—'}</div>
+                <div className="text-[13px] text-ink-500">Client since {new Date(viewing.created_at).toLocaleDateString('en-IN')}</div>
+              </div>
+            </div>
+            <div className="mt-5 space-y-3 rounded-xl bg-ink-50 p-4">
+              <div className="flex items-center gap-2.5 text-[13.5px] text-ink-800"><Mail size={15} className="text-ink-400" /> {viewing.email || '—'}</div>
+              <div className="flex items-center gap-2.5 text-[13.5px] text-ink-800"><Phone size={15} className="text-ink-400" /> {viewing.phone || '—'}</div>
+              <div className="flex items-center gap-2.5 text-[13.5px] text-ink-800"><Calendar size={15} className="text-ink-400" /> Joined {new Date(viewing.created_at).toLocaleDateString('en-IN', { dateStyle: 'long' })}</div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => { setEditing(viewing); setViewing(null); }}><Pencil size={14} /> Edit</Button>
+              <Button variant="danger" onClick={() => handleDelete(viewing)}><Trash2 size={14} /> Delete</Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <ClientEditModal client={editing} onClose={() => setEditing(null)} onSave={handleSaveEdit} />
     </>
+  );
+}
+
+function ClientEditModal({ client, onClose, onSave }) {
+  const [form, setForm] = useState({ full_name: '', phone: '' });
+  useEffect(() => { setForm({ full_name: client?.full_name || '', phone: client?.phone || '' }); }, [client]);
+  if (!client) return null;
+
+  return (
+    <Modal open={!!client} onClose={onClose} title={`Edit — ${client.full_name || client.email}`}>
+      <Label>Full name</Label>
+      <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+      <Label>Phone</Label>
+      <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+      <div className="mt-5 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button onClick={() => onSave(form)}>Save changes</Button>
+      </div>
+    </Modal>
   );
 }

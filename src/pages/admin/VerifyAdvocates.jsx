@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Pencil, Trash2, FileWarning, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, Pencil, Trash2, FileWarning, ShieldCheck, Eye, Mail, Phone, MapPin, Briefcase, GraduationCap, Languages, Video, IndianRupee } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import {
   listAllAdvocates,
@@ -29,6 +29,7 @@ export default function VerifyAdvocates() {
   const [incomplete, setIncomplete] = useState([]);
   const [tab, setTab] = useState('pending');
   const [editing, setEditing] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -98,14 +99,19 @@ export default function VerifyAdvocates() {
           filtered.map((a) => (
             <Card key={a.id}>
               <div className="flex flex-col gap-4 sm:flex-row">
-                {a.photo_url ? <img src={a.photo_url} alt="" className="h-16 w-16 shrink-0 rounded-full object-cover" /> : <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-brand-50 text-xl font-bold text-brand-600">{(a.profiles?.full_name || '?').charAt(0)}</div>}
+                <button onClick={() => setViewing(a)} className="shrink-0">
+                  {a.photo_url ? <img src={a.photo_url} alt="" className="h-16 w-16 rounded-full object-cover" /> : <div className="grid h-16 w-16 place-items-center rounded-full bg-brand-50 text-xl font-bold text-brand-600">{(a.profiles?.full_name || '?').charAt(0)}</div>}
+                </button>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-ink-900">{a.profiles?.full_name}</span>
+                    <button onClick={() => setViewing(a)} className="font-bold text-ink-900 hover:text-brand-600 hover:underline">{a.profiles?.full_name}</button>
                     <Badge tone={a.verification_status === 'approved' ? 'green' : a.verification_status === 'rejected' ? 'red' : 'amber'}>{a.verification_status}</Badge>
                   </div>
                   <div className="mt-0.5 text-[12.5px] text-ink-500">
-                    Submitted {a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('en-IN') : '—'} · {a.profiles?.phone || 'no phone'} · Bar No. {a.bar_number || '—'}
+                    {a.profiles?.email || 'no email'} · {a.profiles?.phone || 'no phone'} · Bar No. {a.bar_number || '—'}
+                  </div>
+                  <div className="mt-0.5 text-[12.5px] text-ink-400">
+                    Submitted {a.submitted_at ? new Date(a.submitted_at).toLocaleDateString('en-IN') : '—'}
                   </div>
                   <div className="mt-1.5">
                     {a.bar_certificate_url ? (
@@ -115,10 +121,10 @@ export default function VerifyAdvocates() {
                     )}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(a.practice_areas || []).map((p) => <Badge key={p} tone="blue">{p}</Badge>)}
+                    {(a.practice_areas || []).slice(0, 4).map((p) => <Badge key={p} tone="blue">{p}</Badge>)}
+                    {(a.practice_areas || []).length > 4 && <Badge tone="gray">+{a.practice_areas.length - 4}</Badge>}
                   </div>
                   <div className="mt-2 text-[12.5px] text-ink-500">{a.experience_years ? `${a.experience_years} yrs experience` : ''} {a.consultation_fee ? `· ₹${a.consultation_fee}/30min` : ''}</div>
-                  {a.bio && <p className="mt-1.5 text-[13px] text-ink-600">{a.bio}</p>}
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     {a.verification_status === 'pending' && (
@@ -133,6 +139,7 @@ export default function VerifyAdvocates() {
                     {a.verification_status === 'rejected' && (
                       <Button size="sm" onClick={() => handleReview(a.id, 'approved')}><CheckCircle2 size={14} /> Approve</Button>
                     )}
+                    <Button size="sm" variant="ghost" onClick={() => setViewing(a)}><Eye size={14} /> View details</Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(a)}><Pencil size={14} /> Edit</Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDelete(a.id)}><Trash2 size={14} /> Delete</Button>
                   </div>
@@ -144,7 +151,119 @@ export default function VerifyAdvocates() {
       </div>
 
       <AdvocateEditModal advocate={editing} onClose={() => setEditing(null)} onSaved={load} />
+      <AdvocateDetailsModal advocate={viewing} onClose={() => setViewing(null)} onViewCert={viewCert} />
     </>
+  );
+}
+
+function DetailRow({ icon: Icon, label, value }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-2.5">
+      <Icon size={15} className="mt-0.5 shrink-0 text-ink-400" />
+      <div>
+        <div className="text-[11.5px] font-semibold uppercase tracking-wide text-ink-400">{label}</div>
+        <div className="text-[13.5px] text-ink-800">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function AdvocateDetailsModal({ advocate, onClose, onViewCert }) {
+  if (!advocate) return null;
+  const p = advocate.profiles || {};
+
+  return (
+    <Modal open={!!advocate} onClose={onClose} title="Advocate details" width="max-w-2xl">
+      <div className="flex items-center gap-4">
+        {advocate.photo_url ? (
+          <img src={advocate.photo_url} alt="" className="h-16 w-16 rounded-full object-cover" />
+        ) : (
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-brand-50 text-xl font-bold text-brand-600">{(p.full_name || '?').charAt(0)}</div>
+        )}
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-[17px] font-extrabold text-ink-900">{p.full_name}</span>
+            <Badge tone={advocate.verification_status === 'approved' ? 'green' : advocate.verification_status === 'rejected' ? 'red' : 'amber'}>{advocate.verification_status}</Badge>
+          </div>
+          {advocate.headline && <div className="text-[13.5px] text-ink-500">{advocate.headline}</div>}
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 gap-4 rounded-xl bg-ink-50 p-4 sm:grid-cols-2">
+        <DetailRow icon={Mail} label="Email" value={p.email} />
+        <DetailRow icon={Phone} label="Phone" value={p.phone} />
+        <DetailRow icon={MapPin} label="Location" value={[advocate.city, advocate.state].filter(Boolean).join(', ')} />
+        <DetailRow icon={Languages} label="Languages" value={(advocate.languages || []).join(', ')} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <DetailRow icon={Briefcase} label="Bar No." value={advocate.bar_number} />
+        <DetailRow icon={Briefcase} label="State Bar Council" value={advocate.state_bar_council} />
+        <DetailRow icon={GraduationCap} label="Enrolled" value={advocate.enrollment_year} />
+        <DetailRow icon={IndianRupee} label="Fee / 30min" value={advocate.consultation_fee ? `₹${advocate.consultation_fee}` : null} />
+      </div>
+
+      <div className="mt-4">
+        {advocate.bar_certificate_url ? (
+          <button onClick={() => onViewCert(advocate.bar_certificate_url)} className="text-[13px] font-semibold text-brand-600 underline">View Bar Council certificate</button>
+        ) : (
+          <span className="flex items-center gap-1 text-[13px] font-semibold text-coral-500"><FileWarning size={14} /> Certificate not uploaded</span>
+        )}
+      </div>
+
+      {(advocate.consultation_modes || []).length > 0 && (
+        <div className="mt-4 flex items-center gap-2 text-[13px] text-ink-600">
+          <Video size={14} className="text-ink-400" /> Consults via {advocate.consultation_modes.join(', ')}
+        </div>
+      )}
+
+      {(advocate.practice_areas || []).length > 0 && (
+        <div className="mt-4">
+          <div className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink-400">Practice areas</div>
+          <div className="flex flex-wrap gap-1.5">{advocate.practice_areas.map((pa) => <Badge key={pa} tone="blue">{pa}</Badge>)}</div>
+        </div>
+      )}
+
+      {advocate.bio && (
+        <div className="mt-4">
+          <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-ink-400">Bio</div>
+          <p className="text-[13.5px] leading-relaxed text-ink-700">{advocate.bio}</p>
+        </div>
+      )}
+
+      {(advocate.experience_timeline || []).length > 0 && (
+        <div className="mt-4">
+          <div className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink-400">Experience</div>
+          <div className="space-y-2">
+            {advocate.experience_timeline.map((e, i) => (
+              <div key={i} className="text-[13.5px] text-ink-700">
+                <span className="font-semibold">{e.title}</span>{e.org && ` · ${e.org}`}{e.period && <span className="text-ink-400"> ({e.period})</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(advocate.education_timeline || []).length > 0 && (
+        <div className="mt-4">
+          <div className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink-400">Education</div>
+          <div className="space-y-2">
+            {advocate.education_timeline.map((e, i) => (
+              <div key={i} className="text-[13.5px] text-ink-700">
+                <span className="font-semibold">{e.degree}</span>{e.institution && ` · ${e.institution}`}{e.period && <span className="text-ink-400"> ({e.period})</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t border-ink-100 pt-3 text-[12px] text-ink-400">
+        <span>Submitted {advocate.submitted_at ? new Date(advocate.submitted_at).toLocaleDateString('en-IN') : '—'}</span>
+        {advocate.reviewed_at && <span>Reviewed {new Date(advocate.reviewed_at).toLocaleDateString('en-IN')}</span>}
+        <span>{advocate.view_count || 0} profile views</span>
+      </div>
+    </Modal>
   );
 }
 
