@@ -64,13 +64,13 @@ export default function About() {
               {team.map((m, i) => (
                 <motion.div key={m.id} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: (i % 4) * 0.06 }} className="rounded-2xl bg-white p-6 text-center shadow-sm">
                   {m.photo_url ? (
-                    <img src={m.photo_url} alt={m.full_name} className="mx-auto h-20 w-20 rounded-full object-cover" />
+                    <img src={m.photo_url} alt={m.full_name} className="mx-auto h-36 w-36 rounded-full object-cover shadow-md" />
                   ) : (
-                    <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-brand-100 text-[22px] font-extrabold text-brand-600">
+                    <div className="mx-auto grid h-36 w-36 place-items-center rounded-full bg-brand-100 text-[36px] font-extrabold text-brand-600 shadow-md">
                       {m.full_name.charAt(0)}
                     </div>
                   )}
-                  <h3 className="mt-4 text-[14.5px] font-bold text-ink-900">{m.full_name}</h3>
+                  <h3 className="mt-5 text-[14.5px] font-bold text-ink-900">{m.full_name}</h3>
                   {m.title && <div className="mt-0.5 text-[12.5px] text-ink-500">{m.title}</div>}
                   {m.bio && <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-500">{m.bio}</p>}
                   {m.linkedin_url && (
