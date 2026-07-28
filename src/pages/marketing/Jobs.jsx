@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, GraduationCap, MapPin, Clock, IndianRupee } from 'lucide-react';
+import { Briefcase, GraduationCap, MapPin, Clock, IndianRupee, ExternalLink, Landmark } from 'lucide-react';
 import { listJobsPublic, listCoursesPublic, submitJobApplication, submitCourseEnrollment, uploadResume } from '../../lib/cms';
 import { colorFor } from '../../lib/colorFor';
 import PublicNav from '../../components/marketing/PublicNav';
@@ -13,6 +13,15 @@ import Modal from '../../components/ui/Modal';
 import Tabs from '../../components/ui/Tabs';
 import { Input, Textarea, Label } from '../../components/ui/Field';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
+
+function timeAgo(dateStr) {
+  if (!dateStr) return null;
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+  if (days <= 0) return 'Posted today';
+  if (days === 1) return 'Posted yesterday';
+  if (days < 30) return `Posted ${days}d ago`;
+  return `Posted ${Math.floor(days / 30)}mo ago`;
+}
 
 export default function Jobs() {
   const [tab, setTab] = useState('jobs');
@@ -60,17 +69,26 @@ export default function Jobs() {
             {jobs.map((j, i) => (
               <motion.div key={j.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i % 6) * 0.05 }}>
                 <Card hover className="flex h-full flex-col">
-                  <div className="flex items-center gap-3">
-                    {j.logo_url ? (
-                      <img src={j.logo_url} alt="" className="h-11 w-11 rounded-lg object-cover" />
-                    ) : (
-                      <div className="grid h-11 w-11 place-items-center rounded-lg text-[13px] font-extrabold text-white" style={{ background: j.firm_color || colorFor(j.firm_name) }}>
-                        {j.firm_initials || j.firm_name?.slice(0, 2).toUpperCase()}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      {j.logo_url ? (
+                        <img src={j.logo_url} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
+                      ) : (
+                        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-[13px] font-extrabold text-white" style={{ background: j.firm_color || colorFor(j.firm_name) }}>
+                          {j.firm_initials || j.firm_name?.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-[15px] font-bold text-ink-900">{j.title}</div>
+                        <div className="flex items-center gap-1.5 text-[13px] text-ink-500">
+                          {j.firm_name}
+                          {j.company_url && (
+                            <a href={j.company_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-ink-300 hover:text-brand-600">
+                              <ExternalLink size={11} />
+                            </a>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <div className="text-[15px] font-bold text-ink-900">{j.title}</div>
-                      <div className="text-[13px] text-ink-500">{j.firm_name}</div>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5">
@@ -78,9 +96,16 @@ export default function Jobs() {
                     <Badge tone="gray"><MapPin size={11} /> {j.location_type}</Badge>
                     {j.experience_level && <Badge tone="gray">{j.experience_level}</Badge>}
                   </div>
-                  {j.salary_range && <div className="mt-2 text-[13px] font-semibold text-brand-600">{j.salary_range}</div>}
+                  {j.salary_range && (
+                    <div className="mt-3 flex items-center gap-1 text-[14px] font-bold text-brand-600">
+                      <IndianRupee size={13} /> {j.salary_range}
+                    </div>
+                  )}
                   <p className="mt-2 line-clamp-3 flex-1 text-[13.5px] text-ink-500">{j.description}</p>
-                  <Button size="sm" className="mt-4" onClick={() => setApplyJob(j)}>Apply now</Button>
+                  <div className="mt-3 flex items-center justify-between border-t border-ink-50 pt-3">
+                    <span className="text-[11.5px] text-ink-300">{timeAgo(j.created_at)}</span>
+                    <Button size="sm" onClick={() => setApplyJob(j)}>Apply now</Button>
+                  </div>
                 </Card>
               </motion.div>
             ))}
@@ -93,17 +118,42 @@ export default function Jobs() {
                 <Card hover className="flex h-full flex-col !p-0 overflow-hidden">
                   <div className="h-28 w-full" style={{ background: c.image_url ? `url(${c.image_url}) center/cover` : c.band_color || colorFor(c.title) }} />
                   <div className="flex flex-1 flex-col p-5">
-                    <Badge tone="blue" className="w-fit">{c.tag_type}</Badge>
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge tone="blue" className="w-fit">{c.tag_type}</Badge>
+                      <div className="text-[13.5px] font-bold text-brand-600">
+                        {c.is_free ? 'Free' : <span className="flex items-center gap-0.5"><IndianRupee size={12} />{c.price}</span>}
+                      </div>
+                    </div>
                     <div className="mt-2 text-[15px] font-bold text-ink-900">{c.title}</div>
                     <div className="mt-1 text-[13px] text-ink-500">{c.instructor}</div>
                     <div className="mt-2 flex flex-wrap gap-3 text-[12.5px] text-ink-400">
                       {c.duration && <span className="flex items-center gap-1"><Clock size={12} /> {c.duration}</span>}
                       {c.mode && <span>{c.mode}</span>}
                     </div>
-                    <div className="mt-2 flex items-center gap-1 text-[13.5px] font-bold text-brand-600">
-                      {c.is_free ? 'Free' : <><IndianRupee size={13} /> {c.price}</>}
+                    {c.college_name && (
+                      <div className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-ink-50 px-2.5 py-1.5 text-[12px] text-ink-500">
+                        <Landmark size={12} className="shrink-0 text-ink-400" />
+                        <span className="truncate">Issued by {c.college_name}</span>
+                        {c.college_website && (
+                          <a href={c.college_website} target="_blank" rel="noreferrer" className="ml-auto shrink-0 text-ink-300 hover:text-brand-600">
+                            <ExternalLink size={11} />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    <div className="mt-4 flex items-center gap-2">
+                      <Button size="sm" className="flex-1" onClick={() => setEnrollCourse(c)}>{c.cta_label || 'Enroll now'}</Button>
+                      {c.course_url && (
+                        <a
+                          href={c.course_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 rounded-lg border border-ink-100 px-3 py-2 text-[12.5px] font-semibold text-ink-500 hover:border-brand-300 hover:text-brand-600"
+                        >
+                          Details <ExternalLink size={11} />
+                        </a>
+                      )}
                     </div>
-                    <Button size="sm" className="mt-4" onClick={() => setEnrollCourse(c)}>{c.cta_label || 'Enroll now'}</Button>
                   </div>
                 </Card>
               </motion.div>
@@ -152,6 +202,11 @@ function ApplyModal({ job, onClose }) {
         <Toast text="Application submitted! The firm will reach out if there's a fit." kind="ok" />
       ) : (
         <>
+          {job.company_url && (
+            <a href={job.company_url} target="_blank" rel="noreferrer" className="mb-4 flex items-center gap-1.5 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700">
+              Visit {job.firm_name}'s website <ExternalLink size={12} />
+            </a>
+          )}
           <Label required>Full name</Label>
           <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
           <Label required>Email</Label>
@@ -199,6 +254,16 @@ function EnrollModal({ course, onClose }) {
         <Toast text="You're enrolled! Details will be sent to your email." kind="ok" />
       ) : (
         <>
+          {(course.course_url || course.college_website) && (
+            <a
+              href={course.course_url || course.college_website}
+              target="_blank"
+              rel="noreferrer"
+              className="mb-4 flex items-center gap-1.5 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+            >
+              View full course details <ExternalLink size={12} />
+            </a>
+          )}
           <Label required>Full name</Label>
           <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
           <Label required>Email</Label>

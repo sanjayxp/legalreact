@@ -10,7 +10,7 @@ import Modal from '../../components/ui/Modal';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
-const EMPTY = { title: '', firm_name: '', firm_initials: '', logo_url: '', employment_type: 'Full-time', location_type: 'On-site', experience_level: '', salary_range: '', description: '', status: 'active' };
+const EMPTY = { title: '', firm_name: '', firm_initials: '', logo_url: '', company_url: '', employment_type: 'Full-time', location_type: 'On-site', experience_level: '', salary_range: '', description: '', status: 'active' };
 
 export default function Jobs() {
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,12 @@ export default function Jobs() {
                     <div className="font-bold text-ink-900">{j.title}</div>
                     <div className="text-ink-400">{j.experience_level}</div>
                   </td>
-                  <td className="px-4 py-3 text-ink-600">{j.firm_name}</td>
+                  <td className="px-4 py-3 text-ink-600">
+                    {j.firm_name}
+                    {j.company_url && (
+                      <a href={j.company_url} target="_blank" rel="noreferrer" className="ml-1.5 text-brand-500 hover:text-brand-700">↗</a>
+                    )}
+                  </td>
                   <td className="px-4 py-3"><Badge tone={j.status === 'active' ? 'green' : 'gray'}>{j.status}</Badge></td>
                   <td className="px-4 py-3">
                     <button onClick={() => openApplicants(j)} className="flex items-center gap-1 font-semibold text-brand-600"><Users size={13} /> {counts[j.id] ?? 0}</button>
@@ -134,6 +139,8 @@ function JobEditor({ job, onClose, onSave }) {
         <div><Label required>Firm name</Label><Input value={form.firm_name} onChange={(e) => setForm({ ...form, firm_name: e.target.value })} /></div>
         <div><Label>Logo</Label><input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} className="text-[13px]" /></div>
       </FormRow>
+      <Label hint="(optional)">Company website</Label>
+      <Input placeholder="https://…" value={form.company_url} onChange={(e) => setForm({ ...form, company_url: e.target.value })} />
       <FormRow>
         <div><Label>Employment type</Label><Select value={form.employment_type} onChange={(e) => setForm({ ...form, employment_type: e.target.value })}>
           {['Full-time', 'Part-time', 'Internship', 'Contract'].map((o) => <option key={o}>{o}</option>)}

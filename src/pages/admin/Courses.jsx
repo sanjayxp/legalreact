@@ -10,7 +10,7 @@ import Modal from '../../components/ui/Modal';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
-const EMPTY = { title: '', tag_type: 'Certificate Course', mode: 'Online', instructor: '', duration: '', schedule_text: '', price: '', cta_label: '', college_name: '', college_website: '', college_contact: '', status: 'active' };
+const EMPTY = { title: '', tag_type: 'Certificate Course', mode: 'Online', instructor: '', duration: '', schedule_text: '', price: '', cta_label: '', course_url: '', college_name: '', college_website: '', college_contact: '', status: 'active' };
 
 export default function Courses() {
   const [loading, setLoading] = useState(true);
@@ -76,7 +76,15 @@ export default function Courses() {
             <tbody>
               {courses.map((c) => (
                 <tr key={c.id} className="border-b border-ink-50 last:border-0">
-                  <td className="px-4 py-3"><div className="font-bold text-ink-900">{c.title}</div><div className="text-ink-400">{c.tag_type}</div></td>
+                  <td className="px-4 py-3">
+                    <div className="font-bold text-ink-900">
+                      {c.title}
+                      {c.course_url && (
+                        <a href={c.course_url} target="_blank" rel="noreferrer" className="ml-1.5 text-brand-500 hover:text-brand-700">↗</a>
+                      )}
+                    </div>
+                    <div className="text-ink-400">{c.tag_type}</div>
+                  </td>
                   <td className="px-4 py-3 text-ink-600">{c.instructor}</td>
                   <td className="px-4 py-3 text-ink-600">{c.is_free ? 'Free' : `₹${c.price}`}</td>
                   <td className="px-4 py-3"><Badge tone={c.status === 'active' ? 'green' : 'gray'}>{c.status}</Badge></td>
@@ -141,6 +149,8 @@ function CourseEditor({ course, onClose, onSave }) {
         <div><Label>Price (₹, blank = free)</Label><Input type="number" value={form.price ?? ''} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
         <div><Label>CTA label</Label><Input value={form.cta_label} onChange={(e) => setForm({ ...form, cta_label: e.target.value })} /></div>
       </FormRow>
+      <Label hint="(optional) — link to the course page if hosted elsewhere">Course URL</Label>
+      <Input placeholder="https://…" value={form.course_url} onChange={(e) => setForm({ ...form, course_url: e.target.value })} />
       <FormRow cols={3}>
         <div><Label>College name</Label><Input value={form.college_name} onChange={(e) => setForm({ ...form, college_name: e.target.value })} /></div>
         <div><Label>College website</Label><Input value={form.college_website} onChange={(e) => setForm({ ...form, college_website: e.target.value })} /></div>
