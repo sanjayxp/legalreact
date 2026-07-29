@@ -138,7 +138,7 @@ export default function CaseWorkspace() {
       {msg && <div className="mt-3"><Toast text={msg} kind="ok" /></div>}
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <Card>
             <CardHeading title="Add a timeline entry" />
             <div className="grid grid-cols-2 gap-3">

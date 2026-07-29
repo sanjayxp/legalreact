@@ -89,7 +89,7 @@ export default function Cases() {
       {msg && <div className="mt-4"><Toast text={msg} kind={msgKind} /></div>}
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           {cases.length === 0 && <EmptyState icon={<Gavel size={28} />} title="No cases yet" sub="Add one manually or look it up by CNR." />}
           {cases.map((c) => {
             const d = c.next_hearing_date ? new Date(c.next_hearing_date) : null;

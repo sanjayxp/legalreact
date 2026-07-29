@@ -93,7 +93,7 @@ export default function ClientsBilling() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           {clients.length === 0 && <EmptyState icon={<Users size={28} />} title="No clients yet" sub="Add your first client to start tracking cases and fees." />}
           {clients.map((c) => {
             const d = clientDue(c.id);

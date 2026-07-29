@@ -78,7 +78,7 @@ export default function Overview() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-[15px] font-bold text-ink-900">Manage</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {CARDS.map((c, i) => (

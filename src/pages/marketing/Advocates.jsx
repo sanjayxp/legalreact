@@ -208,7 +208,7 @@ export default function Advocates() {
             </Card>
           </aside>
 
-          <div>
+          <div className="min-w-0">
             <div className="mb-4 text-[13.5px] text-ink-400">
               {!loading && `${filtered.length} advocate${filtered.length === 1 ? '' : 's'} found`}
             </div>

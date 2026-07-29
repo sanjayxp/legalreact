@@ -72,7 +72,7 @@ export default function AdvocateProfile() {
         </Link>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               <Avatar src={advocate.photo_url} name={advocate.profiles?.full_name} size={88} />
               <div>
