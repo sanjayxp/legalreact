@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/auth';
 import { listMyCases, createCase, deleteCase, lookupCaseByCNR } from '../../lib/cms';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
-import { Input, Textarea, Label, FormRow } from '../../components/ui/Field';
+import { Input, Textarea, Label } from '../../components/ui/Field';
 import Button from '../../components/ui/Button';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
@@ -149,10 +149,10 @@ export default function Cases() {
             <Input value={form.case_number} onChange={(e) => setForm({ ...form, case_number: e.target.value })} />
             <Label>Court</Label>
             <Input value={form.court_name} onChange={(e) => setForm({ ...form, court_name: e.target.value })} />
-            <FormRow>
-              <div><Label>Type</Label><Input value={form.case_type} onChange={(e) => setForm({ ...form, case_type: e.target.value })} /></div>
-              <div><Label>Stage</Label><Input value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} /></div>
-            </FormRow>
+            <Label>Type</Label>
+            <Input value={form.case_type} onChange={(e) => setForm({ ...form, case_type: e.target.value })} placeholder="e.g. Civil suit" />
+            <Label>Stage</Label>
+            <Input value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })} placeholder="e.g. Arguments" />
             <Label>Next hearing date</Label>
             <Input type="date" value={form.next_hearing_date} onChange={(e) => setForm({ ...form, next_hearing_date: e.target.value })} />
             <Button className="mt-4 w-full" onClick={handleAdd} disabled={adding}><Plus size={14} /> Add case</Button>
