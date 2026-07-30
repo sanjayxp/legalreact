@@ -700,3 +700,84 @@ export async function listRecentActivity(limit = 15) {
   events.sort((a, b) => new Date(b.at) - new Date(a.at));
   return events.slice(0, limit);
 }
+
+// ---------- LEGAL LIBRARY (public bare-acts repository) ----------
+export const LEGAL_LIBRARY_CATEGORIES = [
+  'Constitutional Law',
+  'Criminal Law',
+  'Contract & Civil Law',
+  'Corporate Law',
+  'Family Law',
+  'Property Law',
+  'Labour Law',
+  'Other',
+];
+
+export async function listPublishedActs() {
+  const { data, error } = await supabase
+    .from('legal_acts')
+    .select('id, slug, title, short_title, category, year, summary')
+    .eq('status', 'published')
+    .order('display_order', { ascending: true })
+    .order('title', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function getPublishedAct(slug) {
+  const { data: act, error: aErr } = await supabase
+    .from('legal_acts')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .maybeSingle();
+  if (aErr) throw aErr;
+  if (!act) return null;
+  const { data: sections, error: sErr } = await supabase
+    .from('legal_act_sections')
+    .select('*')
+    .eq('act_id', act.id)
+    .order('order_index', { ascending: true });
+  if (sErr) throw sErr;
+  return { act, sections: sections || [] };
+}
+
+// ---------- LEGAL LIBRARY (admin) ----------
+export async function listActsAdmin() {
+  const { data, error } = await supabase.from('legal_acts').select('*').order('display_order', { ascending: true }).order('title', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function saveAct(act) {
+  const { id, ...fields } = act;
+  if (id) {
+    const { error } = await supabase.from('legal_acts').update(fields).eq('id', id);
+    if (error) throw error;
+    return id;
+  }
+  const { data, error } = await supabase.from('legal_acts').insert(fields).select('id').single();
+  if (error) throw error;
+  return data.id;
+}
+export async function deleteAct(id) {
+  const { error } = await supabase.from('legal_acts').delete().eq('id', id);
+  if (error) throw error;
+}
+export async function listActSectionsAdmin(actId) {
+  const { data, error } = await supabase.from('legal_act_sections').select('*').eq('act_id', actId).order('order_index', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+export async function saveActSection(section) {
+  const { id, ...fields } = section;
+  if (id) {
+    const { error } = await supabase.from('legal_act_sections').update(fields).eq('id', id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('legal_act_sections').insert(fields);
+    if (error) throw error;
+  }
+}
+export async function deleteActSection(id) {
+  const { error } = await supabase.from('legal_act_sections').delete().eq('id', id);
+  if (error) throw error;
+}

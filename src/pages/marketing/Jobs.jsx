@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase, GraduationCap, MapPin, Clock, IndianRupee, ExternalLink, Landmark } from 'lucide-react';
-import { listJobsPublic, listCoursesPublic, submitJobApplication, submitCourseEnrollment, uploadResume } from '../../lib/cms';
+import { Briefcase, GraduationCap, MapPin, Clock, IndianRupee, ExternalLink, Landmark, BookOpen, ArrowRight } from 'lucide-react';
+import { listJobsPublic, listCoursesPublic, listPublishedActs, submitJobApplication, submitCourseEnrollment, uploadResume } from '../../lib/cms';
 import { colorFor } from '../../lib/colorFor';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
@@ -24,22 +25,29 @@ function timeAgo(dateStr) {
 }
 
 export default function Jobs() {
-  const [tab, setTab] = useState('jobs');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') || 'jobs';
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [acts, setActs] = useState([]);
   const [applyJob, setApplyJob] = useState(null);
   const [enrollCourse, setEnrollCourse] = useState(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [j, c] = await Promise.all([listJobsPublic(), listCoursesPublic()]);
+      const [j, c, a] = await Promise.all([listJobsPublic(), listCoursesPublic(), listPublishedActs()]);
       setJobs(j);
       setCourses(c);
+      setActs(a);
       setLoading(false);
     })();
   }, []);
+
+  function setTab(k) {
+    setSearchParams(k === 'jobs' ? {} : { tab: k });
+  }
 
   return (
     <div className="bg-white">
@@ -56,13 +64,19 @@ export default function Jobs() {
 
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
         <Tabs
-          tabs={[{ key: 'jobs', label: 'Jobs', count: jobs.length }, { key: 'courses', label: 'Courses & Webinars', count: courses.length }]}
+          tabs={[
+            { key: 'jobs', label: 'Jobs', count: jobs.length },
+            { key: 'courses', label: 'Courses & Webinars', count: courses.length },
+            { key: 'library', label: 'Legal Library', count: acts.length },
+          ]}
           active={tab}
           onChange={setTab}
         />
 
         {loading ? (
           <Spinner />
+        ) : tab === 'library' ? (
+          <LibraryGrid acts={acts} />
         ) : tab === 'jobs' ? (
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {jobs.length === 0 && <EmptyState icon={<Briefcase size={28} />} title="No open roles right now" />}
@@ -166,6 +180,58 @@ export default function Jobs() {
       <EnrollModal course={enrollCourse} onClose={() => setEnrollCourse(null)} />
 
       <Footer />
+    </div>
+  );
+}
+
+function LibraryGrid({ acts }) {
+  const [category, setCategory] = useState('all');
+  const categories = useMemo(() => [...new Set(acts.map((a) => a.category))], [acts]);
+  const filtered = category === 'all' ? acts : acts.filter((a) => a.category === category);
+
+  return (
+    <div className="mt-8">
+      <p className="max-w-2xl text-[14px] text-ink-500">
+        Bare acts and legal texts for students to study — Constitution, codes, and statutes, organized by subject.
+      </p>
+      {categories.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => setCategory('all')}
+            className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold ${category === 'all' ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-ink-100 text-ink-500 hover:border-brand-200'}`}
+          >
+            All
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold ${category === c ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-ink-100 text-ink-500 hover:border-brand-200'}`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.length === 0 && <EmptyState icon={<BookOpen size={28} />} title="No acts published yet" sub="Check back soon — we're building out the library." />}
+        {filtered.map((a, i) => (
+          <motion.div key={a.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i % 6) * 0.05 }}>
+            <Link to={`/library/${a.slug}`}>
+              <Card hover className="flex h-full flex-col">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600"><BookOpen size={18} /></div>
+                <Badge tone="blue" className="mt-3.5 w-fit">{a.category}</Badge>
+                <h3 className="mt-2 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
+                  {a.short_title || a.title} <ArrowRight size={13} />
+                </h3>
+                {a.short_title && a.short_title !== a.title && <div className="text-[12px] text-ink-400">{a.title}{a.year ? ` (${a.year})` : ''}</div>}
+                <p className="mt-2 line-clamp-3 flex-1 text-[13.5px] text-ink-500">{a.summary}</p>
+              </Card>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }

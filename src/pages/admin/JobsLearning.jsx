@@ -4,6 +4,7 @@ import AdminShell from '../../components/layout/AdminShell';
 import Tabs from '../../components/ui/Tabs';
 import JobsTab from './Jobs';
 import CoursesTab from './Courses';
+import LegalLibraryTab from './LegalLibrary';
 
 export default function JobsLearning() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,11 +18,17 @@ export default function JobsLearning() {
       </motion.div>
 
       <div className="mt-5">
-        <Tabs tabs={[{ key: 'jobs', label: 'Jobs' }, { key: 'courses', label: 'Courses & Webinars' }]} active={tab} onChange={(k) => setSearchParams({ tab: k })} />
+        <Tabs
+          tabs={[{ key: 'jobs', label: 'Jobs' }, { key: 'courses', label: 'Courses & Webinars' }, { key: 'library', label: 'Legal Library' }]}
+          active={tab}
+          onChange={(k) => setSearchParams({ tab: k })}
+        />
       </div>
 
       <div className="mt-6">
-        {tab === 'jobs' ? <JobsTab /> : <CoursesTab />}
+        {tab === 'jobs' && <JobsTab />}
+        {tab === 'courses' && <CoursesTab />}
+        {tab === 'library' && <LegalLibraryTab />}
       </div>
     </AdminShell>
   );

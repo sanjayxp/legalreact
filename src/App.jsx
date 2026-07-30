@@ -6,6 +6,7 @@ import Home from './pages/marketing/Home';
 import PublicQA from './pages/marketing/QA';
 import QuestionDetail from './pages/marketing/QuestionDetail';
 import PublicJobs from './pages/marketing/Jobs';
+import LegalActReader from './pages/marketing/LegalActReader';
 import TrackCase from './pages/marketing/TrackCase';
 import ForAdvocates from './pages/marketing/ForAdvocates';
 import Advocates from './pages/marketing/Advocates';
@@ -83,6 +84,7 @@ export default function App() {
       <Route path="/qa" element={<PublicQA />} />
       <Route path="/qa/:id" element={<QuestionDetail />} />
       <Route path="/jobs" element={<PublicJobs />} />
+      <Route path="/library/:slug" element={<LegalActReader />} />
       <Route path="/track-case" element={<TrackCase />} />
       <Route path="/for-advocates" element={<ForAdvocates />} />
       <Route path="/advocates" element={<Advocates />} />
