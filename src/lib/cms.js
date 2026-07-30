@@ -314,6 +314,50 @@ export async function deleteLead(id) {
   if (error) throw error;
 }
 
+// ---------- LEADS (advocate — enquiries assigned to them) ----------
+export async function listMyLeads(advocateId) {
+  const { data, error } = await supabase.from('leads').select('*').eq('advocate_id', advocateId).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+// Accepting turns the enquiry into (or links it to) a row in the advocate's
+// own private client register — this is the one place "lead" becomes "client".
+export async function acceptLead(id) {
+  const { data, error } = await supabase.rpc('accept_lead', { p_lead_id: id });
+  if (error) throw new Error(error.message || 'Could not accept this lead.');
+  return data;
+}
+export async function declineLead(id) {
+  const { data, error } = await supabase.rpc('decline_lead', { p_lead_id: id });
+  if (error) throw new Error(error.message || 'Could not decline this lead.');
+  return data;
+}
+
+// ---------- DELEGATED ADMIN RIGHTS ----------
+export const ADMIN_SECTIONS = [
+  { key: 'leads', label: 'Leads' },
+  { key: 'qa', label: 'Q&A' },
+  { key: 'jobs_learning', label: 'Jobs & Learning' },
+  { key: 'people', label: 'People' },
+];
+export async function listAdminPermissions() {
+  const { data, error } = await supabase.from('admin_permissions').select('*');
+  if (error) throw error;
+  return data || [];
+}
+export async function grantAdminSection(adminId, section, grantedBy) {
+  const { error } = await supabase.from('admin_permissions').upsert({ admin_id: adminId, section, granted_by: grantedBy }, { onConflict: 'admin_id,section' });
+  if (error) throw error;
+}
+export async function revokeAdminSection(adminId, section) {
+  const { error } = await supabase.from('admin_permissions').delete().eq('admin_id', adminId).eq('section', section);
+  if (error) throw error;
+}
+export async function demoteAdmin(userId) {
+  const { error } = await supabase.from('profiles').update({ role: 'client', is_super_admin: false }).eq('id', userId);
+  if (error) throw error;
+}
+
 // ---------- CASE TRACKING ----------
 export async function listMyCases(advocateId) {
   const { data, error } = await supabase.from('court_cases').select('*').eq('advocate_id', advocateId).order('next_hearing_date', { ascending: true, nullsFirst: false });
@@ -524,9 +568,19 @@ export async function submitQuestion({ topic, title, body, budget, client_id }) 
   if (error) throw error;
   return data;
 }
-export async function upvoteAnswer(answerId) {
-  const { error } = await supabase.rpc('increment_answer_upvotes', { a_id: answerId });
+// Quora-style toggle — voting again removes the vote. Requires login;
+// the RPC raises if there's no session.
+export async function toggleAnswerVote(answerId) {
+  const { data, error } = await supabase.rpc('toggle_answer_vote', { p_answer_id: answerId });
+  if (error) throw new Error(error.message?.includes('log in') ? 'Log in to mark an answer helpful.' : error.message || 'Could not register your vote.');
+  return data?.[0] || { voted: false, upvote_count: 0 };
+}
+// Which of this question's answers the signed-in user has already voted on.
+export async function listMyVotedAnswerIds(answerIds) {
+  if (!answerIds.length) return [];
+  const { data, error } = await supabase.from('answer_votes').select('answer_id').in('answer_id', answerIds);
   if (error) throw error;
+  return (data || []).map((r) => r.answer_id);
 }
 export async function addAnswerComment(answerId, authorRole, authorId, body) {
   const { error } = await supabase.from('answer_comments').insert({ answer_id: answerId, author_role: authorRole, author_id: authorId || null, body });

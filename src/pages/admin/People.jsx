@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { listPendingAdvocates } from '../../lib/cms';
+import { useAdminAccess } from '../../lib/auth';
 import AdminShell from '../../components/layout/AdminShell';
 import Tabs from '../../components/ui/Tabs';
 import VerifyAdvocatesTab from './VerifyAdvocates';
@@ -11,6 +12,7 @@ import TeamTab from './Team';
 
 export default function People() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isSuper } = useAdminAccess();
   const tab = searchParams.get('tab') || 'advocates';
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -18,10 +20,12 @@ export default function People() {
     listPendingAdvocates().then((rows) => setPendingCount(rows.length)).catch(() => {});
   }, []);
 
+  // Managing admin accounts — including granting/revoking another admin's
+  // section access — is a main-admin-only power, never delegable itself.
   const tabs = [
     { key: 'advocates', label: 'Advocates', count: pendingCount },
     { key: 'clients', label: 'Clients' },
-    { key: 'admins', label: 'Admins' },
+    ...(isSuper ? [{ key: 'admins', label: 'Admins' }] : []),
     { key: 'team', label: 'Team' },
   ];
 
@@ -39,7 +43,7 @@ export default function People() {
       <div className="mt-6">
         {tab === 'advocates' && <VerifyAdvocatesTab />}
         {tab === 'clients' && <ClientsTab />}
-        {tab === 'admins' && <AdminsTab />}
+        {tab === 'admins' && isSuper && <AdminsTab />}
         {tab === 'team' && <TeamTab />}
       </div>
     </AdminShell>

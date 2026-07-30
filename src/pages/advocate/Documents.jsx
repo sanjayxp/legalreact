@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Printer, FileText } from 'lucide-react';
-import { DOC_TEMPLATES, getTemplate } from '../../lib/doc-templates';
+import { DOC_TEMPLATES, getTemplate, renderDocument } from '../../lib/doc-templates';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card from '../../components/ui/Card';
-import { Input, Textarea, Label } from '../../components/ui/Field';
+import { Input, Textarea, Select, Label } from '../../components/ui/Field';
 import Button from '../../components/ui/Button';
 import { Toast } from '../../components/ui/Misc';
 
@@ -18,7 +18,7 @@ export default function Documents() {
   const html = useMemo(() => {
     if (!template) return '';
     try {
-      return template.render(fields);
+      return renderDocument(template, fields);
     } catch {
       return '';
     }
@@ -73,11 +73,21 @@ export default function Documents() {
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2 print:block">
         <Card className="print:hidden">
-          {template.fields.map((f) => (
+          {template.fields.map((f, i) => (
             <div key={f.key}>
+              {f.group === 'letterhead' && i === 0 && (
+                <div className="mb-1 mt-0 text-[11px] font-bold uppercase tracking-wide text-ink-400">Letterhead (optional) — appears at the top of the document</div>
+              )}
+              {template.fields[i - 1]?.group === 'letterhead' && f.group !== 'letterhead' && (
+                <div className="mb-1 mt-5 border-t border-ink-100 pt-4 text-[11px] font-bold uppercase tracking-wide text-ink-400">Document details</div>
+              )}
               <Label required={f.required}>{f.label}</Label>
               {f.type === 'textarea' ? (
                 <Textarea placeholder={f.placeholder} value={fields[f.key] || ''} onChange={(e) => setFields({ ...fields, [f.key]: e.target.value })} />
+              ) : f.type === 'select' ? (
+                <Select value={fields[f.key] || f.options[0]} onChange={(e) => setFields({ ...fields, [f.key]: e.target.value })}>
+                  {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                </Select>
               ) : (
                 <Input type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'} placeholder={f.placeholder} value={fields[f.key] || ''} onChange={(e) => setFields({ ...fields, [f.key]: e.target.value })} />
               )}

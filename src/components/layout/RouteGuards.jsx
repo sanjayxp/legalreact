@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../lib/auth';
+import { useAuth, useAdminAccess } from '../../lib/auth';
 import { Spinner } from '../ui/Misc';
 
 // session existence only (mirrors requireAuth())
@@ -21,5 +21,15 @@ export function RequireRole({ role, children }) {
     const routes = { client: '/dashboard/client', advocate: '/dashboard/advocate', admin: '/admin' };
     return <Navigate to={routes[profile.role] || '/login'} replace />;
   }
+  return children;
+}
+
+// Admin routes beyond the overview are gated per-section for delegated
+// admins — a sub-admin without the "leads" grant, say, gets bounced to
+// /admin instead of seeing a page they have no data access to anyway.
+export function RequireAdminSection({ section, children }) {
+  const { loading: accessLoading, can } = useAdminAccess();
+  if (accessLoading) return <Spinner className="min-h-screen" />;
+  if (!can(section)) return <Navigate to="/admin" replace />;
   return children;
 }

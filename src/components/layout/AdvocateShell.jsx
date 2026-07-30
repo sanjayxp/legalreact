@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { signOut } from '../../lib/auth';
-import { listMySlots } from '../../lib/cms';
+import { listMySlots, listMyLeads, getAdvocateProfile } from '../../lib/cms';
 import { Avatar } from '../ui/Misc';
 import Logo from '../brand/Logo';
 
 const NAV = [
   { to: '/dashboard/advocate', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/advocate/profile', label: 'Profile', icon: UserRound },
-  { to: '/dashboard/advocate/bookings', label: 'Leads & Bookings', icon: Inbox, badge: true },
+  { to: '/dashboard/advocate/bookings', label: 'Enquiries & Bookings', icon: Inbox, badge: true },
   { to: '/dashboard/advocate/cases', label: 'My Cases', icon: Gavel },
   { to: '/dashboard/advocate/clients', label: 'Clients', icon: Users },
   { to: '/dashboard/advocate/documents', label: 'Documents', icon: FileText },
@@ -30,11 +30,19 @@ export default function AdvocateShell({ children }) {
   const { profile, user } = useAuth();
   const name = profile?.full_name || user?.email || '';
   const [leadCount, setLeadCount] = useState(0);
+  const [photoUrl, setPhotoUrl] = useState(null);
 
   useEffect(() => {
     if (!user) return;
-    listMySlots(user.id)
-      .then((rows) => setLeadCount(rows.filter((s) => s.status === 'requested').length))
+    Promise.all([listMySlots(user.id), listMyLeads(user.id)])
+      .then(([slots, leads]) => {
+        const pendingRequests = slots.filter((s) => s.status === 'requested').length;
+        const openEnquiries = leads.filter((l) => l.status === 'new' || l.status === 'contacted').length;
+        setLeadCount(pendingRequests + openEnquiries);
+      })
+      .catch(() => {});
+    getAdvocateProfile(user.id)
+      .then((ap) => setPhotoUrl(ap?.photo_url || null))
       .catch(() => {});
   }, [user]);
 
@@ -44,7 +52,7 @@ export default function AdvocateShell({ children }) {
         <div className="mb-6 px-2"><Logo size="sm" /></div>
 
         <div className="mb-4 flex items-center gap-2.5 rounded-xl bg-ink-50 px-2.5 py-2.5">
-          <Avatar src={null} name={name} size={36} />
+          <Avatar src={photoUrl} name={name} size={36} />
           <div className="min-w-0">
             <div className="truncate text-[13.5px] font-bold text-ink-900">{name.split(' ')[0] || '…'}</div>
             <div className="text-[11.5px] text-ink-400">Advocate</div>

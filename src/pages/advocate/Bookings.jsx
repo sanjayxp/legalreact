@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2, UserPlus, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import {
   listMySlots,
@@ -12,6 +13,9 @@ import {
   confirmBookingRequest,
   declineBookingRequest,
   updateSlotStatus,
+  listMyLeads,
+  acceptLead,
+  declineLead,
 } from '../../lib/cms';
 import { computeDaySlots, startOfWeek, dayKey } from '../../lib/slots';
 import AdvocateShell from '../../components/layout/AdvocateShell';
@@ -28,18 +32,21 @@ const MODE_ICON = { video: Video, phone: Phone, inperson: Building2 };
 export default function Bookings() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('calendar');
+  const [tab, setTab] = useState('enquiries');
   const [slots, setSlots] = useState([]);
   const [availability, setAvailabilityState] = useState([]);
   const [timeOff, setTimeOff] = useState([]);
+  const [enquiries, setEnquiries] = useState([]);
   const [msg, setMsg] = useState('');
+  const [msgKind, setMsgKind] = useState('ok');
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date()));
 
   async function loadAll() {
-    const [sl, av, to] = await Promise.all([listMySlots(user.id), getAvailability(user.id), listTimeOff(user.id)]);
+    const [sl, av, to, lq] = await Promise.all([listMySlots(user.id), getAvailability(user.id), listTimeOff(user.id), listMyLeads(user.id)]);
     setSlots(sl);
     setAvailabilityState(av);
     setTimeOff(to);
+    setEnquiries(lq);
     setLoading(false);
   }
 
@@ -49,25 +56,32 @@ export default function Bookings() {
   }, [user]);
 
   const now = new Date();
-  const leads = slots.filter((s) => s.status === 'requested');
+  const openEnquiries = enquiries.filter((l) => l.status === 'new' || l.status === 'contacted');
+  const requests = slots.filter((s) => s.status === 'requested');
   const upcoming = slots.filter((s) => s.status === 'confirmed' && new Date(s.slot_start) >= now);
   const past = slots.filter((s) => ['completed', 'cancelled', 'declined'].includes(s.status) || (s.status === 'confirmed' && new Date(s.slot_start) < now));
 
   const tabs = [
+    { key: 'enquiries', label: 'Enquiries', count: openEnquiries.length },
     { key: 'calendar', label: 'Calendar' },
-    { key: 'leads', label: 'Leads', count: leads.length },
+    { key: 'requests', label: 'Booking requests', count: requests.length },
     { key: 'upcoming', label: 'Upcoming', count: upcoming.length },
     { key: 'availability', label: 'Availability' },
     { key: 'past', label: 'Past' },
   ];
 
+  function say(text, kind = 'ok') {
+    setMsg(text);
+    setMsgKind(kind);
+  }
+
   async function handleConfirm(id) {
     try {
       await confirmBookingRequest(id);
-      setMsg('Confirmed.');
+      say('Confirmed.');
       loadAll();
     } catch (e) {
-      setMsg(e.message);
+      say(e.message, 'err');
     }
   }
   async function handleDecline(id) {
@@ -75,12 +89,29 @@ export default function Bookings() {
       await declineBookingRequest(id);
       loadAll();
     } catch (e) {
-      setMsg(e.message);
+      say(e.message, 'err');
     }
   }
   async function handleStatus(id, status) {
     await updateSlotStatus(id, status);
     loadAll();
+  }
+  async function handleAcceptLead(id) {
+    try {
+      await acceptLead(id);
+      say('Accepted — added to your client register.');
+      loadAll();
+    } catch (e) {
+      say(e.message, 'err');
+    }
+  }
+  async function handleDeclineLead(id) {
+    try {
+      await declineLead(id);
+      loadAll();
+    } catch (e) {
+      say(e.message, 'err');
+    }
   }
 
   if (loading) return <AdvocateShell><Spinner /></AdvocateShell>;
@@ -88,18 +119,19 @@ export default function Bookings() {
   return (
     <AdvocateShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Leads &amp; bookings</h1>
-        <p className="mt-1 text-[14.5px] text-ink-500">Manage your availability and consultation requests.</p>
+        <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Enquiries &amp; bookings</h1>
+        <p className="mt-1 text-[14.5px] text-ink-500">Enquiries routed to you by our team, plus your availability and consultation requests.</p>
       </motion.div>
 
       <div className="mt-5"><Tabs tabs={tabs} active={tab} onChange={setTab} /></div>
-      {msg && <div className="mt-3"><Toast text={msg} kind="ok" /></div>}
+      {msg && <div className="mt-3"><Toast text={msg} kind={msgKind} /></div>}
 
       <div className="mt-5">
+        {tab === 'enquiries' && <EnquiriesList enquiries={enquiries} onAccept={handleAcceptLead} onDecline={handleDeclineLead} />}
         {tab === 'calendar' && (
           <CalendarView weekStart={weekStart} setWeekStart={setWeekStart} availability={availability} timeOff={timeOff} slots={slots} onConfirm={handleConfirm} onDecline={handleDecline} />
         )}
-        {tab === 'leads' && <LeadsList leads={leads} onConfirm={handleConfirm} onDecline={handleDecline} />}
+        {tab === 'requests' && <RequestsList requests={requests} onConfirm={handleConfirm} onDecline={handleDecline} />}
         {tab === 'upcoming' && <BookingList list={upcoming} onStatus={handleStatus} showComplete />}
         {tab === 'availability' && (
           <AvailabilityEditor
@@ -107,7 +139,7 @@ export default function Bookings() {
             availability={availability}
             timeOff={timeOff}
             onSaved={loadAll}
-            setMsg={setMsg}
+            setMsg={say}
           />
         )}
         {tab === 'past' && <BookingList list={past} readonly />}
@@ -116,10 +148,47 @@ export default function Bookings() {
   );
 }
 
-function LeadsList({ leads, onConfirm, onDecline }) {
-  if (!leads.length) return <EmptyState title="No leads right now" sub="New consultation requests will show up here." />;
+const ENQUIRY_STATUS_TONE = { new: 'amber', contacted: 'blue', converted: 'green', dropped: 'gray' };
+
+function EnquiriesList({ enquiries, onAccept, onDecline }) {
+  if (!enquiries.length) {
+    return <EmptyState title="No enquiries yet" sub="Public enquiries our team routes to you will show up here — accept one to add it to your client register." />;
+  }
+  return (
+    <div className="space-y-3">
+      {enquiries.map((l) => {
+        const actionable = l.status === 'new' || l.status === 'contacted';
+        return (
+          <Card key={l.id} className="flex flex-wrap items-center justify-between gap-3 !p-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="text-[14px] font-bold text-ink-900">{l.client_name || 'Unnamed enquiry'}</div>
+                <Badge tone={ENQUIRY_STATUS_TONE[l.status] || 'gray'}>{l.status}</Badge>
+              </div>
+              <div className="text-[12.5px] text-ink-500">{l.phone} {l.email ? `· ${l.email}` : ''}</div>
+              {l.matter && <div className="mt-1 text-[12.5px] text-ink-600">{l.matter}</div>}
+            </div>
+            {actionable ? (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => onAccept(l.id)}><UserPlus size={14} /> Accept &amp; add as client</Button>
+                <Button size="sm" variant="ghost" onClick={() => onDecline(l.id)}><XIcon size={14} /> Decline</Button>
+              </div>
+            ) : l.status === 'converted' ? (
+              <Link to="/dashboard/advocate/clients" className="flex items-center gap-1 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700">
+                View in Clients <ArrowRight size={13} />
+              </Link>
+            ) : null}
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+function RequestsList({ requests, onConfirm, onDecline }) {
+  if (!requests.length) return <EmptyState title="No booking requests right now" sub="New consultation-slot requests will show up here." />;
   const byTime = {};
-  leads.forEach((l) => {
+  requests.forEach((l) => {
     (byTime[l.slot_start] ||= []).push(l);
   });
   return (

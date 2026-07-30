@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { RequireRole } from './components/layout/RouteGuards';
+import { RequireRole, RequireAdminSection } from './components/layout/RouteGuards';
 
 import Home from './pages/marketing/Home';
 import PublicQA from './pages/marketing/QA';
@@ -69,10 +69,10 @@ export default function App() {
       <Route path="/dashboard/advocate/documents" element={<RequireRole role="advocate"><AdvocateDocuments /></RequireRole>} />
 
       <Route path="/admin" element={<RequireRole role="admin"><AdminOverview /></RequireRole>} />
-      <Route path="/admin/leads" element={<RequireRole role="admin"><AdminLeads /></RequireRole>} />
-      <Route path="/admin/qa" element={<RequireRole role="admin"><AdminQA /></RequireRole>} />
-      <Route path="/admin/jobs" element={<RequireRole role="admin"><AdminJobsLearning /></RequireRole>} />
-      <Route path="/admin/people" element={<RequireRole role="admin"><AdminPeople /></RequireRole>} />
+      <Route path="/admin/leads" element={<RequireRole role="admin"><RequireAdminSection section="leads"><AdminLeads /></RequireAdminSection></RequireRole>} />
+      <Route path="/admin/qa" element={<RequireRole role="admin"><RequireAdminSection section="qa"><AdminQA /></RequireAdminSection></RequireRole>} />
+      <Route path="/admin/jobs" element={<RequireRole role="admin"><RequireAdminSection section="jobs_learning"><AdminJobsLearning /></RequireAdminSection></RequireRole>} />
+      <Route path="/admin/people" element={<RequireRole role="admin"><RequireAdminSection section="people"><AdminPeople /></RequireAdminSection></RequireRole>} />
       <Route path="/admin/courses" element={<Navigate to="/admin/jobs?tab=courses" replace />} />
       <Route path="/admin/team" element={<Navigate to="/admin/people?tab=team" replace />} />
       <Route path="/admin/clients" element={<Navigate to="/admin/people?tab=clients" replace />} />

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ThumbsUp, Eye, Gavel, Send } from 'lucide-react';
-import { getQuestionDetail, incrementQuestionViews, upvoteAnswer, submitAnswer, getAdvocateProfile, addAnswerComment } from '../../lib/cms';
+import { getQuestionDetail, incrementQuestionViews, toggleAnswerVote, listMyVotedAnswerIds, submitAnswer, getAdvocateProfile, addAnswerComment } from '../../lib/cms';
 import { useAuth } from '../../lib/auth';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
@@ -18,6 +18,7 @@ export default function QuestionDetail() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [votedIds, setVotedIds] = useState(new Set());
+  const [votingId, setVotingId] = useState(null);
   const [advVerification, setAdvVerification] = useState(null);
   const [answerBody, setAnswerBody] = useState('');
   const [answering, setAnswering] = useState(false);
@@ -25,6 +26,7 @@ export default function QuestionDetail() {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [commentBusy, setCommentBusy] = useState(null);
   const [commentErr, setCommentErr] = useState({});
+  const [voteMsg, setVoteMsg] = useState('');
 
   async function load() {
     setLoading(true);
@@ -35,17 +37,37 @@ export default function QuestionDetail() {
   }
   useEffect(() => { load(); }, [id]);
 
+  // Which answers the signed-in visitor has already voted on — refetches
+  // once a session becomes available (e.g. logging in from this page).
+  useEffect(() => {
+    if (!data || !session) { setVotedIds(new Set()); return; }
+    listMyVotedAnswerIds(data.answers.map((a) => a.id)).then((ids) => setVotedIds(new Set(ids))).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.question?.id, session]);
+
   useEffect(() => {
     if (profile?.role === 'advocate' && user) {
       getAdvocateProfile(user.id).then((ap) => setAdvVerification(ap?.verification_status || null)).catch(() => {});
     }
   }, [profile, user]);
 
-  async function handleUpvote(answerId) {
-    if (votedIds.has(answerId)) return;
-    await upvoteAnswer(answerId);
-    setVotedIds(new Set([...votedIds, answerId]));
-    setData((d) => ({ ...d, answers: d.answers.map((a) => (a.id === answerId ? { ...a, upvote_count: (a.upvote_count || 0) + 1 } : a)) }));
+  async function handleToggleVote(answerId) {
+    if (!session) { setVoteMsg('Log in to mark an answer helpful.'); return; }
+    setVoteMsg('');
+    setVotingId(answerId);
+    try {
+      const { voted, upvote_count } = await toggleAnswerVote(answerId);
+      setVotedIds((prev) => {
+        const next = new Set(prev);
+        if (voted) next.add(answerId); else next.delete(answerId);
+        return next;
+      });
+      setData((d) => ({ ...d, answers: d.answers.map((a) => (a.id === answerId ? { ...a, upvote_count } : a)) }));
+    } catch (e) {
+      setVoteMsg(e.message || 'Could not register your vote.');
+    } finally {
+      setVotingId(null);
+    }
   }
 
   async function handlePostComment(answerId) {
@@ -149,6 +171,7 @@ export default function QuestionDetail() {
 
         <div className="mt-10">
           <h2 className="text-[17px] font-bold text-ink-900">{answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}</h2>
+          {voteMsg && <div className="mt-3"><Toast text={voteMsg} kind="err" /></div>}
           {answers.length === 0 && <div className="mt-4"><EmptyState icon={<Gavel size={26} />} title="No answers yet" sub="Verified advocates will answer here soon." /></div>}
           <div className="mt-4 space-y-4">
             {answers.map((a) => (
@@ -164,11 +187,12 @@ export default function QuestionDetail() {
                 </div>
                 <p className="mt-3 whitespace-pre-line text-[14.5px] leading-relaxed text-ink-700">{a.body}</p>
                 <button
-                  onClick={() => handleUpvote(a.id)}
-                  disabled={votedIds.has(a.id)}
-                  className={`mt-3 flex items-center gap-1.5 text-[13px] font-semibold ${votedIds.has(a.id) ? 'text-brand-600' : 'text-ink-400 hover:text-brand-600'}`}
+                  onClick={() => handleToggleVote(a.id)}
+                  disabled={votingId === a.id}
+                  title={votedIds.has(a.id) ? 'Remove your vote' : 'Mark as helpful'}
+                  className={`mt-3 flex items-center gap-1.5 text-[13px] font-semibold transition-colors disabled:opacity-60 ${votedIds.has(a.id) ? 'text-brand-600' : 'text-ink-400 hover:text-brand-600'}`}
                 >
-                  <ThumbsUp size={14} /> {a.upvote_count || 0} helpful
+                  <ThumbsUp size={14} fill={votedIds.has(a.id) ? 'currentColor' : 'none'} /> {a.upvote_count || 0} helpful
                 </button>
 
                 <div className="mt-4 space-y-3 border-t border-ink-50 pt-4">

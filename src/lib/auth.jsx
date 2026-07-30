@@ -67,6 +67,31 @@ export function useAuth() {
   return ctx;
 }
 
+// Which admin sections the current user can access — super admins get
+// everything, delegated admins get whatever's been explicitly granted.
+// Loading is treated as "no access yet" so gated UI doesn't flash open.
+export function useAdminAccess() {
+  const { profile } = useAuth();
+  const [sections, setSections] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const isSuper = !!profile?.is_super_admin;
+
+  useEffect(() => {
+    if (!profile || profile.role !== 'admin') { setLoading(false); return; }
+    if (isSuper) { setSections(new Set(['leads', 'qa', 'jobs_learning', 'people'])); setLoading(false); return; }
+    let mounted = true;
+    setLoading(true);
+    supabase.from('admin_permissions').select('section').eq('admin_id', profile.id).then(({ data }) => {
+      if (!mounted) return;
+      setSections(new Set((data || []).map((r) => r.section)));
+      setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [profile, isSuper]);
+
+  return { sections, isSuper, loading, can: (section) => isSuper || sections.has(section) };
+}
+
 // ---- Auth actions (ported 1:1 from app/js/auth.js) ----
 
 export async function registerUser({ fullName, email, password, role, phone }) {

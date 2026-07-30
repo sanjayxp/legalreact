@@ -19,7 +19,8 @@ import {
   ThumbsUp,
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { getAdvocateProfile, listMySlots, getAvailability, countMyAnswers, listMyCases, listMyInvoices, listQuestionsPublic, submitAnswer } from '../../lib/cms';
+import { getAdvocateProfile, listMySlots, listMyLeads, getAvailability, countMyAnswers, listMyCases, listMyInvoices, listQuestionsPublic, submitAnswer } from '../../lib/cms';
+import { useLiveRefresh } from '../../lib/realtime';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
 import StatTile from '../../components/ui/StatTile';
@@ -27,7 +28,7 @@ import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import { Textarea } from '../../components/ui/Field';
-import { Spinner, EmptyState, Toast } from '../../components/ui/Misc';
+import { Spinner, EmptyState, Toast, LiveBadge } from '../../components/ui/Misc';
 
 const STATUS_COPY = {
   none: { tone: 'amber', icon: AlertCircle, title: 'Set up your profile', body: 'Complete your profile to start receiving leads and bookings.' },
@@ -56,6 +57,7 @@ export default function Overview() {
   const { profile, user } = useAuth();
   const [advProfile, setAdvProfile] = useState(null);
   const [slots, setSlots] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [availability, setAvailability] = useState([]);
   const [answerCount, setAnswerCount] = useState(0);
   const [cases, setCases] = useState([]);
@@ -65,9 +67,10 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
 
   async function loadAll() {
-    const [ap, sl, av, ac, cs, inv, qs] = await Promise.all([
+    const [ap, sl, lq, av, ac, cs, inv, qs] = await Promise.all([
       getAdvocateProfile(user.id),
       listMySlots(user.id),
+      listMyLeads(user.id),
       getAvailability(user.id),
       countMyAnswers(user.id),
       listMyCases(user.id),
@@ -76,6 +79,7 @@ export default function Overview() {
     ]);
     setAdvProfile(ap);
     setSlots(sl);
+    setLeads(lq);
     setAvailability(av);
     setAnswerCount(ac);
     setCases(cs);
@@ -90,12 +94,25 @@ export default function Overview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  useLiveRefresh(
+    'advocate-overview-live',
+    user ? [
+      { table: 'booking_slots', filter: `advocate_id=eq.${user.id}` },
+      { table: 'leads', filter: `advocate_id=eq.${user.id}` },
+      { table: 'advocate_profiles', filter: `id=eq.${user.id}` },
+      { table: 'answers', filter: `advocate_id=eq.${user.id}` },
+    ] : [],
+    loadAll,
+    !!user,
+  );
+
   if (loading) return <AdvocateShell><Spinner /></AdvocateShell>;
 
   const status = advProfile?.verification_status || 'none';
   const statusInfo = STATUS_COPY[status];
   const now = new Date();
-  const leadRequests = slots.filter((s) => s.status === 'requested');
+  const bookingRequests = slots.filter((s) => s.status === 'requested');
+  const openEnquiries = leads.filter((l) => l.status === 'new' || l.status === 'contacted');
   const upcoming = slots.filter((s) => s.status === 'confirmed' && new Date(s.slot_start) >= now);
   const isApproved = status === 'approved';
   const profileLink = isApproved ? `${window.location.origin}/advocates/${user.id}` : '';
@@ -122,11 +139,14 @@ export default function Overview() {
 
   return (
     <AdvocateShell>
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Welcome back, {name.split(' ')[0]}</h1>
-        <p className="mt-1 text-[14.5px] text-ink-500">
-          {todayCount > 0 ? `You have ${todayCount} thing${todayCount === 1 ? '' : 's'} on today.` : "Here's how your practice is doing on LegalConnects."}
-        </p>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Welcome back, {name.split(' ')[0]}</h1>
+          <p className="mt-1 text-[14.5px] text-ink-500">
+            {todayCount > 0 ? `You have ${todayCount} thing${todayCount === 1 ? '' : 's'} on today.` : "Here's how your practice is doing on LegalConnects."}
+          </p>
+        </div>
+        <LiveBadge />
       </motion.div>
 
       <motion.div
@@ -158,9 +178,10 @@ export default function Overview() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="Profile views" value={advProfile?.profile_views ?? 0} icon={<Eye size={16} />} accent="brand" />
-        <StatTile label="New leads" value={leadRequests.length} icon={<Inbox size={16} />} accent="coral" />
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <StatTile label="Profile views" value={advProfile?.view_count ?? 0} icon={<Eye size={16} />} accent="brand" />
+        <StatTile label="New enquiries" value={openEnquiries.length} icon={<Inbox size={16} />} accent="coral" />
+        <StatTile label="Booking requests" value={bookingRequests.length} icon={<Inbox size={16} />} accent="sun" />
         <StatTile label="Upcoming bookings" value={upcoming.length} icon={<CalendarCheck2 size={16} />} accent="green" />
         <StatTile label="Q&A answers posted" value={answerCount} icon={<MessageCircleQuestion size={16} />} accent="sun" />
       </div>
@@ -198,9 +219,16 @@ export default function Overview() {
             <Link to="/dashboard/advocate/bookings" className="flex items-center justify-between rounded-lg border border-ink-100 p-3 hover:border-brand-200">
               <div className="flex items-center gap-2.5">
                 <Inbox size={16} className="text-coral-500" />
-                <span className="text-[13.5px] font-semibold text-ink-800">Pending lead requests</span>
+                <span className="text-[13.5px] font-semibold text-ink-800">New enquiries</span>
               </div>
-              <Badge tone={leadRequests.length > 0 ? 'amber' : 'gray'}>{leadRequests.length}</Badge>
+              <Badge tone={openEnquiries.length > 0 ? 'amber' : 'gray'}>{openEnquiries.length}</Badge>
+            </Link>
+            <Link to="/dashboard/advocate/bookings" className="flex items-center justify-between rounded-lg border border-ink-100 p-3 hover:border-brand-200">
+              <div className="flex items-center gap-2.5">
+                <Inbox size={16} className="text-coral-500" />
+                <span className="text-[13.5px] font-semibold text-ink-800">Pending booking requests</span>
+              </div>
+              <Badge tone={bookingRequests.length > 0 ? 'amber' : 'gray'}>{bookingRequests.length}</Badge>
             </Link>
             <Link to="/dashboard/advocate/clients" className="flex items-center justify-between rounded-lg border border-ink-100 p-3 hover:border-brand-200">
               <div className="flex items-center gap-2.5">

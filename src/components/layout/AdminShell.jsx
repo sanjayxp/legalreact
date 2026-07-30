@@ -1,28 +1,31 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { signOut } from '../../lib/auth';
+import { signOut, useAdminAccess } from '../../lib/auth';
 import { listPendingAdvocates } from '../../lib/cms';
 import Logo from '../brand/Logo';
 
 const NAV = [
   { to: '/admin', label: 'Overview', end: true },
-  { to: '/admin/leads', label: 'Leads' },
-  { to: '/admin/qa', label: 'Q&A' },
-  { to: '/admin/jobs', label: 'Jobs & Learning' },
-  { to: '/admin/people', label: 'People', badge: true },
+  { to: '/admin/leads', label: 'Leads', section: 'leads' },
+  { to: '/admin/qa', label: 'Q&A', section: 'qa' },
+  { to: '/admin/jobs', label: 'Jobs & Learning', section: 'jobs_learning' },
+  { to: '/admin/people', label: 'People', section: 'people', badge: true },
 ];
 
 export default function AdminShell({ children }) {
   const [pendingCount, setPendingCount] = useState(0);
+  const { can, isSuper } = useAdminAccess();
+  const visibleNav = NAV.filter((item) => !item.section || can(item.section));
 
   useEffect(() => {
+    if (!can('people')) return;
     let mounted = true;
     listPendingAdvocates()
       .then((rows) => { if (mounted) setPendingCount(rows.length); })
       .catch(() => {});
     return () => { mounted = false; };
-  }, []);
+  }, [can]);
 
   return (
     <div className="min-h-screen bg-ink-50/40">
@@ -30,7 +33,7 @@ export default function AdminShell({ children }) {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-8">
           <Logo dark size="sm" />
           <nav className="hidden flex-1 items-center gap-1 overflow-x-auto lg:flex">
-            {NAV.map((item) => (
+            {visibleNav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -50,15 +53,22 @@ export default function AdminShell({ children }) {
               </NavLink>
             ))}
           </nav>
-          <button
-            onClick={signOut}
-            className="ml-auto shrink-0 rounded-lg border border-white/15 px-3.5 py-1.5 text-[13px] font-semibold text-white/80 hover:border-white/40 hover:text-white"
-          >
-            Sign out
-          </button>
+          <div className="ml-auto flex shrink-0 items-center gap-3">
+            {!isSuper && (
+              <span className="hidden rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-semibold text-white/60 sm:inline">
+                Delegated admin
+              </span>
+            )}
+            <button
+              onClick={signOut}
+              className="rounded-lg border border-white/15 px-3.5 py-1.5 text-[13px] font-semibold text-white/80 hover:border-white/40 hover:text-white"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto border-t border-white/10 px-4 py-2 lg:hidden">
-          {NAV.map((item) => (
+          {visibleNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

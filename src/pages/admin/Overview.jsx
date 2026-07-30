@@ -17,71 +17,115 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { listPendingAdvocates, listRecentActivity, listLeads } from '../../lib/cms';
+import { useAdminAccess } from '../../lib/auth';
+import { useLiveRefresh } from '../../lib/realtime';
 import AdminShell from '../../components/layout/AdminShell';
 import Card, { CardHeading } from '../../components/ui/Card';
 import StatTile from '../../components/ui/StatTile';
 import Badge from '../../components/ui/Badge';
-import { EmptyState, Spinner } from '../../components/ui/Misc';
+import { EmptyState, Spinner, LiveBadge } from '../../components/ui/Misc';
 
 const CARDS = [
-  { to: '/admin/leads', label: 'Leads', icon: Inbox, desc: 'Enquiries from bookings, posted cases & the case tracker.' },
-  { to: '/admin/qa', label: 'Q&A moderation', icon: MessageCircleQuestion, desc: 'Moderate public questions and advocate answers.' },
-  { to: '/admin/jobs', label: 'Jobs & Learning', icon: Briefcase, desc: 'Postings, courses, applicants and enrollees.' },
-  { to: '/admin/people', label: 'People', icon: Users2, desc: 'Advocates to verify, clients, admins, and your team.' },
+  { to: '/admin/leads', section: 'leads', label: 'Leads', icon: Inbox, desc: 'Enquiries from bookings, posted cases & the case tracker.' },
+  { to: '/admin/qa', section: 'qa', label: 'Q&A moderation', icon: MessageCircleQuestion, desc: 'Moderate public questions and advocate answers.' },
+  { to: '/admin/jobs', section: 'jobs_learning', label: 'Jobs & Learning', icon: Briefcase, desc: 'Postings, courses, applicants and enrollees.' },
+  { to: '/admin/people', section: 'people', label: 'People', icon: Users2, desc: 'Advocates to verify, clients, admins, and your team.' },
 ];
 
 const ACTIVITY_ICON = { signup: UserPlus, lead: Inbox, question: MessageCircleQuestion, submission: ShieldCheck };
 
 export default function Overview() {
+  const { can, sections, isSuper, loading: accessLoading } = useAdminAccess();
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState({ total: 0, advocates: 0, clients: 0 });
   const [pending, setPending] = useState([]);
   const [newLeads, setNewLeads] = useState(0);
   const [activity, setActivity] = useState([]);
 
-  useEffect(() => {
-    (async () => {
-      const [{ data: profiles }, pend, leads, feed] = await Promise.all([
-        supabase.from('profiles').select('role'),
-        listPendingAdvocates(),
-        listLeads(),
-        listRecentActivity(15),
-      ]);
-      const rows = profiles || [];
-      setCounts({
-        total: rows.length,
-        advocates: rows.filter((r) => r.role === 'advocate').length,
-        clients: rows.filter((r) => r.role === 'client').length,
-      });
-      setPending(pend);
-      setNewLeads(leads.filter((l) => l.status === 'new').length);
-      setActivity(feed);
-      setLoading(false);
-    })();
-  }, []);
+  const visibleCards = CARDS.filter((c) => can(c.section));
+  const hasAnySection = isSuper || sections.size > 0;
 
-  if (loading) return <AdminShell><Spinner /></AdminShell>;
+  async function refresh() {
+    const [{ data: profiles }, pend, leads, feed] = await Promise.all([
+      can('people') ? supabase.from('profiles').select('role') : Promise.resolve({ data: [] }),
+      can('people') ? listPendingAdvocates() : Promise.resolve([]),
+      can('leads') ? listLeads() : Promise.resolve([]),
+      listRecentActivity(15),
+    ]);
+    const rows = profiles || [];
+    setCounts({
+      total: rows.length,
+      advocates: rows.filter((r) => r.role === 'advocate').length,
+      clients: rows.filter((r) => r.role === 'client').length,
+    });
+    setPending(pend);
+    setNewLeads(leads.filter((l) => l.status === 'new').length);
+    setActivity(feed);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    if (accessLoading) return;
+    if (!hasAnySection) { setLoading(false); return; }
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessLoading, hasAnySection]);
+
+  useLiveRefresh(
+    'admin-overview-live',
+    [
+      can('people') && { table: 'profiles' },
+      can('people') && { table: 'advocate_profiles' },
+      can('leads') && { table: 'leads' },
+      { table: 'questions' },
+    ].filter(Boolean),
+    refresh,
+    !accessLoading && hasAnySection,
+  );
+
+  if (accessLoading || loading) return <AdminShell><Spinner /></AdminShell>;
+
+  if (!hasAnySection) {
+    return (
+      <AdminShell>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Admin overview</h1>
+          <p className="mt-1 text-[14.5px] text-ink-500">The full pulse of the platform, in one place.</p>
+        </motion.div>
+        <div className="mt-8">
+          <EmptyState
+            icon={<ShieldCheck size={26} />}
+            title="No sections granted yet"
+            sub="A super admin needs to give you access to at least one section (Leads, Q&A, Jobs & Learning, or People) before you can manage anything here."
+          />
+        </div>
+      </AdminShell>
+    );
+  }
 
   return (
     <AdminShell>
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Admin overview</h1>
-        <p className="mt-1 text-[14.5px] text-ink-500">The full pulse of the platform, in one place.</p>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Admin overview</h1>
+          <p className="mt-1 text-[14.5px] text-ink-500">The full pulse of the platform, in one place.</p>
+        </div>
+        <LiveBadge />
       </motion.div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatTile label="Total users" value={counts.total} icon={<Users size={16} />} accent="brand" />
-        <StatTile label="Advocates" value={counts.advocates} icon={<Gavel size={16} />} accent="coral" />
-        <StatTile label="Clients" value={counts.clients} icon={<UserCheck size={16} />} accent="green" />
-        <StatTile label="New leads" value={newLeads} icon={<Inbox size={16} />} accent="sun" />
-        <StatTile label="Pending verifications" value={pending.length} icon={<Clock size={16} />} accent="sun" />
+        {can('people') && <StatTile label="Total users" value={counts.total} icon={<Users size={16} />} accent="brand" />}
+        {can('people') && <StatTile label="Advocates" value={counts.advocates} icon={<Gavel size={16} />} accent="coral" />}
+        {can('people') && <StatTile label="Clients" value={counts.clients} icon={<UserCheck size={16} />} accent="green" />}
+        {can('leads') && <StatTile label="New leads" value={newLeads} icon={<Inbox size={16} />} accent="sun" />}
+        {can('people') && <StatTile label="Pending verifications" value={pending.length} icon={<Clock size={16} />} accent="sun" />}
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         <div className="min-w-0">
           <h2 className="text-[15px] font-bold text-ink-900">Manage</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {CARDS.map((c, i) => (
+            {visibleCards.map((c, i) => (
               <motion.div key={c.to} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <Link to={c.to}>
                   <Card hover className="h-full">
