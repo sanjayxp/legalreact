@@ -21,7 +21,7 @@ export default function Cases() {
   const [cnrBusy, setCnrBusy] = useState(false);
   const [cnrPreview, setCnrPreview] = useState(null);
 
-  const [form, setForm] = useState({ case_title: '', case_number: '', court_name: '', case_type: '', stage: '', next_hearing_date: '' });
+  const [form, setForm] = useState({ case_title: '', crn: '', court_name: '', case_type: '', stage: '', next_hearing_date: '' });
   const [adding, setAdding] = useState(false);
 
   async function load() {
@@ -47,10 +47,17 @@ export default function Cases() {
     }
   }
   async function saveCnrPreview() {
-    await createCase(user.id, { ...cnrPreview, source: 'ecourts_api' });
-    setCnrPreview(null);
-    setCnr('');
-    load();
+    try {
+      await createCase(user.id, { ...cnrPreview, source: 'ecourts_api' });
+      setCnrPreview(null);
+      setCnr('');
+      setMsg('Case saved to My Cases.');
+      setMsgKind('ok');
+      load();
+    } catch (e) {
+      setMsg(e.message || 'Could not save that case.');
+      setMsgKind('err');
+    }
   }
 
   async function handleAdd() {
@@ -65,16 +72,26 @@ export default function Cases() {
         ...form,
         next_hearing_date: form.next_hearing_date ? new Date(form.next_hearing_date).toISOString() : null,
       });
-      setForm({ case_title: '', case_number: '', court_name: '', case_type: '', stage: '', next_hearing_date: '' });
+      setForm({ case_title: '', crn: '', court_name: '', case_type: '', stage: '', next_hearing_date: '' });
+      setMsg('Case added.');
+      setMsgKind('ok');
       load();
+    } catch (e) {
+      setMsg(e.message || 'Could not add that case.');
+      setMsgKind('err');
     } finally {
       setAdding(false);
     }
   }
 
   async function handleDelete(id) {
-    await deleteCase(id);
-    load();
+    try {
+      await deleteCase(id);
+      load();
+    } catch (e) {
+      setMsg(e.message || 'Could not delete that case.');
+      setMsgKind('err');
+    }
   }
 
   if (loading) return <AdvocateShell><Spinner /></AdvocateShell>;
@@ -108,7 +125,7 @@ export default function Cases() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14.5px] font-bold text-ink-900">{c.case_title}</div>
                   <div className="truncate text-[12.5px] text-ink-500">
-                    {[c.case_number, c.court_name, c.case_type, c.stage].filter(Boolean).join(' · ') || 'No details added'}
+                    {[c.crn, c.court_name, c.case_type, c.stage].filter(Boolean).join(' · ') || 'No details added'}
                   </div>
                 </div>
                 <Link to={`/dashboard/advocate/cases/${c.id}`}>
@@ -130,7 +147,7 @@ export default function Cases() {
             {cnrPreview && (
               <div className="mt-3 rounded-lg border border-brand-200 bg-brand-50 p-3 text-[12.5px]">
                 <div className="font-bold text-ink-900">{cnrPreview.case_title}</div>
-                <div className="mt-1 text-ink-600">{[cnrPreview.case_number, cnrPreview.court_name, cnrPreview.case_type].filter(Boolean).join(' · ')}</div>
+                <div className="mt-1 text-ink-600">{[cnrPreview.crn, cnrPreview.court_name, cnrPreview.case_type].filter(Boolean).join(' · ')}</div>
                 {cnrPreview.next_hearing_date && <div className="mt-1 text-ink-600">Next hearing: {new Date(cnrPreview.next_hearing_date).toLocaleDateString('en-IN')}</div>}
                 {cnrPreview.stage && <div className="text-ink-600">Stage: {cnrPreview.stage}</div>}
                 <div className="mt-2.5 flex gap-2">
@@ -146,7 +163,7 @@ export default function Cases() {
             <Label required>Case title</Label>
             <Input value={form.case_title} onChange={(e) => setForm({ ...form, case_title: e.target.value })} placeholder="Petitioner vs Respondent" />
             <Label>Case / CNR number</Label>
-            <Input value={form.case_number} onChange={(e) => setForm({ ...form, case_number: e.target.value })} />
+            <Input value={form.crn} onChange={(e) => setForm({ ...form, crn: e.target.value })} />
             <Label>Court</Label>
             <Input value={form.court_name} onChange={(e) => setForm({ ...form, court_name: e.target.value })} />
             <Label>Type</Label>

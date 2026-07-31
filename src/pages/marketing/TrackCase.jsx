@@ -86,7 +86,7 @@ export default function TrackCase() {
                   <h2 className="text-[18px] font-extrabold text-ink-900">{result.case_title}</h2>
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Fact icon={Landmark} label="Court" value={result.court_name} />
-                    <Fact icon={FileText} label="Case / CNR number" value={result.case_number} />
+                    <Fact icon={FileText} label="Case / CNR number" value={result.crn} />
                     <Fact icon={Gavel} label="Case type" value={result.case_type} />
                     <Fact icon={Calendar} label="Filed on" value={result.filed_date ? new Date(result.filed_date).toLocaleDateString('en-IN') : null} />
                     <Fact icon={Calendar} label="Next hearing" value={result.next_hearing_date ? new Date(result.next_hearing_date).toLocaleDateString('en-IN') : null} />

@@ -19,7 +19,7 @@ import StatTile from '../../components/ui/StatTile';
 import { Input, Label, Select } from '../../components/ui/Field';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
-import { EmptyState, Spinner } from '../../components/ui/Misc';
+import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 export default function ClientsBilling() {
   const { user } = useAuth();
@@ -31,6 +31,7 @@ export default function ClientsBilling() {
 
   const [cForm, setCForm] = useState({ full_name: '', phone: '', email: '' });
   const [iForm, setIForm] = useState({ client_id: '', description: '', amount: '' });
+  const [msg, setMsg] = useState('');
 
   async function load() {
     setLoading(true);
@@ -49,25 +50,46 @@ export default function ClientsBilling() {
   }
 
   async function handleAddClient() {
-    if (!cForm.full_name.trim()) return;
-    await addClient(user.id, cForm);
-    setCForm({ full_name: '', phone: '', email: '' });
-    load();
+    if (!cForm.full_name.trim()) { setMsg('Client name is required.'); return; }
+    try {
+      await addClient(user.id, cForm);
+      setCForm({ full_name: '', phone: '', email: '' });
+      setMsg('');
+      load();
+    } catch (e) {
+      setMsg(e.message || 'Could not add that client.');
+    }
   }
   async function handleDeleteClient(id) {
-    await deleteClient(id);
-    load();
+    try {
+      await deleteClient(id);
+      load();
+    } catch (e) {
+      setMsg(e.message || 'Could not delete that client.');
+    }
   }
   async function handleAddInvoice() {
     const amt = parseFloat(iForm.amount);
-    if (!iForm.client_id || !iForm.description.trim() || !(amt > 0)) return;
-    await addInvoice(user.id, { client_id: iForm.client_id, description: iForm.description, amount: amt, status: 'unpaid', issued_on: new Date().toISOString().slice(0, 10) });
-    setIForm({ client_id: '', description: '', amount: '' });
-    load();
+    if (!iForm.client_id || !iForm.description.trim() || !(amt > 0)) {
+      setMsg('Pick a client, add a description, and enter an amount above zero.');
+      return;
+    }
+    try {
+      await addInvoice(user.id, { client_id: iForm.client_id, description: iForm.description, amount: amt, status: 'unpaid', issued_on: new Date().toISOString().slice(0, 10) });
+      setIForm({ client_id: '', description: '', amount: '' });
+      setMsg('');
+      load();
+    } catch (e) {
+      setMsg(e.message || 'Could not create that invoice.');
+    }
   }
   async function markPaid(id) {
-    await setInvoiceStatus(id, 'paid');
-    load();
+    try {
+      await setInvoiceStatus(id, 'paid');
+      load();
+    } catch (e) {
+      setMsg(e.message || 'Could not update that invoice.');
+    }
   }
 
   if (loading) return <AdvocateShell><Spinner /></AdvocateShell>;
@@ -84,6 +106,8 @@ export default function ClientsBilling() {
         <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Clients &amp; billing</h1>
         <p className="mt-1 text-[14.5px] text-ink-500">Your private client register, fee tracking, and update history.</p>
       </motion.div>
+
+      {msg && <div className="mt-4"><Toast text={msg} kind="err" /></div>}
 
       <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label="Clients" value={clients.length} icon={<Users size={16} />} accent="brand" />

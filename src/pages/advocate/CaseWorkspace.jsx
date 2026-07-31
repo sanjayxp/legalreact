@@ -91,8 +91,14 @@ export default function CaseWorkspace() {
     setCaseLabels(id, next);
   }
   async function handleLinkClient(clientId) {
+    const prev = linkedClient;
     setLinkedClient(clientId);
-    await linkCaseToClient(id, clientId || null);
+    try {
+      await linkCaseToClient(id, clientId || null);
+    } catch (e) {
+      setLinkedClient(prev);
+      setMsg(e.message || 'Could not link that client.');
+    }
   }
   async function handleUploadDoc() {
     if (!docFile) return;
@@ -132,7 +138,7 @@ export default function CaseWorkspace() {
       </Link>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-2">
         <h1 className="font-heading text-[23px] font-extrabold text-ink-900">{caseRow.case_title}</h1>
-        <p className="mt-1 text-[13.5px] text-ink-500">{[caseRow.case_number, caseRow.court_name].filter(Boolean).join(' · ')}</p>
+        <p className="mt-1 text-[13.5px] text-ink-500">{[caseRow.crn, caseRow.court_name].filter(Boolean).join(' · ')}</p>
       </motion.div>
 
       {msg && <div className="mt-3"><Toast text={msg} kind="ok" /></div>}

@@ -364,8 +364,21 @@ export async function listMyCases(advocateId) {
   if (error) throw error;
   return data || [];
 }
+// Only these are real court_cases columns. The eCourts lookup returns extra
+// keys (case_status, history) that aren't stored, and passing them straight
+// through made PostgREST reject the whole insert.
+const CASE_COLUMNS = [
+  'crn', 'case_title', 'court_name', 'case_type', 'filed_date',
+  'next_hearing_date', 'stage', 'last_order', 'labels', 'register_client_id',
+  'client_id', 'whatsapp_alerts_enabled',
+];
+
 export async function createCase(advocateId, fields) {
-  const { error } = await supabase.from('court_cases').insert({ advocate_id: advocateId, source: 'manual', ...fields });
+  const row = { advocate_id: advocateId, source: fields.source || 'manual' };
+  for (const k of CASE_COLUMNS) {
+    if (fields[k] !== undefined && fields[k] !== '') row[k] = fields[k];
+  }
+  const { error } = await supabase.from('court_cases').insert(row);
   if (error) throw error;
 }
 export async function deleteCase(caseId) {
