@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Label } from '../../components/ui/Field';
 import { Avatar, EmptyState, Spinner } from '../../components/ui/Misc';
 
@@ -15,6 +16,8 @@ export default function Clients() {
   const [search, setSearch] = useState('');
   const [viewing, setViewing] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -34,10 +37,11 @@ export default function Clients() {
     setEditing(null);
     load();
   }
-  async function handleDelete(c) {
-    if (!window.confirm(`Delete ${c.full_name || c.email}? This removes their profile row (auth credential purged separately).`)) return;
-    if (!window.confirm('Are you absolutely sure? This cannot be undone.')) return;
-    await supabase.from('profiles').delete().eq('id', c.id);
+  async function handleDelete() {
+    setDeleting(true);
+    await supabase.from('profiles').delete().eq('id', deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     setViewing(null);
     load();
   }
@@ -76,7 +80,7 @@ export default function Clients() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => setEditing(c)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
-                      <button onClick={() => handleDelete(c)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                      <button onClick={() => setDeleteTarget(c)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -103,13 +107,22 @@ export default function Clients() {
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => { setEditing(viewing); setViewing(null); }}><Pencil size={14} /> Edit</Button>
-              <Button variant="danger" onClick={() => handleDelete(viewing)}><Trash2 size={14} /> Delete</Button>
+              <Button variant="danger" onClick={() => setDeleteTarget(viewing)}><Trash2 size={14} /> Delete</Button>
             </div>
           </>
         )}
       </Modal>
 
       <ClientEditModal client={editing} onClose={() => setEditing(null)} onSave={handleSaveEdit} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Delete this client?"
+        message={`This permanently removes ${deleteTarget?.full_name || deleteTarget?.email}'s profile row. This can't be undone (their auth credential is purged separately).`}
+      />
     </>
   );
 }

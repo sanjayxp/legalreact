@@ -6,10 +6,13 @@ import AdminShell from '../../components/layout/AdminShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 export default function QA() {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'question' | 'answer', id, label }
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -18,15 +21,13 @@ export default function QA() {
   }
   useEffect(() => { load(); }, []);
 
-  async function handleDeleteAnswer(id) {
-    if (!window.confirm('Delete this answer permanently?')) return;
-    await deleteAnswer(id);
-    load();
-  }
-  async function handleDeleteQuestion(id) {
-    if (!window.confirm('Delete this question and all its answers permanently?')) return;
-    await deleteQuestion(id);
-    load();
+  async function handleConfirmDelete() {
+    setDeleting(true);
+    if (deleteTarget.type === 'answer') await deleteAnswer(deleteTarget.id);
+    else await deleteQuestion(deleteTarget.id);
+    await load();
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   if (loading) return <AdminShell><Spinner /></AdminShell>;
@@ -50,7 +51,7 @@ export default function QA() {
                   {new Date(q.created_at).toLocaleDateString('en-IN')} · {q.views ?? 0} views · {q.answers?.length ?? 0} answers
                 </div>
               </div>
-              <button onClick={() => handleDeleteQuestion(q.id)} className="shrink-0 text-ink-300 hover:text-coral-500"><Trash2 size={15} /></button>
+              <button onClick={() => setDeleteTarget({ type: 'question', id: q.id, label: q.title })} className="shrink-0 text-ink-300 hover:text-coral-500"><Trash2 size={15} /></button>
             </div>
             {q.answers?.length > 0 && (
               <div className="mt-3 space-y-2 border-t border-ink-50 pt-3">
@@ -61,7 +62,7 @@ export default function QA() {
                       <div className="mt-0.5 text-[13px] text-ink-600">{a.body}</div>
                       <div className="mt-1 flex items-center gap-1 text-[11.5px] text-ink-400"><ThumbsUp size={11} /> {a.upvote_count ?? 0}</div>
                     </div>
-                    <button onClick={() => handleDeleteAnswer(a.id)} className="shrink-0 text-ink-300 hover:text-coral-500"><Trash2 size={14} /></button>
+                    <button onClick={() => setDeleteTarget({ type: 'answer', id: a.id, label: 'this answer' })} className="shrink-0 text-ink-300 hover:text-coral-500"><Trash2 size={14} /></button>
                   </div>
                 ))}
               </div>
@@ -69,6 +70,19 @@ export default function QA() {
           </Card>
         ))}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        busy={deleting}
+        title={deleteTarget?.type === 'question' ? 'Delete this question?' : 'Delete this answer?'}
+        message={
+          deleteTarget?.type === 'question'
+            ? `This will permanently delete "${deleteTarget?.label}" and all of its answers. This can't be undone.`
+            : `This will permanently delete ${deleteTarget?.label}. This can't be undone.`
+        }
+      />
     </AdminShell>
   );
 }

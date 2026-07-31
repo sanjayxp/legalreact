@@ -7,6 +7,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
@@ -19,6 +20,8 @@ export default function Courses() {
   const [editing, setEditing] = useState(null);
   const [enrolleesFor, setEnrolleesFor] = useState(null);
   const [enrollees, setEnrollees] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -41,9 +44,11 @@ export default function Courses() {
     setEditing(null);
     load();
   }
-  async function handleDelete(id) {
-    if (!window.confirm('Delete this course?')) return;
-    await deleteCourse(id);
+  async function handleDelete() {
+    setDeleting(true);
+    await deleteCourse(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   }
   async function openEnrollees(c) {
@@ -92,7 +97,7 @@ export default function Courses() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => setEditing(c)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
-                      <button onClick={() => handleDelete(c.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                      <button onClick={() => setDeleteTarget(c)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -115,6 +120,15 @@ export default function Courses() {
           {enrollees.length === 0 && <div className="text-[13px] text-ink-400">No enrollees yet.</div>}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Delete this course?"
+        message={`This will permanently delete "${deleteTarget?.title}". This can't be undone.`}
+      />
     </>
   );
 }

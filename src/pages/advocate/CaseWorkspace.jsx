@@ -22,6 +22,7 @@ import Card, { CardHeading } from '../../components/ui/Card';
 import { Input, Textarea, Label, Select } from '../../components/ui/Field';
 import { Chip } from '../../components/ui/Misc';
 import Button from '../../components/ui/Button';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 const EVENT_KINDS = [
@@ -48,6 +49,8 @@ export default function CaseWorkspace() {
   const [labels, setLabels] = useState([]);
   const [linkedClient, setLinkedClient] = useState('');
   const [docFile, setDocFile] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { kind: 'event' | 'doc', item }
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -73,8 +76,12 @@ export default function CaseWorkspace() {
     setEv({ ...ev, title: '', detail: '' });
     load();
   }
-  async function handleDeleteEvent(eid) {
-    await deleteCaseEvent(eid);
+  async function handleConfirmDelete() {
+    setDeleting(true);
+    if (deleteTarget.kind === 'event') await deleteCaseEvent(deleteTarget.item.id);
+    else await deleteCaseDocument(deleteTarget.item);
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   }
   function addLabel() {
@@ -109,10 +116,6 @@ export default function CaseWorkspace() {
   }
   async function handleOpenDoc(doc) {
     window.open(await caseDocumentUrl(doc.file_path), '_blank');
-  }
-  async function handleDeleteDoc(doc) {
-    await deleteCaseDocument(doc);
-    load();
   }
   async function sendLatestUpdate() {
     if (!linkedClient) { setMsg('Link a client first.'); return; }
@@ -169,7 +172,7 @@ export default function CaseWorkspace() {
                     <div className="text-[14px] font-semibold text-ink-900">{e.title}</div>
                     {e.detail && <div className="mt-0.5 text-[13px] text-ink-500">{e.detail}</div>}
                   </div>
-                  <button onClick={() => handleDeleteEvent(e.id)} className="shrink-0 text-ink-300 hover:text-coral-500"><Trash2 size={14} /></button>
+                  <button onClick={() => setDeleteTarget({ kind: 'event', item: e })} className="shrink-0 text-ink-300 hover:text-coral-500"><Trash2 size={14} /></button>
                 </div>
               ))}
             </div>
@@ -192,7 +195,7 @@ export default function CaseWorkspace() {
                   <span className="flex items-center gap-1.5 font-semibold text-ink-800"><FileText size={14} /> {d.file_name}</span>
                   <div className="flex gap-3">
                     <button onClick={() => handleOpenDoc(d)} className="text-brand-600 hover:underline">Open</button>
-                    <button onClick={() => handleDeleteDoc(d)} className="text-ink-400 hover:text-coral-500"><Trash2 size={14} /></button>
+                    <button onClick={() => setDeleteTarget({ kind: 'doc', item: d })} className="text-ink-400 hover:text-coral-500"><Trash2 size={14} /></button>
                   </div>
                 </div>
               ))}
@@ -237,6 +240,19 @@ export default function CaseWorkspace() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        busy={deleting}
+        title={deleteTarget?.kind === 'event' ? 'Delete this timeline entry?' : 'Delete this document?'}
+        message={
+          deleteTarget?.kind === 'event'
+            ? `This will permanently delete "${deleteTarget?.item?.title}" from the case timeline. This can't be undone.`
+            : `This will permanently delete "${deleteTarget?.item?.file_name}". This can't be undone.`
+        }
+      />
     </AdvocateShell>
   );
 }

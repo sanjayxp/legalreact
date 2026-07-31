@@ -14,6 +14,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
@@ -29,6 +30,8 @@ export default function LegalLibrary() {
   const [acts, setActs] = useState([]);
   const [editing, setEditing] = useState(null);
   const [managingSections, setManagingSections] = useState(null); // act row
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -42,9 +45,11 @@ export default function LegalLibrary() {
     setEditing(null);
     load();
   }
-  async function handleDeleteAct(id) {
-    if (!window.confirm('Delete this act and all of its sections? This cannot be undone.')) return;
-    await deleteAct(id);
+  async function handleDeleteAct() {
+    setDeleting(true);
+    await deleteAct(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   }
 
@@ -92,7 +97,7 @@ export default function LegalLibrary() {
                     <div className="flex justify-end gap-3">
                       <button onClick={() => setManagingSections(a)} className="text-[12.5px] font-semibold text-brand-600 hover:text-brand-700">Sections</button>
                       <button onClick={() => setEditing(a)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
-                      <button onClick={() => handleDeleteAct(a.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                      <button onClick={() => setDeleteTarget(a)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -103,6 +108,15 @@ export default function LegalLibrary() {
       </Card>
 
       <ActEditor act={editing} onClose={() => setEditing(null)} onSave={handleSaveAct} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteAct}
+        busy={deleting}
+        title="Delete this act?"
+        message={`This will permanently delete "${deleteTarget?.title}" and all of its sections. This can't be undone.`}
+      />
     </>
   );
 }
@@ -161,6 +175,8 @@ function SectionsEditor({ act, onBack }) {
   const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -178,9 +194,11 @@ function SectionsEditor({ act, onBack }) {
     setEditing(null);
     load();
   }
-  async function handleDelete(id) {
-    if (!window.confirm('Delete this section?')) return;
-    await deleteActSection(id);
+  async function handleDelete() {
+    setDeleting(true);
+    await deleteActSection(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   }
 
@@ -215,7 +233,7 @@ function SectionsEditor({ act, onBack }) {
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <button onClick={() => setEditing(s)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
-                    <button onClick={() => handleDelete(s.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                    <button onClick={() => setDeleteTarget(s)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                   </div>
                 </div>
               ))}
@@ -225,6 +243,15 @@ function SectionsEditor({ act, onBack }) {
       )}
 
       <SectionEditor section={editing} onClose={() => setEditing(null)} onSave={handleSave} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Delete this section?"
+        message={`This will permanently delete "${deleteTarget?.heading}". This can't be undone.`}
+      />
     </>
   );
 }

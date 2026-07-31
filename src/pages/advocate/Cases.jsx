@@ -8,6 +8,7 @@ import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
 import { Input, Textarea, Label } from '../../components/ui/Field';
 import Button from '../../components/ui/Button';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 export default function Cases() {
@@ -23,6 +24,8 @@ export default function Cases() {
 
   const [form, setForm] = useState({ case_title: '', crn: '', court_name: '', case_type: '', stage: '', next_hearing_date: '' });
   const [adding, setAdding] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -84,13 +87,17 @@ export default function Cases() {
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete() {
+    setDeleting(true);
     try {
-      await deleteCase(id);
+      await deleteCase(deleteTarget.id);
+      setDeleteTarget(null);
       load();
     } catch (e) {
       setMsg(e.message || 'Could not delete that case.');
       setMsgKind('err');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -131,7 +138,7 @@ export default function Cases() {
                 <Link to={`/dashboard/advocate/cases/${c.id}`}>
                   <Button size="sm" variant="ghost">Open workspace <ArrowRight size={14} /></Button>
                 </Link>
-                <button onClick={() => handleDelete(c.id)} className="text-ink-300 hover:text-coral-500"><Trash2 size={16} /></button>
+                <button onClick={() => setDeleteTarget(c)} className="text-ink-300 hover:text-coral-500"><Trash2 size={16} /></button>
               </Card>
             );
           })}
@@ -176,6 +183,15 @@ export default function Cases() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Delete this case?"
+        message={`This will permanently delete "${deleteTarget?.case_title}" along with its documents and timeline events. This can't be undone.`}
+      />
     </AdvocateShell>
   );
 }

@@ -24,6 +24,7 @@ import Tabs from '../../components/ui/Tabs';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Field';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -340,6 +341,8 @@ function AvailabilityEditor({ advocateId, availability, timeOff, onSaved, setMsg
   const [saving, setSaving] = useState(false);
   const [offDate, setOffDate] = useState('');
   const [offNote, setOffNote] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   function updateDay(i, patch) {
     setDays((d) => d.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
@@ -373,6 +376,14 @@ function AvailabilityEditor({ advocateId, availability, timeOff, onSaved, setMsg
     await addTimeOff(advocateId, offDate, offNote);
     setOffDate('');
     setOffNote('');
+    onSaved();
+  }
+
+  async function handleDeleteTimeOff() {
+    setDeleting(true);
+    await deleteTimeOff(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     onSaved();
   }
 
@@ -420,12 +431,22 @@ function AvailabilityEditor({ advocateId, availability, timeOff, onSaved, setMsg
           {timeOff.map((t) => (
             <div key={t.id} className="flex items-center justify-between rounded-lg bg-ink-50 px-3 py-2 text-[13px]">
               <span className="font-semibold text-ink-800">{t.off_date} {t.note && `— ${t.note}`}</span>
-              <button onClick={() => deleteTimeOff(t.id).then(onSaved)} className="text-ink-400 hover:text-coral-500"><Trash2 size={14} /></button>
+              <button onClick={() => setDeleteTarget(t)} className="text-ink-400 hover:text-coral-500"><Trash2 size={14} /></button>
             </div>
           ))}
           {timeOff.length === 0 && <div className="text-[13px] text-ink-400">No blocked dates.</div>}
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteTimeOff}
+        busy={deleting}
+        title="Unblock this date?"
+        message={`This will remove the block on ${deleteTarget?.off_date}${deleteTarget?.note ? ` (${deleteTarget.note})` : ''} — clients will be able to book that day again.`}
+        confirmLabel="Unblock"
+      />
     </div>
   );
 }

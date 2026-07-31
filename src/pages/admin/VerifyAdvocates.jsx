@@ -16,6 +16,7 @@ import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Tabs from '../../components/ui/Tabs';
 import Modal from '../../components/ui/Modal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, FormRow } from '../../components/ui/Field';
 import { Chip } from '../../components/ui/Misc';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
@@ -30,6 +31,8 @@ export default function VerifyAdvocates() {
   const [tab, setTab] = useState('pending');
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -54,9 +57,11 @@ export default function VerifyAdvocates() {
     await reviewAdvocateProfile(id, status, user.id);
     load();
   }
-  async function handleDelete(id) {
-    if (!window.confirm("Delete this profile? The advocate's login stays active — they'll see a fresh unfilled profile next time.")) return;
-    await deleteAdvocateProfile(id);
+  async function handleDelete() {
+    setDeleting(true);
+    await deleteAdvocateProfile(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   }
   async function viewCert(path) {
@@ -141,7 +146,7 @@ export default function VerifyAdvocates() {
                     )}
                     <Button size="sm" variant="ghost" onClick={() => setViewing(a)}><Eye size={14} /> View details</Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(a)}><Pencil size={14} /> Edit</Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(a.id)}><Trash2 size={14} /> Delete</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(a)}><Trash2 size={14} /> Delete</Button>
                   </div>
                 </div>
               </div>
@@ -152,6 +157,15 @@ export default function VerifyAdvocates() {
 
       <AdvocateEditModal advocate={editing} onClose={() => setEditing(null)} onSaved={load} />
       <AdvocateDetailsModal advocate={viewing} onClose={() => setViewing(null)} onViewCert={viewCert} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Delete this advocate profile?"
+        message={`This will delete ${deleteTarget?.profiles?.full_name || 'this advocate'}'s profile. Their login stays active — they'll see a fresh, unfilled profile next time they sign in.`}
+      />
     </>
   );
 }

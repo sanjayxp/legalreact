@@ -6,6 +6,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
@@ -15,6 +16,8 @@ export default function Team() {
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -33,9 +36,11 @@ export default function Team() {
     setEditing(null);
     load();
   }
-  async function handleDelete(id) {
-    if (!window.confirm('Remove this team member?')) return;
-    await deleteTeamMember(id);
+  async function handleDelete() {
+    setDeleting(true);
+    await deleteTeamMember(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   }
 
@@ -63,7 +68,7 @@ export default function Team() {
               {m.status === 'hidden' && <Badge tone="gray" className="mt-2">Hidden</Badge>}
               <div className="mt-3 flex gap-3">
                 <button onClick={() => setEditing(m)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
-                <button onClick={() => handleDelete(m.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                <button onClick={() => setDeleteTarget(m)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
               </div>
             </Card>
           ))}
@@ -71,6 +76,15 @@ export default function Team() {
       )}
 
       <TeamEditor member={editing} onClose={() => setEditing(null)} onSave={handleSave} />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Remove this team member?"
+        message={`This will remove ${deleteTarget?.full_name} from the public About Us page. This can't be undone.`}
+      />
     </>
   );
 }

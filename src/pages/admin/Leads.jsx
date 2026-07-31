@@ -8,6 +8,7 @@ import Badge from '../../components/ui/Badge';
 import { Input, Select } from '../../components/ui/Field';
 import Card from '../../components/ui/Card';
 import { Spinner } from '../../components/ui/Misc';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const STATUSES = ['new', 'contacted', 'converted', 'dropped'];
 const SOURCES = ['booking', 'post_case', 'case_tracker', 'other'];
@@ -30,6 +31,8 @@ export default function Leads() {
   const [statusFilter, setStatusFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -70,10 +73,12 @@ export default function Leads() {
     await updateLead(l.id, { admin_notes: note });
     setLeads((ls) => ls.map((x) => (x.id === l.id ? { ...x, admin_notes: note } : x)));
   }
-  async function handleDelete(id) {
-    if (!window.confirm('Delete this lead permanently?')) return;
-    await deleteLead(id);
-    setLeads((ls) => ls.filter((l) => l.id !== id));
+  async function handleDelete() {
+    setDeleting(true);
+    await deleteLead(deleteTarget.id);
+    setLeads((ls) => ls.filter((l) => l.id !== deleteTarget.id));
+    setDeleting(false);
+    setDeleteTarget(null);
   }
 
   if (loading) return <AdminShell><Spinner /></AdminShell>;
@@ -154,7 +159,7 @@ export default function Leads() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => handleNote(l)} className="text-ink-400 hover:text-brand-600"><StickyNote size={15} /></button>
-                      <button onClick={() => handleDelete(l.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                      <button onClick={() => setDeleteTarget(l)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -164,6 +169,15 @@ export default function Leads() {
         </table>
         {filtered.length === 0 && <div className="p-8 text-center text-[13.5px] text-ink-400">No leads match your filters.</div>}
       </Card>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Delete this lead?"
+        message={`This will permanently delete the lead from ${deleteTarget?.client_name || 'this client'}. This can't be undone.`}
+      />
     </AdminShell>
   );
 }

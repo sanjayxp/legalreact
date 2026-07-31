@@ -7,6 +7,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
@@ -19,6 +20,8 @@ export default function Jobs() {
   const [editing, setEditing] = useState(null);
   const [applicantsFor, setApplicantsFor] = useState(null);
   const [applicants, setApplicants] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -40,9 +43,11 @@ export default function Jobs() {
     setEditing(null);
     load();
   }
-  async function handleDelete(id) {
-    if (!window.confirm('Delete this job posting?')) return;
-    await deleteJob(id);
+  async function handleDelete() {
+    setDeleting(true);
+    await deleteJob(deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   }
   async function openApplicants(job) {
@@ -92,7 +97,7 @@ export default function Jobs() {
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => setEditing(j)} className="text-ink-400 hover:text-brand-600"><Pencil size={15} /></button>
-                      <button onClick={() => handleDelete(j.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                      <button onClick={() => setDeleteTarget(j)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>
@@ -121,6 +126,15 @@ export default function Jobs() {
           {applicants.length === 0 && <div className="text-[13px] text-ink-400">No applicants yet.</div>}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        busy={deleting}
+        title="Delete this job posting?"
+        message={`This will permanently delete "${deleteTarget?.title}" at ${deleteTarget?.firm_name}. This can't be undone.`}
+      />
     </>
   );
 }

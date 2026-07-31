@@ -19,6 +19,7 @@ import StatTile from '../../components/ui/StatTile';
 import { Input, Label, Select } from '../../components/ui/Field';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 export default function ClientsBilling() {
@@ -32,6 +33,8 @@ export default function ClientsBilling() {
   const [cForm, setCForm] = useState({ full_name: '', phone: '', email: '' });
   const [iForm, setIForm] = useState({ client_id: '', description: '', amount: '' });
   const [msg, setMsg] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -60,12 +63,16 @@ export default function ClientsBilling() {
       setMsg(e.message || 'Could not add that client.');
     }
   }
-  async function handleDeleteClient(id) {
+  async function handleDeleteClient() {
+    setDeleting(true);
     try {
-      await deleteClient(id);
+      await deleteClient(deleteTarget.id);
+      setDeleteTarget(null);
       load();
     } catch (e) {
       setMsg(e.message || 'Could not delete that client.');
+    } finally {
+      setDeleting(false);
     }
   }
   async function handleAddInvoice() {
@@ -145,7 +152,7 @@ export default function ClientsBilling() {
                     {expandedData.updates.map((u) => (
                       <div key={u.id} className="mb-1.5 text-[12.5px] text-ink-600">{new Date(u.sent_at).toLocaleDateString('en-IN')} — {u.message}</div>
                     ))}
-                    <button onClick={() => handleDeleteClient(c.id)} className="mt-3 flex items-center gap-1 text-[12.5px] font-semibold text-coral-500">
+                    <button onClick={() => setDeleteTarget(c)} className="mt-3 flex items-center gap-1 text-[12.5px] font-semibold text-coral-500">
                       <Trash2 size={13} /> Delete client
                     </button>
                   </div>
@@ -202,6 +209,15 @@ export default function ClientsBilling() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteClient}
+        busy={deleting}
+        title="Delete this client?"
+        message={`This will remove ${deleteTarget?.full_name} from your client register. This can't be undone.`}
+      />
     </AdvocateShell>
   );
 }
