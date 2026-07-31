@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Logo from '../brand/Logo';
+import { usePostMatter } from './PostMatterContext';
 
 const COLUMNS = [
   {
@@ -38,6 +39,8 @@ const COLUMNS = [
 ];
 
 export default function Footer() {
+  const { openPostMatter } = usePostMatter();
+
   return (
     <footer className="border-t border-ink-900/[0.08] bg-ink-900 text-white/70">
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
@@ -48,10 +51,15 @@ export default function Footer() {
               Connecting people with Bar Council-verified advocates across India — plain-language legal help, without the guesswork.
             </p>
           </div>
-          {COLUMNS.map((col) => (
+          {COLUMNS.map((col, i) => (
             <div key={col.title}>
               <div className="text-[12px] font-bold uppercase tracking-wide text-white/40">{col.title}</div>
               <div className="mt-3.5 flex flex-col gap-2.5">
+                {i === 0 && (
+                  <button onClick={openPostMatter} className="text-left text-[13.5px] font-semibold text-gold-300 hover:text-gold-200">
+                    Post your matter
+                  </button>
+                )}
                 {col.links.map((l) => (
                   <Link key={l.label} to={l.to} className="text-[13.5px] text-white/70 hover:text-gold-300">
                     {l.label}

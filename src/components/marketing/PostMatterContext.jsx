@@ -4,7 +4,7 @@ import PostMatterModal from './PostMatterModal';
 
 const PostMatterCtx = createContext(null);
 
-const AUTO_POPUP_DELAY_MS = 15000;
+const AUTO_POPUP_DELAY_MS = 8000;
 // Don't interrupt logged-in dashboards or the auth flow with the marketing popup.
 const SKIP_PREFIXES = ['/dashboard', '/admin', '/login'];
 
