@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { BookOpen, GraduationCap, Briefcase } from 'lucide-react';
 import AdminShell from '../../components/layout/AdminShell';
 import Tabs from '../../components/ui/Tabs';
 import JobsTab from './Jobs';
@@ -8,7 +9,7 @@ import LegalLibraryTab from './LegalLibrary';
 
 export default function JobsLearning() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get('tab') || 'jobs';
+  const tab = searchParams.get('tab') || 'library';
 
   return (
     <AdminShell>
@@ -19,7 +20,11 @@ export default function JobsLearning() {
 
       <div className="mt-5">
         <Tabs
-          tabs={[{ key: 'jobs', label: 'Jobs' }, { key: 'courses', label: 'Courses & Webinars' }, { key: 'library', label: 'Legal Library' }]}
+          tabs={[
+            { key: 'library', label: 'Legal Library', tone: 'violet', icon: BookOpen },
+            { key: 'courses', label: 'Courses & Webinars', tone: 'gold', icon: GraduationCap },
+            { key: 'jobs', label: 'Jobs', tone: 'brand', icon: Briefcase },
+          ]}
           active={tab}
           onChange={(k) => setSearchParams({ tab: k })}
         />

@@ -66,11 +66,11 @@ export default function VerifyAdvocates() {
   if (loading) return <Spinner />;
 
   const tabs = [
-    { key: 'all', label: 'All', count: counts.all },
-    { key: 'pending', label: 'Pending', count: counts.pending },
-    { key: 'approved', label: 'Approved', count: counts.approved },
-    { key: 'rejected', label: 'Rejected', count: counts.rejected },
-    { key: 'incomplete', label: 'No profile yet', count: counts.incomplete },
+    { key: 'all', label: 'All', count: counts.all, tone: 'brand' },
+    { key: 'pending', label: 'Pending', count: counts.pending, tone: 'gold' },
+    { key: 'approved', label: 'Approved', count: counts.approved, tone: 'emerald' },
+    { key: 'rejected', label: 'Rejected', count: counts.rejected, tone: 'rose' },
+    { key: 'incomplete', label: 'No profile yet', count: counts.incomplete, tone: 'slate' },
   ];
 
   return (

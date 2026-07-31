@@ -26,7 +26,7 @@ function timeAgo(dateStr) {
 
 export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get('tab') || 'jobs';
+  const tab = searchParams.get('tab') || 'library';
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -46,7 +46,7 @@ export default function Jobs() {
   }, []);
 
   function setTab(k) {
-    setSearchParams(k === 'jobs' ? {} : { tab: k });
+    setSearchParams(k === 'library' ? {} : { tab: k });
   }
 
   return (
@@ -58,16 +58,16 @@ export default function Jobs() {
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Careers &amp; growth</span>
           <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Jobs &amp; Learning</h1>
-          <p className="mt-2 max-w-lg text-[16px] text-ink-500">Legal roles at firms and chambers, plus courses and webinars to build your practice.</p>
+          <p className="mt-2 max-w-lg text-[16px] text-ink-500">A free library of bare acts, plus courses, webinars, and legal roles at firms and chambers.</p>
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
         <Tabs
           tabs={[
-            { key: 'jobs', label: 'Jobs', count: jobs.length },
-            { key: 'courses', label: 'Courses & Webinars', count: courses.length },
-            { key: 'library', label: 'Legal Library', count: acts.length },
+            { key: 'library', label: 'Legal Library', count: acts.length, tone: 'violet', icon: BookOpen },
+            { key: 'courses', label: 'Courses & Webinars', count: courses.length, tone: 'gold', icon: GraduationCap },
+            { key: 'jobs', label: 'Jobs', count: jobs.length, tone: 'brand', icon: Briefcase },
           ]}
           active={tab}
           onChange={setTab}

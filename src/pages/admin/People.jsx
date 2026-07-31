@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Scale, Users, ShieldCheck, UsersRound } from 'lucide-react';
 import { listPendingAdvocates } from '../../lib/cms';
 import { useAdminAccess } from '../../lib/auth';
 import AdminShell from '../../components/layout/AdminShell';
@@ -23,10 +24,10 @@ export default function People() {
   // Managing admin accounts — including granting/revoking another admin's
   // section access — is a main-admin-only power, never delegable itself.
   const tabs = [
-    { key: 'advocates', label: 'Advocates', count: pendingCount },
-    { key: 'clients', label: 'Clients' },
-    ...(isSuper ? [{ key: 'admins', label: 'Admins' }] : []),
-    { key: 'team', label: 'Team' },
+    { key: 'advocates', label: 'Advocates', count: pendingCount, tone: 'brand', icon: Scale },
+    { key: 'clients', label: 'Clients', tone: 'emerald', icon: Users },
+    ...(isSuper ? [{ key: 'admins', label: 'Admins', tone: 'rose', icon: ShieldCheck }] : []),
+    { key: 'team', label: 'Team', tone: 'violet', icon: UsersRound },
   ];
 
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2, UserPlus, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2, UserPlus, ArrowRight, Inbox, CalendarDays, BellRing, CalendarCheck2, Clock, History } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import {
   listMySlots,
@@ -62,12 +62,12 @@ export default function Bookings() {
   const past = slots.filter((s) => ['completed', 'cancelled', 'declined'].includes(s.status) || (s.status === 'confirmed' && new Date(s.slot_start) < now));
 
   const tabs = [
-    { key: 'enquiries', label: 'Enquiries', count: openEnquiries.length },
-    { key: 'calendar', label: 'Calendar' },
-    { key: 'requests', label: 'Booking requests', count: requests.length },
-    { key: 'upcoming', label: 'Upcoming', count: upcoming.length },
-    { key: 'availability', label: 'Availability' },
-    { key: 'past', label: 'Past' },
+    { key: 'enquiries', label: 'Enquiries', count: openEnquiries.length, tone: 'rose', icon: Inbox },
+    { key: 'calendar', label: 'Calendar', tone: 'brand', icon: CalendarDays },
+    { key: 'requests', label: 'Booking requests', count: requests.length, tone: 'gold', icon: BellRing },
+    { key: 'upcoming', label: 'Upcoming', count: upcoming.length, tone: 'emerald', icon: CalendarCheck2 },
+    { key: 'availability', label: 'Availability', tone: 'violet', icon: Clock },
+    { key: 'past', label: 'Past', tone: 'slate', icon: History },
   ];
 
   function say(text, kind = 'ok') {
