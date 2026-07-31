@@ -1,15 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trash2, StickyNote } from 'lucide-react';
+import { Trash2, StickyNote, Clock, AlertTriangle } from 'lucide-react';
 import { listLeads, listApprovedAdvocatesForAssignment, updateLead, deleteLead } from '../../lib/cms';
 import AdminShell from '../../components/layout/AdminShell';
 import StatTile from '../../components/ui/StatTile';
+import Badge from '../../components/ui/Badge';
 import { Input, Select } from '../../components/ui/Field';
 import Card from '../../components/ui/Card';
 import { Spinner } from '../../components/ui/Misc';
 
 const STATUSES = ['new', 'contacted', 'converted', 'dropped'];
 const SOURCES = ['booking', 'post_case', 'case_tracker', 'other'];
+const OVERDUE_HOURS = 24;
+
+// A lead is "awaiting the advocate" once assigned but not yet accepted
+// (converted) or declined (dropped) — this is the dull/pending state.
+function isPending(l) {
+  return !!l.advocate_id && (l.status === 'new' || l.status === 'contacted');
+}
+function isOverdue(l) {
+  if (!isPending(l) || !l.assigned_at) return false;
+  return Date.now() - new Date(l.assigned_at).getTime() > OVERDUE_HOURS * 3600 * 1000;
+}
 
 export default function Leads() {
   const [loading, setLoading] = useState(true);
@@ -47,7 +59,10 @@ export default function Leads() {
   }
   async function handleAssign(id, advocateId) {
     await updateLead(id, { advocate_id: advocateId || null });
-    setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, advocate_id: advocateId } : l)));
+    // Reassignment can reset status/assigned_at server-side (via trigger) —
+    // reload rather than patch local state, so the pending/overdue state
+    // shown here always matches what actually happened.
+    load();
   }
   async function handleNote(l) {
     const note = window.prompt('Note for this lead:', l.admin_notes || '');
@@ -109,33 +124,42 @@ export default function Leads() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((l) => (
-              <tr key={l.id} className="border-b border-ink-50 last:border-0">
-                <td className="px-4 py-3">
-                  <div className="font-bold text-ink-900">{l.client_name || '—'}</div>
-                  <div className="text-ink-400">{l.phone} {l.email ? `· ${l.email}` : ''}</div>
-                </td>
-                <td className="px-4 py-3 text-ink-600">{l.matter || '—'}{l.city ? ` · ${l.city}` : ''}</td>
-                <td className="px-4 py-3 text-ink-500">{l.source}</td>
-                <td className="px-4 py-3">
-                  <select value={l.status} onChange={(e) => handleStatus(l.id, e.target.value)} className="rounded-md border border-ink-100 px-2 py-1 text-[12.5px]">
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </td>
-                <td className="px-4 py-3">
-                  <select value={l.advocate_id || ''} onChange={(e) => handleAssign(l.id, e.target.value)} className="rounded-md border border-ink-100 px-2 py-1 text-[12.5px]">
-                    <option value="">Unassigned</option>
-                    {advocates.map((a) => <option key={a.id} value={a.id}>{a.profiles?.full_name || a.id}</option>)}
-                  </select>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <button onClick={() => handleNote(l)} className="text-ink-400 hover:text-brand-600"><StickyNote size={15} /></button>
-                    <button onClick={() => handleDelete(l.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {filtered.map((l) => {
+              const pending = isPending(l);
+              const overdue = isOverdue(l);
+              return (
+                <tr key={l.id} className={`border-b border-ink-50 last:border-0 ${pending ? 'bg-ink-50/50 text-ink-400' : ''}`}>
+                  <td className="px-4 py-3">
+                    <div className={`font-bold ${pending ? 'text-ink-500' : 'text-ink-900'}`}>{l.client_name || '—'}</div>
+                    <div className="text-ink-400">{l.phone} {l.email ? `· ${l.email}` : ''}</div>
+                    {pending && (
+                      <Badge tone={overdue ? 'amber' : 'gray'} className="mt-1">
+                        {overdue ? <><AlertTriangle size={11} /> Overdue — no response in 24h</> : <><Clock size={11} /> Awaiting advocate response</>}
+                      </Badge>
+                    )}
+                  </td>
+                  <td className={`px-4 py-3 ${pending ? '' : 'text-ink-600'}`}>{l.matter || '—'}{l.city ? ` · ${l.city}` : ''}</td>
+                  <td className={`px-4 py-3 ${pending ? '' : 'text-ink-500'}`}>{l.source}</td>
+                  <td className="px-4 py-3">
+                    <select value={l.status} onChange={(e) => handleStatus(l.id, e.target.value)} className="rounded-md border border-ink-100 bg-white px-2 py-1 text-[12.5px] text-ink-800">
+                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select value={l.advocate_id || ''} onChange={(e) => handleAssign(l.id, e.target.value)} className="rounded-md border border-ink-100 bg-white px-2 py-1 text-[12.5px] text-ink-800">
+                      <option value="">Unassigned</option>
+                      {advocates.map((a) => <option key={a.id} value={a.id}>{a.profiles?.full_name || a.id}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => handleNote(l)} className="text-ink-400 hover:text-brand-600"><StickyNote size={15} /></button>
+                      <button onClick={() => handleDelete(l.id)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {filtered.length === 0 && <div className="p-8 text-center text-[13.5px] text-ink-400">No leads match your filters.</div>}
