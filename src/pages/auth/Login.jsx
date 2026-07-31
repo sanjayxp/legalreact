@@ -22,7 +22,11 @@ export default function Login() {
   const location = useLocation();
   const { session } = useAuth();
 
-  const [mode, setMode] = useState(location.hash === '#register' ? 'reg' : 'login');
+  // Carried over from the public "Post your matter" flow — never in the
+  // URL, just router state, so no PII ends up in the address bar or history.
+  const prefill = location.state?.prefill;
+
+  const [mode, setMode] = useState(location.hash === '#register' || prefill ? 'reg' : 'login');
   const [role, setRole] = useState('client');
   const [msg, setMsg] = useState('');
   const [msgKind, setMsgKind] = useState('err');
@@ -30,9 +34,9 @@ export default function Login() {
 
   const [liEmail, setLiEmail] = useState('');
   const [liPass, setLiPass] = useState('');
-  const [rgName, setRgName] = useState('');
-  const [rgEmail, setRgEmail] = useState('');
-  const [rgPhone, setRgPhone] = useState('');
+  const [rgName, setRgName] = useState(prefill?.fullName || '');
+  const [rgEmail, setRgEmail] = useState(prefill?.email || '');
+  const [rgPhone, setRgPhone] = useState(prefill?.phone || '');
   const [rgPass, setRgPass] = useState('');
   const [consent, setConsent] = useState(false);
 

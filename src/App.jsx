@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { RequireRole, RequireAdminSection } from './components/layout/RouteGuards';
+import { PostMatterProvider } from './components/marketing/PostMatterContext';
 
 import Home from './pages/marketing/Home';
 import PublicQA from './pages/marketing/QA';
@@ -53,7 +54,7 @@ function ScrollToHash() {
 
 export default function App() {
   return (
-    <>
+    <PostMatterProvider>
     <ScrollToHash />
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -98,6 +99,6 @@ export default function App() {
       <Route path="/careers" element={<Careers />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-    </>
+    </PostMatterProvider>
   );
 }

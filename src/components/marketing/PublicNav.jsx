@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 import { useAuth, signOut } from '../../lib/auth';
+import { usePostMatter } from './PostMatterContext';
 import Logo from '../brand/Logo';
 import Button from '../ui/Button';
 import { Avatar } from '../ui/Misc';
@@ -19,6 +20,7 @@ const DASHBOARD_PATH = { client: '/dashboard/client', advocate: '/dashboard/advo
 export default function PublicNav() {
   const [open, setOpen] = useState(false);
   const { session, profile, user } = useAuth();
+  const { openPostMatter } = usePostMatter();
   const isLoggedIn = !!session;
   const dashboardPath = DASHBOARD_PATH[profile?.role] || '/dashboard/client';
   const name = profile?.full_name || user?.email || '';
@@ -49,6 +51,7 @@ export default function PublicNav() {
           ))}
         </nav>
         <div className="ml-auto hidden items-center gap-4 lg:flex">
+          <Button variant="subtle" size="sm" onClick={openPostMatter}>Post your matter</Button>
           {isLoggedIn ? (
             <>
               <Link to={dashboardPath} className="flex items-center gap-2.5 text-[14px] font-semibold text-ink-700 hover:text-brand-600">
@@ -94,6 +97,12 @@ export default function PublicNav() {
               </NavLink>
             ))}
             <div className="my-3 border-t border-ink-100" />
+            <button
+              onClick={() => { setOpen(false); openPostMatter(); }}
+              className="mx-3 mb-1 rounded-lg bg-brand-50 px-3 py-3 text-left text-[16px] font-semibold text-brand-600"
+            >
+              Post your matter
+            </button>
             {isLoggedIn ? (
               <>
                 <Link to={dashboardPath} onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-lg px-3 py-3 text-[16px] font-semibold text-ink-700">

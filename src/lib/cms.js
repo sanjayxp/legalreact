@@ -222,6 +222,18 @@ export async function listMyBookingsByEmail(email) {
   if (error) throw error;
   return data || [];
 }
+// Client — their own submitted matters, matched by the email on their
+// account (leads has no client_id since posting a matter never requires login).
+export async function listMyLeadsByEmail(email) {
+  if (!email) return [];
+  const { data, error } = await supabase
+    .from('leads')
+    .select('*')
+    .ilike('email', email)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
 export async function confirmBookingRequest(requestId) {
   const { data, error } = await supabase.rpc('confirm_booking_request', { p_request_id: requestId });
   if (error) throw new Error(error.message || 'Could not confirm that request.');
@@ -638,6 +650,22 @@ export async function requestAdvocateLead({ advocate_id, client_name, phone, ema
     email: email || null,
     matter: matter || null,
     source: 'booking',
+    status: 'new',
+  });
+  if (error) throw error;
+}
+
+// Public "Post your matter" capture — general enquiry, not yet assigned to
+// any advocate. Lands in the same admin Leads queue for triage/assignment.
+export async function submitMatterLead({ client_name, phone, email, matter, city, budget }) {
+  const { error } = await supabase.from('leads').insert({
+    client_name,
+    phone,
+    email: email || null,
+    matter: matter || null,
+    city: city || null,
+    budget: budget || null,
+    source: 'post_case',
     status: 'new',
   });
   if (error) throw error;

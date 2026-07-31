@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, CalendarClock, MessagesSquare, Sparkles, Video, Phone, Building2 } from 'lucide-react';
+import { Search, CalendarClock, MessagesSquare, Sparkles, Video, Phone, Building2, FileText } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { listMyBookingsByEmail } from '../../lib/cms';
+import { listMyBookingsByEmail, listMyLeadsByEmail } from '../../lib/cms';
+import { usePostMatter } from '../../components/marketing/PostMatterContext';
 import ClientShell from '../../components/layout/ClientShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -29,6 +30,9 @@ const MODE_META = {
 const STATUS_TONE = { requested: 'gray', confirmed: 'blue', declined: 'gray', completed: 'blue', cancelled: 'gray' };
 const STATUS_LABEL = { requested: 'Awaiting confirmation', confirmed: 'Confirmed', declined: 'Declined', completed: 'Completed', cancelled: 'Cancelled' };
 
+const LEAD_STATUS_TONE = { new: 'gray', contacted: 'blue', converted: 'blue', dropped: 'gray' };
+const LEAD_STATUS_LABEL = { new: 'Received', contacted: 'Advocate reviewing', converted: 'Matched with an advocate', dropped: 'Closed' };
+
 function formatSlot(slot) {
   const d = new Date(slot.slot_start);
   return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
@@ -36,15 +40,17 @@ function formatSlot(slot) {
 
 export default function ClientDashboard() {
   const { profile, user } = useAuth();
+  const { openPostMatter } = usePostMatter();
   const name = profile?.full_name || user?.email || '';
   const firstName = name.split(' ')[0];
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
+  const [leads, setLeads] = useState([]);
 
   useEffect(() => {
     if (!profile?.email) return;
-    listMyBookingsByEmail(profile.email)
-      .then(setBookings)
+    Promise.all([listMyBookingsByEmail(profile.email), listMyLeadsByEmail(profile.email)])
+      .then(([b, l]) => { setBookings(b); setLeads(l); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [profile?.email]);
@@ -130,6 +136,45 @@ export default function ClientDashboard() {
                 </Card>
               );
             })}
+          </div>
+        )}
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-[16px] font-bold text-ink-900">
+            <FileText size={17} className="text-brand-600" /> My Submitted Matters
+          </h2>
+          <button onClick={openPostMatter} className="text-[13px] font-semibold text-brand-600">Post another →</button>
+        </div>
+
+        {loading ? (
+          <Spinner className="py-8" />
+        ) : leads.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={<FileText size={26} />}
+              title="No matters posted yet"
+              sub="Describe your legal matter and we'll match you with a verified advocate."
+              action={<button onClick={openPostMatter} className="font-semibold text-brand-600">Post your matter →</button>}
+            />
+          </Card>
+        ) : (
+          <div className="space-y-2.5">
+            {leads.map((l) => (
+              <Card key={l.id} className="!p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-bold text-ink-900">{l.matter || 'Legal matter'}</div>
+                    <div className="mt-0.5 text-[12.5px] text-ink-500">
+                      {new Date(l.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {l.city ? ` · ${l.city}` : ''}
+                    </div>
+                  </div>
+                  <Badge tone={LEAD_STATUS_TONE[l.status] || 'gray'}>{LEAD_STATUS_LABEL[l.status] || l.status}</Badge>
+                </div>
+              </Card>
+            ))}
           </div>
         )}
       </motion.div>
