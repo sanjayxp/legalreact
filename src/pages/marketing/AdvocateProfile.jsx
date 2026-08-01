@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, BadgeCheck, IndianRupee, Video, Phone, Building2, Briefcase, GraduationCap, ArrowLeft } from 'lucide-react';
+import { MapPin, BadgeCheck, IndianRupee, Video, Phone, Building2, Briefcase, GraduationCap, ArrowLeft, ArrowRight, CalendarDays, Download, UserPlus } from 'lucide-react';
 import { getApprovedAdvocatePublic, incrementProfileView, requestAdvocateLead, listOpenSlotsPublic, requestSlot } from '../../lib/cms';
+import { googleCalendarUrl, downloadIcs } from '../../lib/calendarLinks';
+import { useAuth } from '../../lib/auth';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -194,6 +196,7 @@ export default function AdvocateProfile() {
 const MODE_LABEL = { video: '🎥 Video call', phone: '📞 Phone call', inperson: '🤝 In person' };
 
 function RequestModal({ advocate, open, onClose }) {
+  const { session } = useAuth();
   const [step, setStep] = useState(1);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slots, setSlots] = useState([]);
@@ -330,7 +333,58 @@ function RequestModal({ advocate, open, onClose }) {
             text={`${advocate.profiles?.full_name} has been notified of your request for ${formatSlot(selectedSlot)}. You'll hear back once they confirm.`}
             kind="ok"
           />
-          <Button className="mt-5 w-full" onClick={onClose}>Done</Button>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={googleCalendarUrl({
+                title: `Consultation — ${advocate.profiles?.full_name}`,
+                start: selectedSlot.slot_start,
+                end: selectedSlot.slot_end,
+                details: 'Booked via LegalConnects. The advocate will confirm shortly.',
+              })}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 rounded-lg border border-ink-100 px-3 py-2 text-[12.5px] font-semibold text-ink-600 hover:border-brand-300 hover:text-brand-600"
+            >
+              <CalendarDays size={14} /> Add to Google Calendar
+            </a>
+            <button
+              onClick={() => downloadIcs({
+                title: `Consultation — ${advocate.profiles?.full_name}`,
+                start: selectedSlot.slot_start,
+                end: selectedSlot.slot_end,
+                details: 'Booked via LegalConnects.',
+              })}
+              className="flex items-center gap-1.5 rounded-lg border border-ink-100 px-3 py-2 text-[12.5px] font-semibold text-ink-600 hover:border-brand-300 hover:text-brand-600"
+            >
+              <Download size={14} /> .ics
+            </button>
+          </div>
+
+          {/* Booking works without an account, so this is the natural moment
+              to offer one — their details are already filled in. */}
+          {!session && (
+            <div className="mt-5 rounded-xl border border-brand-200 bg-brand-50 p-4">
+              <div className="flex items-start gap-2.5">
+                <UserPlus size={17} className="mt-0.5 shrink-0 text-brand-600" />
+                <div>
+                  <div className="text-[13.5px] font-bold text-ink-900">Create a free account to track this booking</div>
+                  <p className="mt-1 text-[12.5px] leading-relaxed text-ink-600">
+                    See when {advocate.profiles?.full_name?.split(' ')[0]} confirms, keep all your consultations in one place, and ask follow-up questions.
+                  </p>
+                  <Link
+                    to={{ pathname: '/login', hash: '#register' }}
+                    state={{ prefill: { fullName: form.client_name, email: form.email, phone: form.phone } }}
+                    className="mt-3 inline-flex"
+                  >
+                    <Button size="sm">Create my account <ArrowRight size={14} /></Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Button variant="ghost" className="mt-4 w-full" onClick={onClose}>Done</Button>
         </>
       )}
     </Modal>

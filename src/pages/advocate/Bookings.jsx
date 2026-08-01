@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2, UserPlus, ArrowRight, Inbox, CalendarDays, BellRing, CalendarCheck2, Clock, History } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2, UserPlus, ArrowRight, Inbox, CalendarDays, BellRing, CalendarCheck2, Clock, History, Mail, Download } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
+import { googleCalendarUrl, downloadIcs } from '../../lib/calendarLinks';
 import {
   listMySlots,
   getAvailability,
@@ -283,18 +284,21 @@ function CalendarView({ weekStart, setWeekStart, availability, timeOff, slots, o
                   const match = dayBookings.filter((b) => b.slot_start === iso);
                   const confirmed = match.find((b) => b.status === 'confirmed');
                   const pending = match.filter((b) => b.status === 'requested');
+                  const hasBooking = !!confirmed || pending.length > 0;
                   let cls = 'border-ink-100 text-ink-400';
-                  if (confirmed) cls = 'border-brand-300 bg-brand-50 text-brand-700 font-semibold';
-                  else if (pending.length) cls = 'border-amber-300 bg-amber-50 text-amber-700 font-semibold cursor-pointer';
+                  if (confirmed) cls = 'border-brand-300 bg-brand-50 text-brand-700 font-semibold cursor-pointer hover:border-brand-500';
+                  else if (pending.length) cls = 'border-amber-300 bg-amber-50 text-amber-700 font-semibold cursor-pointer hover:border-amber-500';
                   return (
                     <button
                       key={i}
-                      onClick={() => pending.length && setPicker({ time: slot.start, requests: pending })}
+                      onClick={() => hasBooking && setPicker({ time: slot.start, end: slot.end, requests: pending, confirmed })}
                       className={`w-full rounded-md border px-2 py-1 text-[11px] ${cls}`}
                     >
-                      {slot.start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}
-                      {confirmed && ' · booked'}
-                      {pending.length > 0 && ` · ${pending.length} req`}
+                      <span className="block truncate">
+                        {slot.start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}
+                        {confirmed && ` · ${confirmed.client_name || 'Booked'}`}
+                        {!confirmed && pending.length > 0 && ` · ${pending.length} req`}
+                      </span>
                     </button>
                   );
                 })}
@@ -305,21 +309,127 @@ function CalendarView({ weekStart, setWeekStart, availability, timeOff, slots, o
       </div>
 
       {picker && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-900/40 p-4" onMouseDown={(e) => e.target === e.currentTarget && setPicker(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
-            <div className="mb-3 text-[14px] font-bold text-ink-900">{picker.time.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
-            <div className="space-y-2">
-              {picker.requests.map((r) => (
-                <div key={r.id} className="flex items-center justify-between rounded-lg border border-ink-100 p-2.5">
-                  <div className="text-[13px] font-semibold text-ink-800">{r.client_name}</div>
-                  <div className="flex gap-1.5">
-                    <Button size="sm" onClick={() => { onConfirm(r.id); setPicker(null); }}>Confirm</Button>
-                    <Button size="sm" variant="danger" onClick={() => { onDecline(r.id); setPicker(null); }}>Decline</Button>
-                  </div>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-ink-900/40 p-4 py-10" onMouseDown={(e) => e.target === e.currentTarget && setPicker(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <div className="text-[15px] font-extrabold text-ink-900">
+                  {picker.time.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
-              ))}
+                <div className="mt-0.5 text-[13px] text-ink-500">
+                  {picker.time.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}
+                  {picker.end && ` – ${picker.end.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`}
+                </div>
+              </div>
+              <button onClick={() => setPicker(null)} className="rounded-full p-1.5 text-ink-400 hover:bg-ink-50 hover:text-ink-700">
+                <XIcon size={18} />
+              </button>
             </div>
+
+            {picker.confirmed && (
+              <BookingDetail booking={picker.confirmed} end={picker.end} tone="confirmed" />
+            )}
+
+            {picker.requests.length > 0 && (
+              <>
+                {picker.confirmed && (
+                  <div className="mb-2 mt-5 text-[11.5px] font-bold uppercase tracking-wide text-ink-400">
+                    Also requested for this time
+                  </div>
+                )}
+                <div className="space-y-3">
+                  {picker.requests.map((r) => (
+                    <div key={r.id}>
+                      <BookingDetail booking={r} end={picker.end} tone="pending" />
+                      <div className="mt-2 flex gap-2">
+                        <Button size="sm" className="flex-1" onClick={() => { onConfirm(r.id); setPicker(null); }}>
+                          <Check size={14} /> Confirm
+                        </Button>
+                        <Button size="sm" variant="danger" className="flex-1" onClick={() => { onDecline(r.id); setPicker(null); }}>
+                          <XIcon size={14} /> Decline
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MODE_DETAIL = {
+  video: { icon: Video, label: 'Video call' },
+  phone: { icon: Phone, label: 'Phone call' },
+  inperson: { icon: Building2, label: 'In person' },
+};
+
+// One booking's full details, plus (for confirmed ones) links to drop it
+// into the advocate's own calendar app.
+function BookingDetail({ booking, end, tone }) {
+  const mode = MODE_DETAIL[booking.mode];
+  const start = new Date(booking.slot_start);
+  const finish = booking.slot_end ? new Date(booking.slot_end) : end || new Date(start.getTime() + 30 * 60000);
+  const title = `Consultation — ${booking.client_name || 'Client'}`;
+  const details = [
+    booking.client_phone && `Phone: ${booking.client_phone}`,
+    booking.client_email && `Email: ${booking.client_email}`,
+    mode && `Mode: ${mode.label}`,
+    booking.client_notes && `Notes: ${booking.client_notes}`,
+  ].filter(Boolean).join('\n');
+
+  return (
+    <div className={`rounded-xl border p-3.5 ${tone === 'confirmed' ? 'border-brand-200 bg-brand-50/60' : 'border-amber-200 bg-amber-50/60'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[14px] font-bold text-ink-900">{booking.client_name || 'Client'}</div>
+        <Badge tone={tone === 'confirmed' ? 'blue' : 'amber'}>
+          {tone === 'confirmed' ? 'Confirmed' : 'Awaiting your response'}
+        </Badge>
+      </div>
+
+      <div className="mt-2.5 space-y-1.5 text-[12.5px] text-ink-700">
+        {booking.client_phone && (
+          <a href={`tel:${booking.client_phone}`} className="flex items-center gap-2 hover:text-brand-600">
+            <Phone size={13} className="shrink-0 text-ink-400" /> {booking.client_phone}
+          </a>
+        )}
+        {booking.client_email && (
+          <a href={`mailto:${booking.client_email}`} className="flex items-center gap-2 truncate hover:text-brand-600">
+            <Mail size={13} className="shrink-0 text-ink-400" /> {booking.client_email}
+          </a>
+        )}
+        {mode && (
+          <div className="flex items-center gap-2">
+            <mode.icon size={13} className="shrink-0 text-ink-400" /> {mode.label}
+          </div>
+        )}
+      </div>
+
+      {booking.client_notes && (
+        <div className="mt-2.5 rounded-lg bg-white/70 p-2.5 text-[12.5px] leading-relaxed text-ink-600">
+          {booking.client_notes}
+        </div>
+      )}
+
+      {tone === 'confirmed' && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <a
+            href={googleCalendarUrl({ title, start, end: finish, details })}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 rounded-lg border border-ink-100 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-ink-600 hover:border-brand-300 hover:text-brand-600"
+          >
+            <CalendarDays size={13} /> Add to Google Calendar
+          </a>
+          <button
+            onClick={() => downloadIcs({ title, start, end: finish, details, uid: `${booking.id}@legalconnects` })}
+            className="flex items-center gap-1.5 rounded-lg border border-ink-100 bg-white px-2.5 py-1.5 text-[12px] font-semibold text-ink-600 hover:border-brand-300 hover:text-brand-600"
+          >
+            <Download size={13} /> .ics
+          </button>
         </div>
       )}
     </div>
