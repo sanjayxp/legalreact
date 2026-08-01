@@ -5,7 +5,7 @@ import { useAuth } from '../../lib/auth';
 import {
   getAdvocateProfile,
   upsertAdvocateProfile,
-  uploadPhoto,
+  uploadAdvocatePhoto,
   updateOwnName,
   uploadBarCertificate,
   getBarCertificateSignedUrl,
@@ -198,10 +198,7 @@ export default function Profile() {
     setSaving(true);
     try {
       let photoUrl = photoPreview.startsWith('blob:') ? '' : photoPreview;
-      if (photoFile) {
-        const ext = photoFile.name.split('.').pop();
-        photoUrl = await uploadPhoto('advocate-photos', `${user.id}/photo.${ext}`, photoFile);
-      }
+      if (photoFile) photoUrl = await uploadAdvocatePhoto(user.id, photoFile);
       let certPath = existing?.bar_certificate_url || null;
       if (certFile) certPath = await uploadBarCertificate(user.id, certFile);
 
@@ -232,6 +229,9 @@ export default function Profile() {
       setExisting(refreshed);
       setCertUrl(refreshed.bar_certificate_url || '');
       setPhotoPreview(photoUrl || '');
+      // The shell around this page loaded the avatar on mount and never unmounts,
+      // so tell it directly rather than making the advocate reload to see the change.
+      window.dispatchEvent(new CustomEvent('advocate-photo-changed', { detail: photoUrl || null }));
       setMsg('Profile saved.');
       setMsgKind('ok');
     } catch (e) {

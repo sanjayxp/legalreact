@@ -260,6 +260,24 @@ export async function uploadPhoto(bucket, path, file) {
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }
+// Storage serves public objects with a long cache lifetime, so overwriting the
+// same path leaves the browser and the CDN handing back the previous image —
+// and since getPublicUrl returns an unchanged string, photo_url doesn't change
+// either, so nothing re-renders. Each upload gets its own filename instead, and
+// the advocate's older photos are cleared out so copies don't pile up.
+export async function uploadAdvocatePhoto(advocateId, file) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = `${advocateId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('advocate-photos').upload(path, file, { contentType: file.type });
+  if (error) throw error;
+
+  const { data: existing } = await supabase.storage.from('advocate-photos').list(advocateId);
+  const stale = (existing || []).map((o) => `${advocateId}/${o.name}`).filter((p) => p !== path);
+  if (stale.length) await supabase.storage.from('advocate-photos').remove(stale);
+
+  const { data } = supabase.storage.from('advocate-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
 export async function uploadBarCertificate(userId, file) {
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
   const path = `${userId}/${Date.now()}-${safeName}`;

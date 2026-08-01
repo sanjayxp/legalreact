@@ -46,6 +46,13 @@ export default function AdvocateShell({ children }) {
       .catch(() => {});
   }, [user]);
 
+  // Saving the profile page swaps the photo while this shell stays mounted.
+  useEffect(() => {
+    const onPhotoChange = (e) => setPhotoUrl(e.detail || null);
+    window.addEventListener('advocate-photo-changed', onPhotoChange);
+    return () => window.removeEventListener('advocate-photo-changed', onPhotoChange);
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-ink-50/40">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-ink-100 bg-white px-4 py-5 md:flex">

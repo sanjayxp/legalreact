@@ -9,7 +9,7 @@ import {
   adminUpdateAdvocateProfile,
   deleteAdvocateProfile,
   getBarCertificateSignedUrl,
-  uploadPhoto,
+  uploadAdvocatePhoto,
 } from '../../lib/cms';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -313,10 +313,7 @@ function AdvocateEditModal({ advocate, onClose, onSaved }) {
         consultation_fee: form.consultation_fee ? Number(form.consultation_fee) : null,
         practice_areas: Array.from(areas),
       };
-      if (photoFile) {
-        const ext = photoFile.name.split('.').pop();
-        fields.photo_url = await uploadPhoto('advocate-photos', `${advocate.id}/photo.${ext}`, photoFile);
-      }
+      if (photoFile) fields.photo_url = await uploadAdvocatePhoto(advocate.id, photoFile);
       await adminUpdateAdvocateProfile(advocate.id, fields);
       onSaved();
       onClose();
