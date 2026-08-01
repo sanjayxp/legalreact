@@ -214,24 +214,38 @@ function LibraryGrid({ acts }) {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.length === 0 && <EmptyState icon={<BookOpen size={28} />} title="No acts published yet" sub="Check back soon — we're building out the library." />}
-        {filtered.map((a, i) => (
-          <motion.div key={a.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i % 6) * 0.05 }}>
-            <Link to={`/library/${a.slug}`}>
-              <Card hover className="flex h-full flex-col">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600"><BookOpen size={18} /></div>
-                <Badge tone="blue" className="mt-3.5 w-fit">{a.category}</Badge>
-                <h3 className="mt-2 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
-                  {a.short_title || a.title} <ArrowRight size={13} />
-                </h3>
-                {a.short_title && a.short_title !== a.title && <div className="text-[12px] text-ink-400">{a.title}{a.year ? ` (${a.year})` : ''}</div>}
-                <p className="mt-2 line-clamp-3 flex-1 text-[13.5px] text-ink-500">{a.summary}</p>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+      {filtered.length === 0 ? (
+        <div className="mt-6">
+          <EmptyState icon={<BookOpen size={28} />} title="No acts published yet" sub="Check back soon — we're building out the library." />
+        </div>
+      ) : (
+        <div className="mt-6 divide-y divide-ink-100 overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-[var(--shadow-card)]">
+          {filtered.map((a, i) => (
+            <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 10) * 0.03 }}>
+              <Link
+                to={`/library/${a.slug}`}
+                title={a.short_title && a.short_title !== a.title ? a.title : undefined}
+                className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-brand-50/60"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="truncate text-[15px] font-bold text-ink-900 transition-colors group-hover:text-brand-700">
+                      {a.short_title || a.title}
+                    </h3>
+                    {a.year && <span className="shrink-0 text-[12.5px] text-ink-400">{a.year}</span>}
+                  </div>
+                  {a.summary && <p className="mt-0.5 truncate text-[13px] text-ink-500">{a.summary}</p>}
+                  {/* On phones the badge is hidden, so the category rides along here instead. */}
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-brand-600 sm:hidden">{a.category}</p>
+                </div>
+                {/* Wrapper does the hiding — Badge's own display utility would win over `hidden`. */}
+                <span className="hidden shrink-0 sm:block"><Badge tone="blue">{a.category}</Badge></span>
+                <ArrowRight size={15} className="shrink-0 text-ink-300 transition-all group-hover:translate-x-0.5 group-hover:text-brand-500" />
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
