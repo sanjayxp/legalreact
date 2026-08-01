@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Plus, Trash2, Users, IndianRupee } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Users, IndianRupee, Link2 as LinkIcon } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import {
   listMyClients,
   addClient,
-  updateClient,
   deleteClient,
   listClientCases,
   listClientUpdates,
   listMyInvoices,
   addInvoice,
   setInvoiceStatus,
+  listMyCases,
+  linkCaseToClient,
 } from '../../lib/cms';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -29,6 +30,7 @@ export default function ClientsBilling() {
   const [invoices, setInvoices] = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [expandedData, setExpandedData] = useState({ cases: [], updates: [] });
+  const [allCases, setAllCases] = useState([]);
 
   const [cForm, setCForm] = useState({ full_name: '', phone: '', email: '' });
   const [iForm, setIForm] = useState({ client_id: '', description: '', amount: '' });
@@ -38,12 +40,29 @@ export default function ClientsBilling() {
 
   async function load() {
     setLoading(true);
-    const [cl, inv] = await Promise.all([listMyClients(user.id), listMyInvoices(user.id)]);
+    const [cl, inv, cs] = await Promise.all([listMyClients(user.id), listMyInvoices(user.id), listMyCases(user.id)]);
     setClients(cl);
     setInvoices(inv);
+    setAllCases(cs);
     setLoading(false);
   }
   useEffect(() => { if (user) load(); }, [user]);
+
+  // Link/unlink a case from the client register. clientId null = unlink.
+  async function handleLinkCase(caseId, clientId, refreshForClientId) {
+    try {
+      await linkCaseToClient(caseId, clientId || null);
+      setAllCases((cs) => cs.map((c) => (c.id === caseId ? { ...c, register_client_id: clientId || null } : c)));
+      const [cases, updates] = await Promise.all([
+        listClientCases(user.id, refreshForClientId),
+        listClientUpdates(refreshForClientId),
+      ]);
+      setExpandedData({ cases, updates });
+      setMsg('');
+    } catch (e) {
+      setMsg(e.message || 'Could not update that case link.');
+    }
+  }
 
   async function toggleExpand(id) {
     if (expanded === id) { setExpanded(null); return; }
@@ -106,6 +125,8 @@ export default function ClientsBilling() {
   const total = live.reduce((s, i) => s + Number(i.amount), 0);
   const due = total - paid;
   const clientDue = (cid) => invoices.filter((i) => i.client_id === cid && i.status === 'unpaid').reduce((s, i) => s + Number(i.amount), 0);
+  // Cases not yet attached to anyone — the only ones worth offering to link.
+  const unlinkedCases = allCases.filter((c) => !c.register_client_id);
 
   return (
     <AdvocateShell>
@@ -145,8 +166,31 @@ export default function ClientsBilling() {
                     <div className="mb-3 text-[12px] font-bold uppercase text-ink-400">Linked cases</div>
                     {expandedData.cases.length === 0 && <div className="mb-3 text-[13px] text-ink-400">None linked yet.</div>}
                     {expandedData.cases.map((cs) => (
-                      <div key={cs.id} className="mb-1.5 text-[13px] text-ink-700">{cs.case_title} {cs.stage && `· ${cs.stage}`}</div>
+                      <div key={cs.id} className="mb-1.5 flex items-center justify-between gap-3 text-[13px] text-ink-700">
+                        <span className="truncate">{cs.case_title} {cs.stage && `· ${cs.stage}`}</span>
+                        <button
+                          onClick={() => handleLinkCase(cs.id, null, c.id)}
+                          className="shrink-0 text-[12px] font-semibold text-ink-400 hover:text-coral-500"
+                        >
+                          Unlink
+                        </button>
+                      </div>
                     ))}
+                    {unlinkedCases.length > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <LinkIcon size={13} className="shrink-0 text-ink-300" />
+                        <select
+                          value=""
+                          onChange={(e) => e.target.value && handleLinkCase(e.target.value, c.id, c.id)}
+                          className="max-w-[260px] truncate rounded-md border border-ink-100 bg-white px-1.5 py-1 text-[12px] font-semibold text-ink-500 outline-none focus:border-brand-400"
+                        >
+                          <option value="">Link an existing case…</option>
+                          {unlinkedCases.map((uc) => (
+                            <option key={uc.id} value={uc.id}>{uc.case_title}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div className="mb-2 mt-4 text-[12px] font-bold uppercase text-ink-400">Recent updates</div>
                     {expandedData.updates.length === 0 && <div className="text-[13px] text-ink-400">No updates sent yet.</div>}
                     {expandedData.updates.map((u) => (

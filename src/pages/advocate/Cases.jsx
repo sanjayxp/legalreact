@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Plus, Trash2, ArrowRight, Gavel } from 'lucide-react';
+import { Search, Plus, Trash2, ArrowRight, Gavel, UserPlus, UserRound } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { listMyCases, createCase, deleteCase, lookupCaseByCNR } from '../../lib/cms';
+import { listMyCases, createCase, deleteCase, lookupCaseByCNR, listMyClients, linkCaseToClient } from '../../lib/cms';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
-import { Input, Textarea, Label } from '../../components/ui/Field';
+import { Input, Label } from '../../components/ui/Field';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
@@ -26,13 +26,34 @@ export default function Cases() {
   const [adding, setAdding] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [linkingId, setLinkingId] = useState(null);
 
   async function load() {
     setLoading(true);
-    setCases(await listMyCases(user.id));
+    const [cs, cl] = await Promise.all([listMyCases(user.id), listMyClients(user.id)]);
+    setCases(cs);
+    setClients(cl);
     setLoading(false);
   }
   useEffect(() => { if (user) load(); }, [user]);
+
+  async function handleLinkClient(caseId, clientId) {
+    const prev = cases;
+    // Optimistic — the select should feel instant; roll back if the write fails.
+    setCases((cs) => cs.map((c) => (c.id === caseId ? { ...c, register_client_id: clientId || null } : c)));
+    setLinkingId(caseId);
+    try {
+      await linkCaseToClient(caseId, clientId || null);
+      setMsg('');
+    } catch (e) {
+      setCases(prev);
+      setMsg(e.message || 'Could not link that client.');
+      setMsgKind('err');
+    } finally {
+      setLinkingId(null);
+    }
+  }
 
   async function handleCnrLookup() {
     if (!cnr.trim()) return;
@@ -133,6 +154,28 @@ export default function Cases() {
                   <div className="truncate text-[14.5px] font-bold text-ink-900">{c.case_title}</div>
                   <div className="truncate text-[12.5px] text-ink-500">
                     {[c.crn, c.court_name, c.case_type, c.stage].filter(Boolean).join(' · ') || 'No details added'}
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    {c.register_client_id ? (
+                      <UserRound size={13} className="shrink-0 text-brand-500" />
+                    ) : (
+                      <UserPlus size={13} className="shrink-0 text-ink-300" />
+                    )}
+                    <select
+                      value={c.register_client_id || ''}
+                      disabled={linkingId === c.id || clients.length === 0}
+                      onChange={(e) => handleLinkClient(c.id, e.target.value)}
+                      className={`max-w-[200px] truncate rounded-md border border-ink-100 bg-white px-1.5 py-0.5 text-[12px] font-semibold outline-none transition-colors focus:border-brand-400 disabled:opacity-60 ${
+                        c.register_client_id ? 'text-brand-700' : 'text-ink-400'
+                      }`}
+                    >
+                      <option value="">
+                        {clients.length === 0 ? 'No clients added yet' : 'Link a client…'}
+                      </option>
+                      {clients.map((cl) => (
+                        <option key={cl.id} value={cl.id}>{cl.full_name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <Link to={`/dashboard/advocate/cases/${c.id}`}>
