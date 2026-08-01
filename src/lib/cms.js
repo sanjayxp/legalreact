@@ -151,6 +151,20 @@ export async function deleteAdvocateProfile(userId) {
   if (error) throw error;
 }
 
+// Removes the login itself, not just the profile row. The browser can't touch
+// auth.users, so this goes through a definer RPC; profiles cascades from there
+// and takes bookings, answers, cases and the rest with it. Uploaded files are
+// not cascaded by the database, so they're cleared here first.
+export async function adminDeleteUserAccount(userId) {
+  for (const bucket of ['advocate-photos', 'bar-certificates']) {
+    const { data: files } = await supabase.storage.from(bucket).list(userId);
+    const paths = (files || []).map((f) => `${userId}/${f.name}`);
+    if (paths.length) await supabase.storage.from(bucket).remove(paths);
+  }
+  const { error } = await supabase.rpc('admin_delete_user', { target_id: userId });
+  if (error) throw error;
+}
+
 // ---------- CLIENTS (admin, read-only on profiles) ----------
 export async function listClients() {
   const { data, error } = await supabase.from('profiles').select('*').eq('role', 'client').order('created_at', { ascending: false });

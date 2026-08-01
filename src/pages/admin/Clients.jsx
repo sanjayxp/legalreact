@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Pencil, Trash2, Users, Mail, Phone, Calendar } from 'lucide-react';
-import { listClients } from '../../lib/cms';
+import { listClients, adminDeleteUserAccount } from '../../lib/cms';
 import { supabase } from '../../lib/supabase';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Label } from '../../components/ui/Field';
-import { Avatar, EmptyState, Spinner } from '../../components/ui/Misc';
+import { Avatar, EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 export default function Clients() {
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,7 @@ export default function Clients() {
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [err, setErr] = useState('');
 
   async function load() {
     setLoading(true);
@@ -39,11 +40,16 @@ export default function Clients() {
   }
   async function handleDelete() {
     setDeleting(true);
-    await supabase.from('profiles').delete().eq('id', deleteTarget.id);
-    setDeleting(false);
-    setDeleteTarget(null);
-    setViewing(null);
-    load();
+    try {
+      await adminDeleteUserAccount(deleteTarget.id);
+      setDeleteTarget(null);
+      setViewing(null);
+      load();
+    } catch (e) {
+      setErr(e.message || 'Could not delete that account.');
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (loading) return <Spinner />;
@@ -54,6 +60,8 @@ export default function Clients() {
         <h1 className="font-heading text-[23px] font-extrabold text-ink-900">Clients</h1>
         <p className="mt-1 text-[14px] text-ink-500">All registered client accounts.</p>
       </motion.div>
+
+      {err && <div className="mt-4"><Toast text={err} kind="err" /></div>}
 
       <div className="relative mt-5 max-w-sm">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
@@ -121,7 +129,7 @@ export default function Clients() {
         onConfirm={handleDelete}
         busy={deleting}
         title="Delete this client?"
-        message={`This permanently removes ${deleteTarget?.full_name || deleteTarget?.email}'s profile row. This can't be undone (their auth credential is purged separately).`}
+        message={`This removes ${deleteTarget?.full_name || deleteTarget?.email}'s login along with their profile, questions and bookings. They will not be able to sign in again. This can't be undone.`}
       />
     </>
   );

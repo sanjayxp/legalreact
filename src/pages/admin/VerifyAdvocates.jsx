@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Pencil, Trash2, FileWarning, ShieldCheck, Eye, Mail, Phone, MapPin, Briefcase, GraduationCap, Languages, Video, IndianRupee } from 'lucide-react';
+import { CheckCircle2, XCircle, Pencil, Trash2, UserX, FileWarning, ShieldCheck, Eye, Mail, Phone, MapPin, Briefcase, GraduationCap, Languages, Video, IndianRupee } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import {
   listAllAdvocates,
@@ -8,6 +8,7 @@ import {
   reviewAdvocateProfile,
   adminUpdateAdvocateProfile,
   deleteAdvocateProfile,
+  adminDeleteUserAccount,
   getBarCertificateSignedUrl,
   uploadAdvocatePhoto,
 } from '../../lib/cms';
@@ -19,7 +20,7 @@ import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, FormRow } from '../../components/ui/Field';
 import { Chip } from '../../components/ui/Misc';
-import { EmptyState, Spinner } from '../../components/ui/Misc';
+import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 import { PRACTICE_AREAS as AREAS } from '../../lib/practiceAreas';
 
@@ -32,7 +33,9 @@ export default function VerifyAdvocates() {
   const [editing, setEditing] = useState(null);
   const [viewing, setViewing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [accountTarget, setAccountTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [err, setErr] = useState('');
 
   async function load() {
     setLoading(true);
@@ -59,10 +62,29 @@ export default function VerifyAdvocates() {
   }
   async function handleDelete() {
     setDeleting(true);
-    await deleteAdvocateProfile(deleteTarget.id);
-    setDeleting(false);
-    setDeleteTarget(null);
-    load();
+    try {
+      await deleteAdvocateProfile(deleteTarget.id);
+      setDeleteTarget(null);
+      load();
+    } catch (e) {
+      setErr(e.message || 'Could not delete that profile.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+  // Wipes the login as well, so the person can't simply sign back in.
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await adminDeleteUserAccount(accountTarget.id);
+      setAccountTarget(null);
+      setViewing(null);
+      load();
+    } catch (e) {
+      setErr(e.message || 'Could not delete that account.');
+    } finally {
+      setDeleting(false);
+    }
   }
   async function viewCert(path) {
     try { window.open(await getBarCertificateSignedUrl(path), '_blank'); } catch { alert('Could not open certificate.'); }
@@ -87,15 +109,23 @@ export default function VerifyAdvocates() {
 
       <div className="mt-5"><Tabs tabs={tabs} active={tab} onChange={setTab} /></div>
 
+      {err && <div className="mt-4"><Toast text={err} kind="err" /></div>}
+
       <div className="mt-5 space-y-4">
         {tab === 'incomplete' ? (
           incomplete.length === 0 ? <EmptyState title="Everyone who signed up has started a profile" /> : incomplete.map((p) => (
-            <Card key={p.id} className="flex items-center justify-between">
-              <div>
+            <Card key={p.id} className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0">
                 <div className="font-bold text-ink-900">{p.full_name || p.email}</div>
-                <div className="text-[12.5px] text-ink-500">{p.email} · signed up {new Date(p.created_at).toLocaleDateString('en-IN')}</div>
+                <div className="text-[12.5px] text-ink-500">{p.email} · {p.phone || 'no phone'}</div>
+                <div className="mt-0.5 text-[12.5px] text-ink-400">Signed up {new Date(p.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</div>
               </div>
-              <Badge tone="gray">No profile submitted</Badge>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge tone="gray">No profile submitted</Badge>
+                <Button size="sm" variant="danger" onClick={() => setAccountTarget(p)}>
+                  <Trash2 size={14} /> Delete account
+                </Button>
+              </div>
             </Card>
           ))
         ) : filtered.length === 0 ? (
@@ -146,7 +176,8 @@ export default function VerifyAdvocates() {
                     )}
                     <Button size="sm" variant="ghost" onClick={() => setViewing(a)}><Eye size={14} /> View details</Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditing(a)}><Pencil size={14} /> Edit</Button>
-                    <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(a)}><Trash2 size={14} /> Delete</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(a)}><Trash2 size={14} /> Delete profile</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setAccountTarget({ ...a, full_name: a.profiles?.full_name, email: a.profiles?.email })}><UserX size={14} /> Delete account</Button>
                   </div>
                 </div>
               </div>
@@ -165,6 +196,15 @@ export default function VerifyAdvocates() {
         busy={deleting}
         title="Delete this advocate profile?"
         message={`This will delete ${deleteTarget?.profiles?.full_name || 'this advocate'}'s profile. Their login stays active — they'll see a fresh, unfilled profile next time they sign in.`}
+      />
+
+      <ConfirmDialog
+        open={!!accountTarget}
+        onClose={() => setAccountTarget(null)}
+        onConfirm={handleDeleteAccount}
+        busy={deleting}
+        title="Delete this account entirely?"
+        message={`This removes ${accountTarget?.full_name || accountTarget?.email || 'this person'}'s login along with their profile, uploads, bookings and answers. They will not be able to sign in again. This can't be undone.`}
       />
     </>
   );
