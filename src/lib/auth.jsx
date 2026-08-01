@@ -110,8 +110,12 @@ export async function loginUser({ email, password }) {
   return data;
 }
 
+// scope:'local' ends the session in this browser only. The default is
+// 'global', which revokes every refresh token for the user — that let a
+// sign-out in one tab kill a session another tab had just created. Supabase
+// still broadcasts SIGNED_OUT to other tabs, so this logs you out properly.
 export async function signOut() {
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: 'local' });
 }
 
 export async function getCurrentProfile() {
