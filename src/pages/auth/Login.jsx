@@ -48,9 +48,12 @@ export default function Login() {
   async function goToRoleHome() {
     const profile = await getCurrentProfile();
     if (!profile) return navigate('/login');
+    // Admins land in the admin console. Never sign them out here — this page
+    // reacts to any session change (including ones started in another tab, via
+    // onAuthStateChange), and supabase.auth.signOut() defaults to global scope,
+    // so doing that killed the session the admin console had just created.
     if (profile.role === 'admin') {
-      await supabase.auth.signOut();
-      say('Admin accounts sign in at the admin console, not here.');
+      navigate('/admin');
       return;
     }
     if (profile.role === 'advocate') {

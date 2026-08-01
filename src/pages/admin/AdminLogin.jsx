@@ -32,8 +32,14 @@ export default function AdminLogin() {
     try {
       await loginUser({ email: email.trim(), password: pass });
       const p = await getCurrentProfile();
-      if (!p || p.role !== 'admin') {
-        await supabase.auth.signOut();
+      // Only sign out when we positively know this isn't an admin. A failed
+      // profile lookup (network blip) must not log a real admin back out.
+      if (!p) {
+        setMsg("Signed in, but couldn't verify your account. Please try again.");
+        return;
+      }
+      if (p.role !== 'admin') {
+        await supabase.auth.signOut({ scope: 'local' });
         setMsg('This account does not have admin access.');
         return;
       }
