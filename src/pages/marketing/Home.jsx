@@ -19,7 +19,6 @@ import {
   CalendarCheck2,
   BadgeCheck,
   FileCheck2,
-  Globe2,
 } from 'lucide-react';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
@@ -70,6 +69,17 @@ const TRUST_POINTS = [
   { icon: ShieldCheck, label: 'No pay-to-rank listings', body: 'Advocates are never ranked or boosted by fee. Match quality only.' },
 ];
 
+// A diamond lattice: each tile sits one step across and one step down from the
+// last, so the cluster tessellates instead of looking scattered. x/y are the
+// tile centres as a percentage of the square container.
+const HERO_TILES = [
+  { x: 40, y: 20, gradient: 'gradient-sun', src: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=600&q=80', alt: 'Advocate reviewing a brief' },
+  { x: 20, y: 43, gradient: 'gradient-emerald', src: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600&q=80', alt: 'Client at a first consultation' },
+  { x: 60, y: 43, gradient: 'gradient-violet', src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80', alt: 'Advocate in chambers' },
+  { x: 40, y: 66, gradient: 'gradient-brand', src: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&q=80', alt: 'Client on a video consultation' },
+  { x: 80, y: 66, gradient: 'gradient-coral', src: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&q=80', alt: 'Advocate meeting a client' },
+];
+
 export default function Home() {
   return (
     <div className="bg-white">
@@ -77,12 +87,12 @@ export default function Home() {
 
       {/* ---- Hero ---- */}
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-white to-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-2 lg:py-24">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.15fr_1fr] lg:py-24">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
             <span className="inline-flex items-center gap-2 rounded-full bg-brand-100 px-4 py-1.5 text-[14px] font-bold text-brand-700">
               Bar Council-verified advocates, pan-India
             </span>
-            <h1 className="mt-5 text-[45px] font-extrabold leading-[1.1] text-ink-900 sm:text-[57px]">
+            <h1 className="mt-5 text-[38px] font-extrabold leading-[1.08] text-ink-900 sm:text-[46px] lg:text-[48px]">
               Legal Help
               <br />
               <span className="text-brand-500">Beyond the Guesswork</span>
@@ -109,61 +119,35 @@ export default function Home() {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="relative mx-auto h-[380px] w-full max-w-md"
-          >
-            <motion.div
-              initial={{ opacity: 0, rotate: -8 }}
-              animate={{ opacity: 1, rotate: -6 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="gradient-coral blob-shape absolute left-0 top-2 h-56 w-48 overflow-hidden shadow-xl"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1573497491208-6b1acb260507?w=500&q=80"
-                alt="Advocate reviewing documents"
-                className="h-full w-full object-cover"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, rotate: 8 }}
-              animate={{ opacity: 1, rotate: 6 }}
-              transition={{ delay: 0.35, duration: 0.5 }}
-              className="gradient-sun blob-shape-2 absolute bottom-2 right-0 h-64 w-52 overflow-hidden shadow-xl"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1556157382-97eda2d62296?w=500&q=80"
-                alt="Client consultation"
-                className="h-full w-full object-cover"
-              />
-            </motion.div>
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="absolute left-16 top-44 flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 shadow-lg"
-            >
-              <BadgeCheck size={16} className="text-brand-500" />
-              <span className="text-[12.5px] font-bold text-ink-800">Bar Council Verified</span>
-            </motion.div>
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut', delay: 0.6 }}
-              className="absolute left-2 -top-4 flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 shadow-lg"
-            >
-              <Globe2 size={16} className="text-brand-500" />
-              <span className="text-[12.5px] font-bold text-ink-800">Pan-India Coverage</span>
-            </motion.div>
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 3.6, ease: 'easeInOut', delay: 1.2 }}
-              className="absolute right-10 -bottom-4 flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 shadow-lg"
-            >
-              <MessageCircleQuestion size={16} className="text-brand-500" />
-              <span className="text-[12.5px] font-bold text-ink-800">Free to Ask</span>
-            </motion.div>
-          </motion.div>
+          <div className="relative mx-auto aspect-square w-full max-w-[480px]">
+            {HERO_TILES.map((t, i) => (
+              <motion.div
+                key={t.alt}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15 + i * 0.09, duration: 0.5, ease: 'easeOut' }}
+                // Centred by offsetting half a tile rather than a translate:
+                // framer writes its own inline transform, which would win.
+                // The container is square, so 13% reads the same on both axes.
+                className="absolute w-[26%]"
+                style={{ left: `calc(${t.x}% - 13%)`, top: `calc(${t.y}% - 13%)` }}
+              >
+                <motion.div
+                  animate={{ y: [0, -9, 0] }}
+                  transition={{ repeat: Infinity, duration: 4.4 + i * 0.5, ease: 'easeInOut', delay: i * 0.4 }}
+                >
+                  {/* The gradient sits behind a small inset so it reads as a
+                      coloured frame — the photo itself stays untinted. */}
+                  <div className={`diamond aspect-square p-[7px] shadow-xl ${t.gradient}`}>
+                    <div className="relative h-full w-full overflow-hidden rounded-[22%]">
+                      <img src={t.src} alt={t.alt} loading="lazy" className="h-full w-full object-cover" />
+                      <div className={`absolute inset-0 opacity-20 mix-blend-multiply ${t.gradient}`} />
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 

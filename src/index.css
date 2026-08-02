@@ -85,6 +85,22 @@
 .gradient-brand {
   background: linear-gradient(135deg, #5a89f7 0%, #1e6deb 100%);
 }
+.gradient-emerald {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+}
+.gradient-violet {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+}
+
+/* Hero cluster tiles: a square turned 45° reads as a diamond. The photo
+   inside is turned back and scaled by √2 so it still covers the corners. */
+.diamond {
+  transform: rotate(45deg);
+  border-radius: 24%;
+}
+.diamond img {
+  transform: rotate(-45deg) scale(1.42);
+}
 
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;
