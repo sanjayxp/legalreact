@@ -226,13 +226,17 @@ export default function CaseWorkspace() {
               </Link>
             </div>
             <div className="flex items-center gap-2">
+              {/* The browser's own control gives no hint that picking a file is
+                  step one, so it is styled to read as a button. Upload stays
+                  enabled and says what is missing rather than sitting greyed
+                  out with no explanation. */}
               <input
                 ref={fileInputRef}
                 type="file"
                 onChange={(e) => setDocFile(e.target.files[0] || null)}
-                className="min-w-0 flex-1 text-[13px]"
+                className="min-w-0 flex-1 text-[13px] text-ink-500 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-[12.5px] file:font-bold file:text-brand-700 hover:file:bg-brand-100"
               />
-              <Button size="sm" onClick={handleUploadDoc} disabled={uploading || !docFile}>
+              <Button size="sm" onClick={handleUploadDoc} disabled={uploading}>
                 <Upload size={14} /> {uploading ? 'Uploading…' : 'Upload'}
               </Button>
             </div>
