@@ -450,6 +450,55 @@ export async function lookupCaseByCNR(cnr) {
   return data.data;
 }
 
+// ---------- PRECEDENT RESEARCH ----------
+// Every result comes back from the eCourts search with a real CNR. Nothing on
+// screen is invented by a model — the relevance line only explains a record
+// that was actually retrieved, and is dropped server-side if it doesn't match one.
+export async function researchPrecedents({ matter, acts = [] }) {
+  const { data, error } = await supabase.functions.invoke('case-research', { body: { matter, acts } });
+  if (error) {
+    let msg = 'Precedent search failed. Please try again.';
+    try {
+      const body = await error.context.json();
+      if (body?.error) msg = body.error;
+    } catch (_) {
+      /* fall back to generic message */
+    }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data.data;
+}
+
+export async function listCasePrecedents(caseId) {
+  const { data, error } = await supabase
+    .from('case_precedents')
+    .select('*')
+    .eq('case_id', caseId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function savePrecedent(advocateId, caseId, r) {
+  const { error } = await supabase.from('case_precedents').insert({
+    case_id: caseId,
+    advocate_id: advocateId,
+    cnr: r.cnr,
+    case_title: r.case_title,
+    court_name: r.court_name,
+    decision_date: r.decision_date || null,
+    judges: r.judges || [],
+    acts_and_sections: r.acts_and_sections || [],
+  });
+  if (error) throw error;
+}
+
+export async function deletePrecedent(id) {
+  const { error } = await supabase.from('case_precedents').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ---------- CASE WORKSPACE ----------
 export async function listCaseEvents(caseId) {
   const { data, error } = await supabase

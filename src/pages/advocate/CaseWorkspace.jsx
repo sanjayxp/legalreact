@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, Upload, FileText, Send, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Upload, FileText, Send, X, Scale, Search, Bookmark, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import {
   getCase,
@@ -16,6 +16,10 @@ import {
   caseDocumentUrl,
   deleteCaseDocument,
   logClientUpdate,
+  researchPrecedents,
+  listCasePrecedents,
+  savePrecedent,
+  deletePrecedent,
 } from '../../lib/cms';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -202,6 +206,8 @@ export default function CaseWorkspace() {
               {docs.length === 0 && <div className="text-[13px] text-ink-400">No documents uploaded.</div>}
             </div>
           </Card>
+
+          <PrecedentPanel caseRow={caseRow} userId={user.id} />
         </div>
 
         <div className="space-y-5">
@@ -263,5 +269,176 @@ function Fact({ label, value }) {
       <dt className="text-ink-400">{label}</dt>
       <dd className="font-semibold text-ink-800">{value || '—'}</dd>
     </div>
+  );
+}
+
+// Precedent research. The list is whatever the eCourts search returned for this
+// matter — every row carries a real CNR, so an advocate can open the official
+// record before relying on it. The one-line relevance note is model-written and
+// labelled as such; it explains a retrieved record and never supplies a citation.
+function PrecedentPanel({ caseRow, userId }) {
+  const [matter, setMatter] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [run, setRun] = useState(null);
+  const [saved, setSaved] = useState([]);
+
+  useEffect(() => {
+    listCasePrecedents(caseRow.id).then(setSaved).catch(() => {});
+  }, [caseRow.id]);
+
+  const savedCnrs = new Set(saved.map((s) => s.cnr));
+
+  async function handleSearch() {
+    setErr('');
+    setBusy(true);
+    try {
+      setRun(await researchPrecedents({ matter, acts: caseRow.labels || [] }));
+    } catch (e) {
+      setErr(e.message || 'Precedent search failed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSave(r) {
+    try {
+      await savePrecedent(userId, caseRow.id, r);
+      setSaved(await listCasePrecedents(caseRow.id));
+    } catch (e) {
+      setErr(e.message || 'Could not save that precedent.');
+    }
+  }
+
+  async function handleRemove(id) {
+    try {
+      await deletePrecedent(id);
+      setSaved(await listCasePrecedents(caseRow.id));
+    } catch (e) {
+      setErr(e.message || 'Could not remove that precedent.');
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeading title="Find precedents" sub="Searches the eCourts record of decided matters. Verify anything you intend to cite." />
+
+      {err && <div className="mb-3"><Toast text={err} kind="err" /></div>}
+
+      <Textarea
+        rows={3}
+        value={matter}
+        onChange={(e) => setMatter(e.target.value)}
+        placeholder="Describe the legal question in a sentence or two — e.g. cheque dishonoured because the drawer's signature did not match the specimen; is the complaint maintainable?"
+      />
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span className="text-[12px] text-ink-400">
+          {(caseRow.labels || []).length > 0 && `Using labels: ${(caseRow.labels || []).join(', ')}`}
+        </span>
+        <Button size="sm" onClick={handleSearch} disabled={busy || matter.trim().length < 15}>
+          <Search size={14} /> {busy ? 'Searching…' : 'Search'}
+        </Button>
+      </div>
+
+      {saved.length > 0 && (
+        <div className="mt-5">
+          <div className="mb-2 text-[12px] font-bold uppercase tracking-wide text-ink-400">Saved to this case</div>
+          <div className="space-y-1.5">
+            {saved.map((s) => (
+              <div key={s.id} className="flex items-start justify-between gap-3 rounded-lg bg-brand-50/60 px-3 py-2">
+                <div className="min-w-0">
+                  <div className="truncate text-[13px] font-bold text-ink-900">{s.case_title || s.cnr}</div>
+                  <div className="truncate text-[12px] text-ink-500">
+                    {s.court_name || '—'}{s.decision_date ? ` · decided ${new Date(s.decision_date).toLocaleDateString('en-IN')}` : ''} · {s.cnr}
+                  </div>
+                </div>
+                <button onClick={() => handleRemove(s.id)} className="shrink-0 text-ink-400 hover:text-coral-500">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {run && (
+        <div className="mt-5">
+          {run.queries?.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[12px] text-ink-400">
+              <span className="font-semibold">Searched for:</span>
+              {run.queries.map((q) => (
+                <span key={q} className="rounded-full bg-ink-50 px-2 py-0.5 text-ink-600">{q}</span>
+              ))}
+            </div>
+          )}
+
+          {!run.ai_enabled && (
+            <div className="mb-3 flex items-start gap-2 rounded-lg bg-gold-50 px-3 py-2 text-[12.5px] text-gold-700">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <span>Searching on your words directly. Add an ANTHROPIC_API_KEY to turn on query building and relevance notes.</span>
+            </div>
+          )}
+
+          {run.results.length === 0 ? (
+            <div className="text-[13px] text-ink-400">Nothing matched. Try naming the statute and section.</div>
+          ) : (
+            <div className="space-y-2.5">
+              {run.results.map((r) => (
+                <div key={r.cnr} className="rounded-xl border border-ink-100 p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[13.5px] font-bold text-ink-900">{r.case_title}</div>
+                      <div className="mt-0.5 text-[12px] text-ink-500">
+                        {r.court_name || '—'}
+                        {r.decision_date && ` · decided ${new Date(r.decision_date).toLocaleDateString('en-IN')}`}
+                        {r.judgment_count > 0 && ' · judgment on file'}
+                      </div>
+                      <div className="mt-0.5 font-mono text-[11.5px] text-ink-400">{r.cnr}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={savedCnrs.has(r.cnr)}
+                      onClick={() => handleSave(r)}
+                    >
+                      <Bookmark size={13} /> {savedCnrs.has(r.cnr) ? 'Saved' : 'Save'}
+                    </Button>
+                  </div>
+
+                  {r.relevance && (
+                    <p className="mt-2 rounded-lg bg-brand-50/70 px-2.5 py-1.5 text-[12.5px] text-ink-700">
+                      <span className="font-bold text-brand-700">Why this may help — </span>{r.relevance}
+                    </p>
+                  )}
+
+                  {r.topics?.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {r.topics.map((t) => (
+                        <span key={t} className="rounded-full bg-ink-50 px-2 py-0.5 text-[11.5px] text-ink-600">{t}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <a
+                    href={`https://ecourtsindia.com/case/${r.cnr}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 text-[12.5px] font-semibold text-brand-600 hover:underline"
+                  >
+                    Open the official record <ExternalLink size={12} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-4 flex items-start gap-2 text-[12px] text-ink-400">
+            <Scale size={13} className="mt-0.5 shrink-0" />
+            Results come from the eCourts case record. Read the judgment and check the citation against the official
+            reporter before relying on it in any filing.
+          </p>
+        </div>
+      )}
+    </Card>
   );
 }
