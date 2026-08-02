@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, Trash2, Upload, FileText, Send, X, Scale, Search, Bookmark, ExternalLink, AlertTriangle } from 'lucide-react';
@@ -47,12 +47,15 @@ export default function CaseWorkspace() {
   const [clients, setClients] = useState([]);
   const [docs, setDocs] = useState([]);
   const [msg, setMsg] = useState('');
+  const [msgKind, setMsgKind] = useState('ok');
 
   const [ev, setEv] = useState({ event_date: new Date().toISOString().slice(0, 10), kind: 'hearing', title: '', detail: '' });
   const [labelInput, setLabelInput] = useState('');
   const [labels, setLabels] = useState([]);
   const [linkedClient, setLinkedClient] = useState('');
   const [docFile, setDocFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // { kind: 'event' | 'doc', item }
   const [deleting, setDeleting] = useState(false);
 
@@ -75,18 +78,30 @@ export default function CaseWorkspace() {
   useEffect(() => { if (user) load(); }, [user, id]);
 
   async function handleAddEvent() {
-    if (!ev.title.trim()) return;
-    await addCaseEvent(id, user.id, ev);
-    setEv({ ...ev, title: '', detail: '' });
-    load();
+    if (!ev.title.trim()) { setMsg('Give the entry a title.'); setMsgKind('err'); return; }
+    try {
+      await addCaseEvent(id, user.id, ev);
+      setEv({ ...ev, title: '', detail: '' });
+      setMsg('');
+      await load();
+    } catch (e) {
+      setMsg(e.message || 'Could not add that entry.');
+      setMsgKind('err');
+    }
   }
   async function handleConfirmDelete() {
     setDeleting(true);
-    if (deleteTarget.kind === 'event') await deleteCaseEvent(deleteTarget.item.id);
-    else await deleteCaseDocument(deleteTarget.item);
-    setDeleting(false);
-    setDeleteTarget(null);
-    load();
+    try {
+      if (deleteTarget.kind === 'event') await deleteCaseEvent(deleteTarget.item.id);
+      else await deleteCaseDocument(deleteTarget.item);
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      setMsg(e.message || 'Could not delete that.');
+      setMsgKind('err');
+    } finally {
+      setDeleting(false);
+    }
   }
   function addLabel() {
     const v = labelInput.trim().toLowerCase();
@@ -109,21 +124,41 @@ export default function CaseWorkspace() {
     } catch (e) {
       setLinkedClient(prev);
       setMsg(e.message || 'Could not link that client.');
+      setMsgKind('err');
     }
   }
+  // Pressing Upload with nothing chosen used to return in silence, and any
+  // failure after that was an unhandled rejection — so the button looked dead
+  // either way. Every path now says what happened.
   async function handleUploadDoc() {
-    if (!docFile) return;
-    if (docFile.size > 10 * 1024 * 1024) { setMsg('File too large — max 10MB.'); return; }
-    await uploadCaseDocument(id, user.id, docFile);
-    setDocFile(null);
-    load();
+    if (!docFile) { setMsg('Choose a file first.'); setMsgKind('err'); return; }
+    if (docFile.size > 10 * 1024 * 1024) { setMsg('File too large — max 10MB.'); setMsgKind('err'); return; }
+    setUploading(true);
+    try {
+      await uploadCaseDocument(id, user.id, docFile);
+      setDocFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setMsg(`Uploaded ${docFile.name}.`);
+      setMsgKind('ok');
+      await load();
+    } catch (e) {
+      setMsg(e.message || 'Could not upload that document.');
+      setMsgKind('err');
+    } finally {
+      setUploading(false);
+    }
   }
   async function handleOpenDoc(doc) {
-    window.open(await caseDocumentUrl(doc.file_path), '_blank');
+    try {
+      window.open(await caseDocumentUrl(doc.file_path), '_blank');
+    } catch (e) {
+      setMsg(e.message || 'Could not open that document.');
+      setMsgKind('err');
+    }
   }
   async function sendLatestUpdate() {
-    if (!linkedClient) { setMsg('Link a client first.'); return; }
-    if (!events.length) { setMsg('Add a timeline entry first.'); return; }
+    if (!linkedClient) { setMsg('Link a client first.'); setMsgKind('err'); return; }
+    if (!events.length) { setMsg('Add a timeline entry first.'); setMsgKind('err'); return; }
     const latest = events[0];
     const client = clients.find((c) => c.id === linkedClient);
     const message = `Update on your case "${caseRow.case_title}": ${latest.title}. Next hearing: ${caseRow.next_hearing_date ? new Date(caseRow.next_hearing_date).toLocaleDateString('en-IN') : 'TBD'}. — via LegalConnects`;
@@ -134,6 +169,7 @@ export default function CaseWorkspace() {
       window.open(`https://wa.me/${withCC}?text=${encodeURIComponent(message)}`, '_blank');
     }
     setMsg('Update logged.');
+    setMsgKind('ok');
   }
 
   if (loading) return <AdvocateShell><Spinner /></AdvocateShell>;
@@ -148,7 +184,7 @@ export default function CaseWorkspace() {
         <p className="mt-1 text-[13.5px] text-ink-500">{[caseRow.crn, caseRow.court_name].filter(Boolean).join(' · ')}</p>
       </motion.div>
 
-      {msg && <div className="mt-3"><Toast text={msg} kind="ok" /></div>}
+      {msg && <div className="mt-3"><Toast text={msg} kind={msgKind} /></div>}
 
       <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-5">
@@ -190,8 +226,15 @@ export default function CaseWorkspace() {
               </Link>
             </div>
             <div className="flex items-center gap-2">
-              <input type="file" onChange={(e) => setDocFile(e.target.files[0])} className="flex-1 text-[13px]" />
-              <Button size="sm" onClick={handleUploadDoc}><Upload size={14} /> Upload</Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={(e) => setDocFile(e.target.files[0] || null)}
+                className="min-w-0 flex-1 text-[13px]"
+              />
+              <Button size="sm" onClick={handleUploadDoc} disabled={uploading || !docFile}>
+                <Upload size={14} /> {uploading ? 'Uploading…' : 'Upload'}
+              </Button>
             </div>
             <div className="mt-3 space-y-1.5">
               {docs.map((d) => (
