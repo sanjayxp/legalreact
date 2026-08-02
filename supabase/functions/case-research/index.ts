@@ -6,7 +6,12 @@ const CORS_HEADERS = {
 };
 
 const ECOURTS_BASE = 'https://webapi.ecourtsindia.com';
-const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+// Read per request, not at module load. Isolates are cached, so a key added
+// after this function last booted would otherwise stay invisible until a
+// redeploy — the secret is live, the running copy just never looked again.
+function anthropicKey(): string | undefined {
+  return Deno.env.get('ANTHROPIC_API_KEY');
+}
 const MAX_QUERIES = 3;
 const PER_QUERY = 8;
 const MAX_RESULTS = 12;
@@ -24,6 +29,7 @@ type AiResult = { text: string | null; error: string | null };
 // it fails on every call, and the advocate needs to be told that rather than
 // silently getting a worse search.
 async function anthropic(model: string, maxTokens: number, prompt: string): Promise<AiResult> {
+  const ANTHROPIC_KEY = anthropicKey();
   if (!ANTHROPIC_KEY) return { text: null, error: null };
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -192,7 +198,7 @@ Deno.serve(async (req: Request) => {
 
     // Relevance notes, grounded only in what the API returned. The model is
     // given the rows and asked to explain them; it is never asked for cases.
-    if (results.length && ANTHROPIC_KEY) {
+    if (results.length && anthropicKey()) {
       const digest = results.map((r) => ({
         cnr: r.cnr,
         court: r.court_name,
@@ -241,7 +247,7 @@ Reply with only a JSON array of {"cnr": "...", "why": "..."}.`,
     // 'off'    — no key configured
     // 'failed' — key present but the call was rejected (usually no credit)
     // 'ok'     — the AI layer did its job
-    const aiStatus = !ANTHROPIC_KEY ? 'off' : aiError ? 'failed' : 'ok';
+    const aiStatus = !anthropicKey() ? 'off' : aiError ? 'failed' : 'ok';
 
     return json({
       data: {
