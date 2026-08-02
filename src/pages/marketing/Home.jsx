@@ -207,15 +207,19 @@ export default function Home() {
                     hover
                     whileHover={{ y: -4 }}
                     transition={{ type: 'spring', stiffness: 350, damping: 20 }}
-                    className="flex h-full items-center gap-3.5 !p-5 hover:border-brand-200"
+                    // Two across on a phone leaves ~120px inside the card —
+                    // not enough for icon, label and arrow on one line, so
+                    // they stack there and sit in a row from sm up.
+                    className="flex h-full flex-col items-start gap-2.5 !p-5 hover:border-brand-200 sm:flex-row sm:items-center sm:gap-3.5"
                   >
                     <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${TINTS[a.tint]}`}>
                       <a.icon size={19} />
                     </div>
-                    <span className="flex-1 text-[15.5px] font-bold text-ink-900">{a.name}</span>
+                    {/* min-w-0, or the label refuses to shrink and shoves the arrow out of the card. */}
+                    <span className="min-w-0 flex-1 text-[15.5px] font-bold text-ink-900">{a.name}</span>
                     <ArrowUpRight
                       size={16}
-                      className="shrink-0 -translate-x-1 text-ink-200 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-brand-500"
+                      className="hidden shrink-0 -translate-x-1 text-ink-200 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-brand-500 sm:block"
                     />
                   </Card>
                 </Link>
