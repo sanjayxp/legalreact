@@ -248,6 +248,9 @@ Reply with only a JSON array of {"cnr": "...", "why": "..."}.`,
     // 'failed' — key present but the call was rejected (usually no credit)
     // 'ok'     — the AI layer did its job
     const aiStatus = !anthropicKey() ? 'off' : aiError ? 'failed' : 'ok';
+    // Logged so the state is answerable from the function logs rather than by
+    // guessing from what the browser happens to be rendering.
+    console.log(`[case-research] ai_status=${aiStatus} key_present=${!!anthropicKey()} ai_error=${aiError ?? 'none'}`);
 
     return json({
       data: {
