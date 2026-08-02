@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Gavel, Calendar, FileText, Landmark, LogIn, UserPlus } from 'lucide-react';
 import { lookupCaseByCNR } from '../../lib/cms';
@@ -14,18 +14,30 @@ import { Toast } from '../../components/ui/Misc';
 
 export default function TrackCase() {
   const { session } = useAuth();
-  const [cnr, setCnr] = useState('');
+  const [searchParams] = useSearchParams();
+  const [cnr, setCnr] = useState(searchParams.get('cnr')?.toUpperCase() || '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [result, setResult] = useState(null);
 
-  async function handleLookup() {
-    if (!cnr.trim()) return;
+  // Arriving with ?cnr= (from precedent research, say) should just show the
+  // record rather than making the advocate press the button again.
+  const autoRan = useRef(false);
+  useEffect(() => {
+    const incoming = searchParams.get('cnr');
+    if (!incoming || autoRan.current || !session) return;
+    autoRan.current = true;
+    handleLookup(incoming.trim().toUpperCase());
+  }, [searchParams, session]);
+
+  async function handleLookup(override) {
+    const target = (typeof override === 'string' ? override : cnr).trim().toUpperCase();
+    if (!target) return;
     setBusy(true);
     setErr('');
     setResult(null);
     try {
-      const data = await lookupCaseByCNR(cnr.trim().toUpperCase());
+      const data = await lookupCaseByCNR(target);
       setResult(data);
     } catch (e) {
       setErr(e.message || 'Could not look up that CNR. Please check the number and try again.');

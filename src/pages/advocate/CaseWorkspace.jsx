@@ -428,14 +428,16 @@ function PrecedentPanel({ caseRow, userId }) {
                     </div>
                   )}
 
-                  <a
-                    href={`https://ecourtsindia.com/case/${r.cnr}`}
+                  {/* The eCourts portal has no public deep link for a CNR — it
+                      is a form behind a captcha — so this opens the record
+                      through the lookup we already pay for. */}
+                  <Link
+                    to={`/track-case?cnr=${r.cnr}`}
                     target="_blank"
-                    rel="noreferrer"
                     className="mt-2 inline-flex items-center gap-1 text-[12.5px] font-semibold text-brand-600 hover:underline"
                   >
-                    Open the official record <ExternalLink size={12} />
-                  </a>
+                    Open the full case record <ExternalLink size={12} />
+                  </Link>
                 </div>
               ))}
             </div>
