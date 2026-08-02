@@ -372,10 +372,19 @@ function PrecedentPanel({ caseRow, userId }) {
             </div>
           )}
 
-          {!run.ai_enabled && (
+          {run.ai_status === 'off' && (
             <div className="mb-3 flex items-start gap-2 rounded-lg bg-gold-50 px-3 py-2 text-[12.5px] text-gold-700">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <span>Searching on your words directly. Add an ANTHROPIC_API_KEY to turn on query building and relevance notes.</span>
+            </div>
+          )}
+          {run.ai_status === 'failed' && (
+            <div className="mb-3 flex items-start gap-2 rounded-lg bg-coral-500/10 px-3 py-2 text-[12.5px] text-coral-500">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <span>
+                <b>The key is set but the AI call was refused,</b> so these are plain keyword results.
+                {run.ai_error ? ` The API said: “${run.ai_error}”` : ''}
+              </span>
             </div>
           )}
 

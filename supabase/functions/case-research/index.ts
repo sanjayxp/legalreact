@@ -18,8 +18,13 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function anthropic(model: string, maxTokens: number, prompt: string): Promise<string | null> {
-  if (!ANTHROPIC_KEY) return null;
+type AiResult = { text: string | null; error: string | null };
+
+// Returns the failure reason as well as the text. A key with no credit behind
+// it fails on every call, and the advocate needs to be told that rather than
+// silently getting a worse search.
+async function anthropic(model: string, maxTokens: number, prompt: string): Promise<AiResult> {
+  if (!ANTHROPIC_KEY) return { text: null, error: null };
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -35,14 +40,20 @@ async function anthropic(model: string, maxTokens: number, prompt: string): Prom
       }),
     });
     if (!r.ok) {
-      console.error('anthropic error', r.status, (await r.text()).slice(0, 300));
-      return null;
+      const raw = await r.text();
+      console.error('anthropic error', r.status, raw.slice(0, 300));
+      let reason = `HTTP ${r.status}`;
+      try {
+        const msg = JSON.parse(raw)?.error?.message;
+        if (typeof msg === 'string') reason = msg.slice(0, 180);
+      } catch { /* keep the status code */ }
+      return { text: null, error: reason };
     }
     const j = await r.json();
-    return j?.content?.[0]?.text ?? null;
+    return { text: j?.content?.[0]?.text ?? null, error: null };
   } catch (e) {
     console.error('anthropic call failed', e);
-    return null;
+    return { text: null, error: 'Could not reach the Anthropic API.' };
   }
 }
 
@@ -54,7 +65,7 @@ function firstJsonBlock(text: string): unknown {
 
 // Turns the advocate's plain-language matter into searchable legal phrasing.
 // Falls back to the raw text so the feature still works without an AI key.
-async function buildQueries(matter: string, acts: string[]): Promise<{ queries: string[]; aiUsed: boolean }> {
+async function buildQueries(matter: string, acts: string[]): Promise<{ queries: string[]; aiUsed: boolean; aiError: string | null }> {
   const fallback = [matter.trim(), ...acts].filter(Boolean).slice(0, MAX_QUERIES);
 
   const out = await anthropic(
@@ -68,12 +79,12 @@ Matter: ${matter}
 ${acts.length ? `Acts already identified: ${acts.join(', ')}` : ''}`,
   );
 
-  const parsed = out ? firstJsonBlock(out) : null;
+  const parsed = out.text ? firstJsonBlock(out.text) : null;
   if (Array.isArray(parsed)) {
     const qs = parsed.filter((q) => typeof q === 'string' && q.trim()).slice(0, MAX_QUERIES);
-    if (qs.length) return { queries: qs, aiUsed: true };
+    if (qs.length) return { queries: qs, aiUsed: true, aiError: null };
   }
-  return { queries: fallback.length ? fallback : [matter], aiUsed: false };
+  return { queries: fallback.length ? fallback : [matter], aiUsed: false, aiError: out.error };
 }
 
 type Row = Record<string, unknown>;
@@ -133,7 +144,8 @@ Deno.serve(async (req: Request) => {
     const key = Deno.env.get('ECOURTS_API_KEY');
     if (!key) return json({ error: 'eCourts lookup is not configured yet.' }, 500);
 
-    const { queries, aiUsed } = await buildQueries(matter, acts);
+    const { queries, aiUsed, aiError: queryErr } = await buildQueries(matter, acts);
+    let aiError: string | null = queryErr;
 
     // Run the searches, then fold to one row per CNR, remembering which query
     // surfaced it and how often — repeated hits are a decent relevance signal.
@@ -210,7 +222,8 @@ ${JSON.stringify(digest, null, 1)}
 Reply with only a JSON array of {"cnr": "...", "why": "..."}.`,
       );
 
-      const parsed = raw ? firstJsonBlock(raw) : null;
+      if (raw.error) aiError = raw.error;
+      const parsed = raw.text ? firstJsonBlock(raw.text) : null;
       if (Array.isArray(parsed)) {
         // Only accept notes whose CNR is one we actually retrieved. Anything
         // the model invented has no matching row and is dropped here.
@@ -225,11 +238,17 @@ Reply with only a JSON array of {"cnr": "...", "why": "..."}.`,
       }
     }
 
+    // 'off'    — no key configured
+    // 'failed' — key present but the call was rejected (usually no credit)
+    // 'ok'     — the AI layer did its job
+    const aiStatus = !ANTHROPIC_KEY ? 'off' : aiError ? 'failed' : 'ok';
+
     return json({
       data: {
         queries,
         results,
-        ai_enabled: !!ANTHROPIC_KEY,
+        ai_status: aiStatus,
+        ai_error: aiError,
         ai_queries_used: aiUsed,
       },
     });
