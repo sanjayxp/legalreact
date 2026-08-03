@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, Upload, FileText, Send, X, Scale, Search, Bookmark, ExternalLink, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Upload, FileText, Send, X, Scale, Search, Bookmark, ExternalLink, AlertTriangle, DownloadCloud } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import {
   getCase,
@@ -16,6 +16,7 @@ import {
   caseDocumentUrl,
   deleteCaseDocument,
   logClientUpdate,
+  importCaseHistory,
   researchPrecedents,
   listCasePrecedents,
   savePrecedent,
@@ -55,6 +56,7 @@ export default function CaseWorkspace() {
   const [linkedClient, setLinkedClient] = useState('');
   const [docFile, setDocFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
   const [deleteTarget, setDeleteTarget] = useState(null); // { kind: 'event' | 'doc', item }
   const [deleting, setDeleting] = useState(false);
@@ -148,6 +150,26 @@ export default function CaseWorkspace() {
       setUploading(false);
     }
   }
+  // The court already knows every date this matter was listed on. Typing that
+  // history in by hand is work the API can do.
+  async function handleImportHistory() {
+    setImporting(true);
+    try {
+      const { added, skipped } = await importCaseHistory(id, user.id, caseRow.crn);
+      setMsg(
+        added === 0
+          ? `Nothing new — all ${skipped} entries from eCourts are already on the timeline.`
+          : `Added ${added} entr${added === 1 ? 'y' : 'ies'} from eCourts${skipped ? `, skipped ${skipped} already here` : ''}.`,
+      );
+      setMsgKind('ok');
+      await load();
+    } catch (e) {
+      setMsg(e.message || 'Could not pull the history for this case.');
+      setMsgKind('err');
+    } finally {
+      setImporting(false);
+    }
+  }
   async function handleOpenDoc(doc) {
     try {
       window.open(await caseDocumentUrl(doc.file_path), '_blank');
@@ -202,8 +224,20 @@ export default function CaseWorkspace() {
           </Card>
 
           <Card>
-            <CardHeading title="Timeline" />
-            {events.length === 0 && <EmptyState title="No entries yet" />}
+            <div className="flex items-start justify-between gap-3">
+              <CardHeading title="Timeline" />
+              {caseRow.crn && (
+                <Button size="sm" variant="ghost" onClick={handleImportHistory} disabled={importing}>
+                  <DownloadCloud size={14} /> {importing ? 'Pulling…' : 'Pull from eCourts'}
+                </Button>
+              )}
+            </div>
+            {events.length === 0 && (
+              <EmptyState
+                title="No entries yet"
+                sub={caseRow.crn ? 'Pull the hearing history from eCourts, or add an entry above.' : undefined}
+              />
+            )}
             <div className="space-y-3">
               {events.map((e) => (
                 <div key={e.id} className="flex items-start justify-between gap-3 border-l-2 border-brand-200 pl-3.5">

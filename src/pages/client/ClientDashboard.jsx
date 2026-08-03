@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, CalendarClock, MessagesSquare, Sparkles, Video, Phone, Building2, FileText } from 'lucide-react';
+import { Search, CalendarClock, MessagesSquare, Sparkles, Video, Phone, Building2, FileText, Gavel } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { listMyBookingsByEmail, listMyLeadsByEmail } from '../../lib/cms';
+import { listMyBookingsByEmail, listMyLeadsByEmail, listMyCasesAsClient } from '../../lib/cms';
 import { usePostMatter } from '../../components/marketing/PostMatterContext';
 import ClientShell from '../../components/layout/ClientShell';
 import Card from '../../components/ui/Card';
@@ -46,11 +46,16 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [leads, setLeads] = useState([]);
+  const [cases, setCases] = useState([]);
 
   useEffect(() => {
     if (!profile?.email) return;
-    Promise.all([listMyBookingsByEmail(profile.email), listMyLeadsByEmail(profile.email)])
-      .then(([b, l]) => { setBookings(b); setLeads(l); })
+    Promise.all([
+      listMyBookingsByEmail(profile.email),
+      listMyLeadsByEmail(profile.email),
+      listMyCasesAsClient(),
+    ])
+      .then(([b, l, c]) => { setBookings(b); setLeads(l); setCases(c); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [profile?.email]);
@@ -172,6 +177,55 @@ export default function ClientDashboard() {
                     </div>
                   </div>
                   <Badge tone={LEAD_STATUS_TONE[l.status] || 'gray'}>{LEAD_STATUS_LABEL[l.status] || l.status}</Badge>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-[16px] font-bold text-ink-900">
+            <Gavel size={17} className="text-emerald-600" /> My Cases
+          </h2>
+          <Link to="/track-case" className="text-[13px] font-semibold text-brand-600">Track by CNR &rarr;</Link>
+        </div>
+
+        {loading ? (
+          <Spinner className="py-8" />
+        ) : cases.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={<Gavel size={26} />}
+              title="No cases linked yet"
+              sub="When your advocate attaches you to a case on LegalConnects, its status and next hearing appear here."
+            />
+          </Card>
+        ) : (
+          <div className="space-y-2.5">
+            {cases.map((c) => (
+              <Card key={c.id} className="!p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-bold text-ink-900">{c.case_title}</div>
+                    <div className="mt-0.5 text-[12.5px] text-ink-500">
+                      {[c.court_name, c.crn].filter(Boolean).join(' \u00b7 ') || 'Court details pending'}
+                    </div>
+                    {c.last_order && <div className="mt-1 text-[12.5px] text-ink-400">Last order: {c.last_order}</div>}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    {c.next_hearing_date ? (
+                      <>
+                        <div className="text-[11.5px] font-bold uppercase tracking-wide text-ink-400">Next hearing</div>
+                        <div className="text-[13.5px] font-bold text-emerald-700">
+                          {new Date(c.next_hearing_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                      </>
+                    ) : (
+                      <Badge tone="gray">{c.stage || 'In progress'}</Badge>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))}

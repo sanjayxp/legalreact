@@ -434,8 +434,8 @@ export async function getCase(caseId) {
   if (error) throw error;
   return data;
 }
-export async function lookupCaseByCNR(cnr) {
-  const { data, error } = await supabase.functions.invoke('ecourts-lookup', { body: { cnr } });
+export async function lookupCaseByCNR(cnr, { full = false } = {}) {
+  const { data, error } = await supabase.functions.invoke('ecourts-lookup', { body: { cnr, full } });
   if (error) {
     let msg = 'Could not look up that CNR. Please try again.';
     try {
@@ -514,6 +514,51 @@ export async function addCaseEvent(caseId, advocateId, fields) {
   const { error } = await supabase.from('case_events').insert({ case_id: caseId, advocate_id: advocateId, ...fields });
   if (error) throw error;
 }
+// Pulls the hearing history and orders the court already holds for this CNR
+// into the timeline. Entries the advocate already has are skipped, so running
+// it twice is harmless and their own notes are never touched.
+export async function importCaseHistory(caseId, advocateId, crn) {
+  const data = await lookupCaseByCNR(crn, { full: true });
+
+  const incoming = [
+    ...(data.history || [])
+      .filter((h) => h.date)
+      .map((h) => ({
+        event_date: h.date,
+        kind: 'hearing',
+        title: h.purpose ? `Listed — ${h.purpose}` : 'Listed for hearing',
+        detail: h.judge ? `Before ${h.judge}` : null,
+      })),
+    ...(data.orders || [])
+      .filter((o) => o.date)
+      .map((o) => ({
+        event_date: o.date,
+        kind: 'order',
+        title: o.type || 'Order',
+        detail: o.description || null,
+      })),
+  ];
+
+  if (!incoming.length) return { added: 0, skipped: 0 };
+
+  const existing = await listCaseEvents(caseId);
+  const seen = new Set(existing.map((e) => `${e.event_date}|${e.title}`));
+
+  const fresh = [];
+  for (const row of incoming) {
+    const fingerprint = `${row.event_date}|${row.title}`;
+    if (seen.has(fingerprint)) continue;
+    seen.add(fingerprint);
+    fresh.push({ case_id: caseId, advocate_id: advocateId, ...row });
+  }
+
+  if (fresh.length) {
+    const { error } = await supabase.from('case_events').insert(fresh);
+    if (error) throw error;
+  }
+  return { added: fresh.length, skipped: incoming.length - fresh.length };
+}
+
 export async function deleteCaseEvent(id) {
   const { error } = await supabase.from('case_events').delete().eq('id', id);
   if (error) throw error;
@@ -544,6 +589,18 @@ export async function deleteCaseDocument(doc) {
   await supabase.storage.from('case-docs').remove([doc.file_path]);
   const { error } = await supabase.from('case_documents').delete().eq('id', doc.id);
   if (error) throw error;
+}
+
+// Cases an advocate has attached this client to. Deliberately narrow: the
+// client sees where the matter stands, not the advocate's timeline notes or
+// documents, which are work product.
+export async function listMyCasesAsClient() {
+  const { data, error } = await supabase
+    .from('court_cases')
+    .select('id, case_title, crn, court_name, case_type, stage, next_hearing_date, last_order, filed_date')
+    .order('next_hearing_date', { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  return data || [];
 }
 
 // ---------- CLIENT MANAGEMENT (advocate's private register) ----------
