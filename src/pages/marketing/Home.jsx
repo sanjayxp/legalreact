@@ -162,7 +162,7 @@ export default function Home() {
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut', delay: 0.6 }}
-              className="absolute left-2 -top-4 flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 shadow-lg"
+              className="absolute left-1/2 -top-4 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl bg-white px-3.5 py-2.5 shadow-lg"
             >
               <Globe2 size={16} className="text-brand-500" />
               <span className="text-[12.5px] font-bold text-ink-800">Pan-India Coverage</span>
