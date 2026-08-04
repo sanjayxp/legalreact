@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import { usePostMatter } from '../../components/marketing/PostMatterContext';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 
@@ -71,6 +72,8 @@ const TRUST_POINTS = [
 ];
 
 export default function Home() {
+  const { openPostMatter } = usePostMatter();
+
   return (
     <div className="bg-white">
       <PublicNav />
@@ -267,11 +270,9 @@ export default function Home() {
             <p className="mt-3 max-w-sm text-[15.5px] leading-relaxed text-white/75">
               Post your matter or browse verified advocates by city and practice area. Ask the community a question for free, book a paid consultation when you're ready.
             </p>
-            <Link to="/login#register" className="mt-7 inline-block">
-              <Button variant="dark" className="!bg-white !text-brand-700 hover:!bg-brand-50">
-                Get started as a client <ArrowRight size={16} />
-              </Button>
-            </Link>
+            <Button variant="dark" className="mt-7 !bg-white !text-brand-700 hover:!bg-brand-50" onClick={openPostMatter}>
+              Post your matter <ArrowRight size={16} />
+            </Button>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-10">
