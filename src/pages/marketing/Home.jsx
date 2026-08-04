@@ -127,8 +127,8 @@ export default function Home() {
                 className="gradient-coral blob-shape h-full w-full overflow-hidden shadow-xl"
               >
                 <img
-                  src="https://images.unsplash.com/photo-1573497491208-6b1acb260507?w=500&q=80"
-                  alt="Advocate reviewing documents"
+                  src="https://images.unsplash.com/photo-1758876017903-89981565c00b?w=500&q=80"
+                  alt="Advocate smiling in her office"
                   className="h-full w-full object-cover"
                 />
               </motion.div>
