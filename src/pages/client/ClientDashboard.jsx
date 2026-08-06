@@ -8,7 +8,7 @@ import { usePostMatter } from '../../components/marketing/PostMatterContext';
 import ClientShell from '../../components/layout/ClientShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
-import { Avatar, EmptyState, Spinner } from '../../components/ui/Misc';
+import { Avatar, EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
 const CARDS = [
   { icon: Search, title: 'Find an Advocate', body: 'Browse Bar Council-verified advocates by practice area, city, and language.', accent: 'brand', to: '/advocates' },
@@ -47,18 +47,40 @@ export default function ClientDashboard() {
   const [bookings, setBookings] = useState([]);
   const [leads, setLeads] = useState([]);
   const [cases, setCases] = useState([]);
+  const [err, setErr] = useState('');
+
+  // Match on the address in the session token, since that is what the row
+  // policies compare against — the profiles column can lag behind it.
+  const contactEmail = user?.email || profile?.email || '';
 
   useEffect(() => {
-    if (!profile?.email) return;
-    Promise.all([
-      listMyBookingsByEmail(profile.email),
-      listMyLeadsByEmail(profile.email),
+    if (!contactEmail) { setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    setErr('');
+
+    // Settled, not all: these three are independent, and one failing used to
+    // discard the other two and leave every section looking simply empty.
+    Promise.allSettled([
+      listMyBookingsByEmail(contactEmail),
+      listMyLeadsByEmail(contactEmail),
       listMyCasesAsClient(),
-    ])
-      .then(([b, l, c]) => { setBookings(b); setLeads(l); setCases(c); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [profile?.email]);
+    ]).then(([b, l, c]) => {
+      if (cancelled) return;
+      if (b.status === 'fulfilled') setBookings(b.value);
+      if (l.status === 'fulfilled') setLeads(l.value);
+      if (c.status === 'fulfilled') setCases(c.value);
+
+      const failed = [b, l, c].filter((r) => r.status === 'rejected');
+      if (failed.length) {
+        console.error('client dashboard load failed', failed.map((f) => f.reason));
+        setErr(failed[0].reason?.message || 'Some of your dashboard could not be loaded.');
+      }
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [contactEmail]);
 
   return (
     <ClientShell>
@@ -68,6 +90,8 @@ export default function ClientDashboard() {
         </h1>
         <p className="mt-1 text-[14.5px] text-ink-500">Here's what's happening with your legal matters.</p>
       </motion.div>
+
+      {err && <div className="mt-4"><Toast text={err} kind="err" /></div>}
 
       <motion.div
         initial={{ opacity: 0, y: 10 }}
