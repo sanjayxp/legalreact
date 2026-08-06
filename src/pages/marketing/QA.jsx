@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MessageCircleQuestion, Eye, MessageSquare, Plus } from 'lucide-react';
 import { listQuestionsPublic, submitQuestion } from '../../lib/cms';
+import { useAuth } from '../../lib/auth';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import HeroBanner from '../../components/marketing/HeroBanner';
@@ -101,6 +102,7 @@ export default function QA() {
 }
 
 function AskQuestionModal({ open, onClose, onAsked }) {
+  const { user } = useAuth();
   const [form, setForm] = useState({ topic: 'Civil', title: '', body: '', budget: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -110,7 +112,13 @@ function AskQuestionModal({ open, onClose, onAsked }) {
     setBusy(true);
     setErr('');
     try {
-      const q = await submitQuestion({ ...form, budget: form.budget ? Number(form.budget) : null });
+      // Attributing the question to the signed-in asker is what lets it show
+      // up on their dashboard later; visitors without an account still ask.
+      const q = await submitQuestion({
+        ...form,
+        budget: form.budget ? Number(form.budget) : null,
+        client_id: user?.id || null,
+      });
       setForm({ topic: 'Civil', title: '', body: '', budget: '' });
       onAsked(q.id);
     } catch (e) {

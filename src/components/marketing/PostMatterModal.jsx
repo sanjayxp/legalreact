@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { submitMatterLead } from '../../lib/cms';
+import { useAuth } from '../../lib/auth';
 import { PRACTICE_AREAS } from '../../lib/practiceAreas';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Textarea, Select, Label, FormRow } from '../ui/Field';
+import IdentityFields from './IdentityFields';
 import { Toast } from '../ui/Misc';
 
 const EMPTY_FORM = { client_name: '', phone: '', email: '', area: '', city: '', matter: '', budget: '' };
 
 export default function PostMatterModal({ open, onClose }) {
   const navigate = useNavigate();
+  const { session, profile } = useAuth();
   const [form, setForm] = useState(EMPTY_FORM);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -20,6 +23,20 @@ export default function PostMatterModal({ open, onClose }) {
   function set(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
+  function setField(field, value) {
+    setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  // A signed-in visitor should not retype what their account already holds.
+  useEffect(() => {
+    if (!open || !session || !profile) return;
+    setForm((f) => ({
+      ...f,
+      client_name: f.client_name || profile.full_name || '',
+      phone: f.phone || profile.phone || '',
+      email: f.email || profile.email || '',
+    }));
+  }, [open, session, profile]);
 
   function handleClose() {
     onClose?.();
@@ -88,19 +105,7 @@ export default function PostMatterModal({ open, onClose }) {
             Bar Council-verified advocate.
           </p>
 
-          <Label required>Your name</Label>
-          <Input value={form.client_name} onChange={set('client_name')} placeholder="Full name" />
-
-          <FormRow>
-            <div>
-              <Label required>Phone</Label>
-              <Input value={form.phone} onChange={set('phone')} placeholder="10-digit mobile number" />
-            </div>
-            <div>
-              <Label hint="(optional)">Email</Label>
-              <Input type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" />
-            </div>
-          </FormRow>
+          <IdentityFields form={form} onChange={setField} />
 
           <FormRow>
             <div>

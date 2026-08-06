@@ -5,6 +5,7 @@ import { MapPin, BadgeCheck, IndianRupee, Video, Phone, Building2, Briefcase, Gr
 import { getApprovedAdvocatePublic, incrementProfileView, requestAdvocateLead, listOpenSlotsPublic, requestSlot } from '../../lib/cms';
 import { googleCalendarUrl, downloadIcs } from '../../lib/calendarLinks';
 import { useAuth } from '../../lib/auth';
+import IdentityFields from '../../components/marketing/IdentityFields';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -196,7 +197,7 @@ export default function AdvocateProfile() {
 const MODE_LABEL = { video: '🎥 Video call', phone: '📞 Phone call', inperson: '🤝 In person' };
 
 function RequestModal({ advocate, open, onClose }) {
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const [step, setStep] = useState(1);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slots, setSlots] = useState([]);
@@ -212,7 +213,13 @@ function RequestModal({ advocate, open, onClose }) {
     if (!open) return;
     setStep(1);
     setSelectedSlot(null);
-    setForm({ client_name: '', phone: '', email: '', notes: '', mode: modes[0] });
+    setForm({
+      client_name: profile?.full_name || '',
+      phone: profile?.phone || '',
+      email: profile?.email || '',
+      notes: '',
+      mode: modes[0],
+    });
     setMsg('');
     setSlotsErr('');
     setSlotsLoading(true);
@@ -308,12 +315,7 @@ function RequestModal({ advocate, open, onClose }) {
           <Select value={form.mode} onChange={(e) => setForm({ ...form, mode: e.target.value })}>
             {modes.map((m) => <option key={m} value={m}>{MODE_LABEL[m] || m}</option>)}
           </Select>
-          <Label required>Your name</Label>
-          <Input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} />
-          <Label required>Phone</Label>
-          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <Label hint="(optional)">Email</Label>
-          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <IdentityFields form={form} onChange={(field, value) => setForm((f) => ({ ...f, [field]: value }))} />
           <Label hint="(optional)">What's this about?</Label>
           <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="A brief description helps the advocate prepare." />
           <p className="mt-3 text-[11px] leading-relaxed text-ink-400">
