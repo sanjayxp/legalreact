@@ -242,6 +242,18 @@ export default function Bookings() {
         )}
         {tab === 'past' && <BookingList list={past} readonly />}
       </div>
+
+      <ConfirmDialog
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={runConfirmed}
+        busy={confirmBusy}
+        danger={CONFIRM_COPY[confirm?.kind]?.danger}
+        confirmLabel={CONFIRM_COPY[confirm?.kind]?.cta}
+        busyLabel="Working…"
+        title={CONFIRM_COPY[confirm?.kind]?.title || 'Are you sure?'}
+        message={CONFIRM_COPY[confirm?.kind]?.body?.(confirm?.label || 'This matter') || ''}
+      />
     </AdvocateShell>
   );
 }
@@ -686,17 +698,6 @@ function AvailabilityEditor({ advocateId, availability, timeOff, onSaved, setMsg
           {timeOff.length === 0 && <div className="text-[13px] text-ink-400">No blocked dates.</div>}
         </div>
       </Card>
-
-      <ConfirmDialog
-        open={!!confirm}
-        onClose={() => setConfirm(null)}
-        onConfirm={runConfirmed}
-        busy={confirmBusy}
-        danger={CONFIRM_COPY[confirm?.kind]?.danger}
-        confirmLabel={CONFIRM_COPY[confirm?.kind]?.cta}
-        title={CONFIRM_COPY[confirm?.kind]?.title || 'Are you sure?'}
-        message={CONFIRM_COPY[confirm?.kind]?.body(confirm?.label || 'This matter') || ''}
-      />
 
       <ConfirmDialog
         open={!!deleteTarget}
