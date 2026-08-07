@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { signOut } from '../../lib/auth';
-import { listMySlots, listMyLeads, getAdvocateProfile } from '../../lib/cms';
+import { listMySlots, listMyLeads, listOpenLeads, getAdvocateProfile } from '../../lib/cms';
 import { Avatar } from '../ui/Misc';
 import Logo from '../brand/Logo';
 
@@ -34,11 +34,13 @@ export default function AdvocateShell({ children }) {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([listMySlots(user.id), listMyLeads(user.id)])
-      .then(([slots, leads]) => {
+    // Matters nobody has taken count too — an advocate should be able to see
+    // from the sidebar that there is something new to look at.
+    Promise.all([listMySlots(user.id), listMyLeads(user.id), listOpenLeads().catch(() => [])])
+      .then(([slots, leads, open]) => {
         const pendingRequests = slots.filter((s) => s.status === 'requested').length;
         const openEnquiries = leads.filter((l) => l.status === 'new' || l.status === 'contacted').length;
-        setLeadCount(pendingRequests + openEnquiries);
+        setLeadCount(pendingRequests + openEnquiries + open.length);
       })
       .catch(() => {});
     getAdvocateProfile(user.id)

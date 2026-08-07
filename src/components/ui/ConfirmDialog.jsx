@@ -1,9 +1,13 @@
 import Modal from './Modal';
 import Button from './Button';
 
-// Shared delete/destructive-action confirmation — replaces window.confirm()
-// so every dashboard gets the same look, and so the caller can show a busy
-// state while the delete is in flight instead of it firing instantly.
+// Shared confirmation for anything worth a second look — replaces
+// window.confirm() so every dashboard gets the same look, and so the caller
+// can show a busy state instead of the action firing instantly.
+//
+// Destructive by default, since that is most of its use. Actions that merely
+// commit to something (taking a matter on, accepting a client) pass
+// danger={false} so they do not read as a warning.
 export default function ConfirmDialog({
   open,
   onClose,
@@ -11,7 +15,9 @@ export default function ConfirmDialog({
   title = 'Are you sure?',
   message,
   confirmLabel = 'Delete',
+  busyLabel = 'Working…',
   busy = false,
+  danger = true,
 }) {
   const safeClose = () => { if (!busy) onClose?.(); };
 
@@ -20,8 +26,8 @@ export default function ConfirmDialog({
       {message && <p className="text-[14px] leading-relaxed text-ink-600">{message}</p>}
       <div className="mt-5 flex gap-3">
         <Button variant="ghost" className="flex-1" onClick={safeClose} disabled={busy}>Cancel</Button>
-        <Button variant="danger" className="flex-1" onClick={onConfirm} disabled={busy}>
-          {busy ? 'Deleting…' : confirmLabel}
+        <Button variant={danger ? 'danger' : 'primary'} className="flex-1" onClick={onConfirm} disabled={busy}>
+          {busy ? busyLabel : confirmLabel}
         </Button>
       </div>
     </Modal>

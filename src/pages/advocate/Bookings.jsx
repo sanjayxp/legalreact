@@ -44,6 +44,10 @@ export default function Bookings() {
   const [enquiries, setEnquiries] = useState([]);
   const [openLeads, setOpenLeads] = useState([]);
   const [claiming, setClaiming] = useState('');
+  // { kind, id, label } — nothing that reassigns or drops a matter should
+  // happen on a single stray click.
+  const [confirm, setConfirm] = useState(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [msgKind, setMsgKind] = useState('ok');
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date()));
@@ -148,6 +152,47 @@ export default function Bookings() {
     }
   }
 
+  const CONFIRM_COPY = {
+    claim: {
+      title: 'Take this matter on?',
+      body: (l) => `${l} will become yours alone and will leave every other advocate's board. The client's contact details are shared with you.`,
+      cta: 'Take it on',
+      danger: false,
+    },
+    accept: {
+      title: 'Accept and add as a client?',
+      body: (l) => `${l} will be added to your client register, and the enquiry marked converted.`,
+      cta: 'Accept',
+      danger: false,
+    },
+    decline: {
+      title: 'Pass on this matter?',
+      body: (l) => `${l} will go back to the open board for another advocate to take. You can still take it again while it is unclaimed.`,
+      cta: 'Pass on it',
+      danger: true,
+    },
+    'decline-slot': {
+      title: 'Decline this booking request?',
+      body: (l) => `${l} will be told the slot was not confirmed. This cannot be undone.`,
+      cta: 'Decline',
+      danger: true,
+    },
+  };
+
+  async function runConfirmed() {
+    if (!confirm) return;
+    setConfirmBusy(true);
+    try {
+      if (confirm.kind === 'claim') await handleClaim(confirm.id);
+      else if (confirm.kind === 'accept') await handleAcceptLead(confirm.id);
+      else if (confirm.kind === 'decline') await handleDeclineLead(confirm.id);
+      else if (confirm.kind === 'decline-slot') await handleDecline(confirm.id);
+      setConfirm(null);
+    } finally {
+      setConfirmBusy(false);
+    }
+  }
+
   if (loading) return <AdvocateShell><Spinner /></AdvocateShell>;
 
   return (
@@ -161,12 +206,30 @@ export default function Bookings() {
       {msg && <div className="mt-3"><Toast text={msg} kind={msgKind} /></div>}
 
       <div className="mt-5">
-        {tab === 'open' && <OpenMattersList leads={openLeads} onClaim={handleClaim} claiming={claiming} />}
-        {tab === 'enquiries' && <EnquiriesList enquiries={enquiries} onAccept={handleAcceptLead} onDecline={handleDeclineLead} />}
+        {tab === 'open' && (
+          <OpenMattersList
+            leads={openLeads}
+            onClaim={(id, label) => setConfirm({ kind: 'claim', id, label })}
+            claiming={claiming}
+          />
+        )}
+        {tab === 'enquiries' && (
+          <EnquiriesList
+            enquiries={enquiries}
+            onAccept={(id, label) => setConfirm({ kind: 'accept', id, label })}
+            onDecline={(id, label) => setConfirm({ kind: 'decline', id, label })}
+          />
+        )}
         {tab === 'calendar' && (
           <CalendarView weekStart={weekStart} setWeekStart={setWeekStart} availability={availability} timeOff={timeOff} slots={slots} onConfirm={handleConfirm} onDecline={handleDecline} />
         )}
-        {tab === 'requests' && <RequestsList requests={requests} onConfirm={handleConfirm} onDecline={handleDecline} />}
+        {tab === 'requests' && (
+          <RequestsList
+            requests={requests}
+            onConfirm={handleConfirm}
+            onDecline={(id, label) => setConfirm({ kind: 'decline-slot', id, label })}
+          />
+        )}
         {tab === 'upcoming' && <BookingList list={upcoming} onStatus={handleStatus} showComplete />}
         {tab === 'availability' && (
           <AvailabilityEditor
@@ -218,7 +281,7 @@ function OpenMattersList({ leads, onClaim, claiming }) {
                 Contact details are shared once you take this matter on.
               </div>
             </div>
-            <Button size="sm" onClick={() => onClaim(l.id)} disabled={!!claiming}>
+            <Button size="sm" onClick={() => onClaim(l.id, l.matter || 'This matter')} disabled={!!claiming}>
               <UserPlus size={14} /> {claiming === l.id ? 'Taking\u2026' : 'Take this matter'}
             </Button>
           </div>
@@ -248,8 +311,8 @@ function EnquiriesList({ enquiries, onAccept, onDecline }) {
             </div>
             {actionable ? (
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => onAccept(l.id)}><UserPlus size={14} /> Accept &amp; add as client</Button>
-                <Button size="sm" variant="ghost" onClick={() => onDecline(l.id)}><XIcon size={14} /> Decline</Button>
+                <Button size="sm" onClick={() => onAccept(l.id, l.client_name || 'This enquiry')}><UserPlus size={14} /> Accept &amp; add as client</Button>
+                <Button size="sm" variant="ghost" onClick={() => onDecline(l.id, l.matter || 'This matter')}><XIcon size={14} /> Decline</Button>
               </div>
             ) : l.status === 'converted' ? (
               <Link to="/dashboard/advocate/clients" className="flex items-center gap-1 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700">
@@ -283,7 +346,7 @@ function RequestsList({ requests, onConfirm, onDecline }) {
               </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => onConfirm(s.id)}><Check size={14} /> Confirm</Button>
-                <Button size="sm" variant="danger" onClick={() => onDecline(s.id)}><XIcon size={14} /> Decline</Button>
+                <Button size="sm" variant="danger" onClick={() => onDecline(s.id, s.client_name || 'This client')}><XIcon size={14} /> Decline</Button>
               </div>
             </div>
           ))}
@@ -623,6 +686,17 @@ function AvailabilityEditor({ advocateId, availability, timeOff, onSaved, setMsg
           {timeOff.length === 0 && <div className="text-[13px] text-ink-400">No blocked dates.</div>}
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={runConfirmed}
+        busy={confirmBusy}
+        danger={CONFIRM_COPY[confirm?.kind]?.danger}
+        confirmLabel={CONFIRM_COPY[confirm?.kind]?.cta}
+        title={CONFIRM_COPY[confirm?.kind]?.title || 'Are you sure?'}
+        message={CONFIRM_COPY[confirm?.kind]?.body(confirm?.label || 'This matter') || ''}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
