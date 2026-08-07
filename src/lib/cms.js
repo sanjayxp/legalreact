@@ -383,6 +383,22 @@ export async function listMyLeads(advocateId) {
   if (error) throw error;
   return data || [];
 }
+// Matters nobody has taken on yet — visible to every verified advocate. The
+// client's phone and email are deliberately withheld until one advocate takes
+// the matter, so posting a matter doesn't hand contact details to everyone.
+export async function listOpenLeads() {
+  const { data, error } = await supabase.rpc('list_open_leads');
+  if (error) throw new Error(error.message || 'Could not load open matters.');
+  return data || [];
+}
+
+// Takes an unclaimed matter. The first advocate through wins; anyone later is
+// told it has gone rather than quietly overwriting the first.
+export async function claimLead(id) {
+  const { error } = await supabase.rpc('claim_lead', { p_lead_id: id });
+  if (error) throw new Error(error.message || 'Could not take this matter.');
+}
+
 // Accepting turns the enquiry into (or links it to) a row in the advocate's
 // own private client register — this is the one place "lead" becomes "client".
 export async function acceptLead(id) {

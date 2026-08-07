@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2, UserPlus, ArrowRight, Inbox, CalendarDays, BellRing, CalendarCheck2, Clock, History, Mail, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Check, X as XIcon, Phone, Video, Building2, UserPlus, ArrowRight, Inbox, CalendarDays, BellRing, CalendarCheck2, Clock, History, Mail, Download, Globe2, MapPin, IndianRupee } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { googleCalendarUrl, downloadIcs } from '../../lib/calendarLinks';
 import {
@@ -17,6 +17,8 @@ import {
   listMyLeads,
   acceptLead,
   declineLead,
+  listOpenLeads,
+  claimLead,
 } from '../../lib/cms';
 import { computeDaySlots, startOfWeek, dayKey } from '../../lib/slots';
 import AdvocateShell from '../../components/layout/AdvocateShell';
@@ -39,16 +41,27 @@ export default function Bookings() {
   const [availability, setAvailabilityState] = useState([]);
   const [timeOff, setTimeOff] = useState([]);
   const [enquiries, setEnquiries] = useState([]);
+  const [openLeads, setOpenLeads] = useState([]);
+  const [claiming, setClaiming] = useState('');
   const [msg, setMsg] = useState('');
   const [msgKind, setMsgKind] = useState('ok');
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date()));
 
   async function loadAll() {
-    const [sl, av, to, lq] = await Promise.all([listMySlots(user.id), getAvailability(user.id), listTimeOff(user.id), listMyLeads(user.id)]);
+    const [sl, av, to, lq, ol] = await Promise.all([
+      listMySlots(user.id),
+      getAvailability(user.id),
+      listTimeOff(user.id),
+      listMyLeads(user.id),
+      // Only verified advocates get a board; for anyone else this comes back
+      // empty rather than failing the whole page.
+      listOpenLeads().catch(() => []),
+    ]);
     setSlots(sl);
     setAvailabilityState(av);
     setTimeOff(to);
     setEnquiries(lq);
+    setOpenLeads(ol);
     setLoading(false);
   }
 
@@ -64,6 +77,7 @@ export default function Bookings() {
   const past = slots.filter((s) => ['completed', 'cancelled', 'declined'].includes(s.status) || (s.status === 'confirmed' && new Date(s.slot_start) < now));
 
   const tabs = [
+    { key: 'open', label: 'Open matters', count: openLeads.length, tone: 'gold', icon: Globe2 },
     { key: 'enquiries', label: 'Enquiries', count: openEnquiries.length, tone: 'rose', icon: Inbox },
     { key: 'calendar', label: 'Calendar', tone: 'brand', icon: CalendarDays },
     { key: 'requests', label: 'Booking requests', count: requests.length, tone: 'gold', icon: BellRing },
@@ -98,6 +112,23 @@ export default function Bookings() {
     await updateSlotStatus(id, status);
     loadAll();
   }
+  // Takes an unclaimed matter for this advocate. It leaves every other
+  // advocate's board at the same moment.
+  async function handleClaim(id) {
+    setClaiming(id);
+    try {
+      await claimLead(id);
+      say('Matter is yours — the client\u2019s details are now in your Enquiries.');
+      setTab('enquiries');
+      await loadAll();
+    } catch (e) {
+      say(e.message, 'err');
+      // Whoever got there first has already removed it from the board.
+      await loadAll();
+    } finally {
+      setClaiming('');
+    }
+  }
   async function handleAcceptLead(id) {
     try {
       await acceptLead(id);
@@ -122,13 +153,14 @@ export default function Bookings() {
     <AdvocateShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Enquiries &amp; bookings</h1>
-        <p className="mt-1 text-[14.5px] text-ink-500">Enquiries routed to you by our team, plus your availability and consultation requests.</p>
+        <p className="mt-1 text-[14.5px] text-ink-500">Matters open to every advocate, the ones you've taken on, plus your availability and consultation requests.</p>
       </motion.div>
 
       <div className="mt-5"><Tabs tabs={tabs} active={tab} onChange={setTab} /></div>
       {msg && <div className="mt-3"><Toast text={msg} kind={msgKind} /></div>}
 
       <div className="mt-5">
+        {tab === 'open' && <OpenMattersList leads={openLeads} onClaim={handleClaim} claiming={claiming} />}
         {tab === 'enquiries' && <EnquiriesList enquiries={enquiries} onAccept={handleAcceptLead} onDecline={handleDeclineLead} />}
         {tab === 'calendar' && (
           <CalendarView weekStart={weekStart} setWeekStart={setWeekStart} availability={availability} timeOff={timeOff} slots={slots} onConfirm={handleConfirm} onDecline={handleDecline} />
@@ -151,6 +183,44 @@ export default function Bookings() {
 }
 
 const ENQUIRY_STATUS_TONE = { new: 'amber', contacted: 'blue', converted: 'green', dropped: 'gray' };
+
+// Matters posted from the public site or a client dashboard that nobody has
+// picked up. Contact details are withheld until one advocate takes it on.
+function OpenMattersList({ leads, onClaim, claiming }) {
+  if (!leads.length) {
+    return (
+      <EmptyState
+        title="No open matters right now"
+        sub="Matters posted by clients appear here for every verified advocate. Take one on and it becomes yours alone."
+      />
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {leads.map((l) => (
+        <Card key={l.id} className="!p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-[14.5px] font-bold text-ink-900">{l.matter || 'Legal matter'}</div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-ink-500">
+                <span>{l.display_name}</span>
+                {l.city && <span className="flex items-center gap-1"><MapPin size={12} /> {l.city}</span>}
+                {l.budget && <span className="flex items-center gap-1"><IndianRupee size={12} /> {l.budget}</span>}
+                <span>{new Date(l.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+              </div>
+              <div className="mt-1.5 text-[12px] text-ink-400">
+                Contact details are shared once you take this matter on.
+              </div>
+            </div>
+            <Button size="sm" onClick={() => onClaim(l.id)} disabled={!!claiming}>
+              <UserPlus size={14} /> {claiming === l.id ? 'Taking\u2026' : 'Take this matter'}
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 function EnquiriesList({ enquiries, onAccept, onDecline }) {
   if (!enquiries.length) {
