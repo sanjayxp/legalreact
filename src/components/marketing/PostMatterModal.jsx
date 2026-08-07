@@ -1,24 +1,44 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { submitMatterLead } from '../../lib/cms';
 import { useAuth } from '../../lib/auth';
-import { PRACTICE_AREAS } from '../../lib/practiceAreas';
+import { MATTER_TYPES, findMatterType, summariseMatter } from '../../lib/matterTypes';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Textarea, Select, Label, FormRow } from '../ui/Field';
 import IdentityFields from './IdentityFields';
+import MatterFields from './MatterFields';
 import { Toast } from '../ui/Misc';
 
-const EMPTY_FORM = { client_name: '', phone: '', email: '', area: '', city: '', matter: '', budget: '' };
+// Tile colours, kept here so the types file stays free of Tailwind classes.
+const TILE_TINTS = {
+  brand: 'bg-brand-500/10 text-brand-600',
+  gold: 'bg-gold-500/10 text-gold-600',
+  coral: 'bg-coral-500/10 text-coral-500',
+  emerald: 'bg-emerald-50 text-emerald-600',
+  violet: 'bg-violet-50 text-violet-600',
+  slate: 'bg-ink-100 text-ink-500',
+};
 
-export default function PostMatterModal({ open, onClose }) {
+const EMPTY_FORM = { client_name: '', phone: '', email: '', city: '', matter: '', budget: '' };
+
+export default function PostMatterModal({ open, onClose, preselect = '' }) {
   const navigate = useNavigate();
   const { session, profile } = useAuth();
   const [form, setForm] = useState(EMPTY_FORM);
+  // Step 1 picks the kind of matter; step 2 asks what that kind needs.
+  const [typeSlug, setTypeSlug] = useState('');
+  const [details, setDetails] = useState({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [done, setDone] = useState(false);
+
+  const type = findMatterType(typeSlug);
+
+  function setDetail(name, value) {
+    setDetails((d) => ({ ...d, [name]: value }));
+  }
 
   function set(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -26,6 +46,11 @@ export default function PostMatterModal({ open, onClose }) {
   function setField(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
   }
+
+  // Opening from a homepage tile skips straight to that type's questions.
+  useEffect(() => {
+    if (open && preselect) setTypeSlug(preselect);
+  }, [open, preselect]);
 
   // A signed-in visitor should not retype what their account already holds.
   useEffect(() => {
@@ -43,6 +68,8 @@ export default function PostMatterModal({ open, onClose }) {
     // Reset after the close animation has a moment to finish.
     setTimeout(() => {
       setForm(EMPTY_FORM);
+      setTypeSlug('');
+      setDetails({});
       setMsg('');
       setDone(false);
     }, 200);
@@ -50,8 +77,13 @@ export default function PostMatterModal({ open, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!type) { setMsg('Pick what you need help with first.'); return; }
     if (!form.client_name.trim() || !form.phone.trim()) {
       setMsg('Name and phone are needed so an advocate can reach you.');
+      return;
+    }
+    if (!form.matter.trim() && !type.fields.length) {
+      setMsg('Tell us a little about the matter.');
       return;
     }
     setBusy(true);
@@ -61,7 +93,9 @@ export default function PostMatterModal({ open, onClose }) {
         client_name: form.client_name,
         phone: form.phone,
         email: form.email,
-        matter: [form.area, form.matter].filter(Boolean).join(' — '),
+        matter: summariseMatter(type, details, form.matter),
+        matter_type: type?.slug || null,
+        details: Object.keys(details).length ? details : null,
         city: form.city,
         budget: form.budget,
       });
@@ -99,33 +133,69 @@ export default function PostMatterModal({ open, onClose }) {
           <Button variant="ghost" className="mt-2.5 w-full" onClick={handleClose}>Maybe later</Button>
         </>
       ) : (
+        !type ? (
+          <div>
+            <p className="text-[13.5px] text-ink-500">
+              What do you need help with? Pick the closest one — you can explain in your own words next.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {MATTER_TYPES.map((t) => (
+                <button
+                  key={t.slug}
+                  type="button"
+                  onClick={() => setTypeSlug(t.slug)}
+                  className="group flex flex-col items-start gap-2 rounded-xl border border-ink-100 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-[var(--shadow-card)]"
+                >
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${TILE_TINTS[t.tint] || TILE_TINTS.brand}`}>
+                    <t.icon size={17} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[13px] font-bold leading-tight text-ink-900">{t.label}</span>
+                    <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-400">{t.blurb}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit}>
-          <p className="text-[13.5px] text-ink-500">
-            Tell us what's going on, in plain language — no forms or jargon required. We'll match you with a
-            Bar Council-verified advocate.
-          </p>
+          <button
+            type="button"
+            onClick={() => { setTypeSlug(''); setDetails({}); setMsg(''); }}
+            className="mb-3 inline-flex items-center gap-1 text-[12.5px] font-semibold text-ink-500 hover:text-brand-600"
+          >
+            <ArrowLeft size={13} /> All matter types
+          </button>
+
+          <div className="flex items-center gap-2.5 rounded-xl bg-brand-50/70 px-3.5 py-2.5">
+            <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TILE_TINTS[type.tint] || TILE_TINTS.brand}`}>
+              <type.icon size={16} />
+            </span>
+            <div className="min-w-0">
+              <div className="text-[13.5px] font-bold text-ink-900">{type.label}</div>
+              <div className="truncate text-[11.5px] text-ink-500">{type.blurb}</div>
+            </div>
+          </div>
 
           <IdentityFields form={form} onChange={setField} />
 
+          <MatterFields type={type} details={details} onChange={setDetail} />
+
           <FormRow>
-            <div>
-              <Label hint="(optional)">Practice area</Label>
-              <Select value={form.area} onChange={set('area')}>
-                <option value="">Not sure yet</option>
-                {PRACTICE_AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
-              </Select>
-            </div>
             <div>
               <Label hint="(optional)">City</Label>
               <Input value={form.city} onChange={set('city')} placeholder="e.g. Bengaluru" />
             </div>
+            <div>
+              <Label hint="(optional)">Budget</Label>
+              <Input value={form.budget} onChange={set('budget')} placeholder="e.g. ₹5,000–10,000" />
+            </div>
           </FormRow>
 
-          <Label required>What's your matter about?</Label>
-          <Textarea rows={4} value={form.matter} onChange={set('matter')} placeholder="A brief description helps the advocate prepare." />
-
-          <Label hint="(optional)">Budget</Label>
-          <Input value={form.budget} onChange={set('budget')} placeholder="e.g. ₹5,000–10,000" />
+          <Label required={!type.fields.length} hint={type.fields.length ? '(optional)' : undefined}>
+            Anything else we should know?
+          </Label>
+          <Textarea rows={3} value={form.matter} onChange={set('matter')} placeholder="In your own words — this reaches the advocate as you write it." />
 
           <p className="mt-3 text-[11px] leading-relaxed text-ink-400">
             By submitting, you consent to LegalConnects sharing these details with a matched advocate, as
@@ -146,6 +216,7 @@ export default function PostMatterModal({ open, onClose }) {
             Prefer to browse yourself? Search advocates instead →
           </button>
         </form>
+        )
       )}
     </Modal>
   );

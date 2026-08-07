@@ -10,6 +10,8 @@ const SKIP_PREFIXES = ['/dashboard', '/admin', '/login'];
 
 export function PostMatterProvider({ children }) {
   const [open, setOpen] = useState(false);
+  // Lets the homepage tiles open the modal already on the details step.
+  const [preselect, setPreselect] = useState('');
   const { pathname } = useLocation();
   const pathRef = useRef(pathname);
   pathRef.current = pathname;
@@ -26,9 +28,17 @@ export function PostMatterProvider({ children }) {
   }, []);
 
   return (
-    <PostMatterCtx.Provider value={{ openPostMatter: () => setOpen(true) }}>
+    <PostMatterCtx.Provider
+      value={{
+        openPostMatter: (slug) => { setPreselect(typeof slug === 'string' ? slug : ''); setOpen(true); },
+      }}
+    >
       {children}
-      <PostMatterModal open={open} onClose={() => setOpen(false)} />
+      <PostMatterModal
+        open={open}
+        preselect={preselect}
+        onClose={() => { setOpen(false); setPreselect(''); }}
+      />
     </PostMatterCtx.Provider>
   );
 }

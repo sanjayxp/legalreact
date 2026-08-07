@@ -1,29 +1,10 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Scale,
-  Gavel,
-  ShieldCheck,
-  Building2,
-  Home as HomeIcon,
-  Percent,
-  Briefcase,
-  Lightbulb,
-  Lock,
-  ShoppingBag,
-  Plane,
-  HeartHandshake,
-  MessageCircleQuestion,
-  Globe2,
-  CalendarCheck2,
-  BadgeCheck,
-  FileCheck2,
-} from 'lucide-react';
+import { ArrowRight, ShieldCheck, MessageCircleQuestion, Globe2, CalendarCheck2, BadgeCheck, FileCheck2 } from 'lucide-react';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import { usePostMatter } from '../../components/marketing/PostMatterContext';
+import { MATTER_TYPES } from '../../lib/matterTypes';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 
@@ -31,21 +12,11 @@ const TINTS = {
   brand: 'bg-brand-500/10 text-brand-600',
   gold: 'bg-gold-500/10 text-gold-600',
   coral: 'bg-coral-500/10 text-coral-500',
+  emerald: 'bg-emerald-50 text-emerald-600',
+  violet: 'bg-violet-50 text-violet-600',
+  slate: 'bg-ink-100 text-ink-500',
 };
 
-const PRACTICE_AREAS = [
-  { name: 'Civil', icon: Scale, tint: 'brand' },
-  { name: 'Criminal', icon: Gavel, tint: 'coral' },
-  { name: 'Family', icon: HeartHandshake, tint: 'gold' },
-  { name: 'Corporate', icon: Building2, tint: 'brand' },
-  { name: 'Property & Real Estate', icon: HomeIcon, tint: 'gold' },
-  { name: 'Tax', icon: Percent, tint: 'coral' },
-  { name: 'Labour & Employment', icon: Briefcase, tint: 'brand' },
-  { name: 'IP', icon: Lightbulb, tint: 'gold' },
-  { name: 'Cyber Law', icon: Lock, tint: 'coral' },
-  { name: 'Consumer', icon: ShoppingBag, tint: 'brand' },
-  { name: 'Immigration', icon: Plane, tint: 'gold' },
-];
 
 const STEPS = [
   {
@@ -217,45 +188,55 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- Practice areas ---- */}
+      {/* ---- What do you need help with ---- */}
       <section id="practice-areas" className="bg-brand-50/50 py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
-          <div className="max-w-xl">
-            <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Practice areas</span>
-            <h2 className="mt-2 text-[33px] font-extrabold text-ink-900 sm:text-[41px]">Every practice area, one place to start</h2>
+          <div className="max-w-2xl">
+            <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Common matters</span>
+            {/* Named the way a person describes their problem, not the way a
+                lawyer classifies it — someone with a fine knows they have a
+                challan, not that it is a criminal matter. */}
+            <h2 className="mt-2 text-[33px] font-extrabold text-ink-900 sm:text-[41px]">What do you need help with?</h2>
+            <p className="mt-3 text-[16.5px] text-ink-500">
+              Pick the closest one and answer a few questions — we'll pass it to a Bar Council-verified advocate.
+            </p>
           </div>
           <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {PRACTICE_AREAS.map((a, i) => (
+            {MATTER_TYPES.filter((t) => t.slug !== 'other').map((t, i) => (
               <motion.div
-                key={a.name}
+                key={t.slug}
                 initial={{ opacity: 0, y: 14 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: (i % 4) * 0.06, duration: 0.4 }}
               >
-                <Link to={`/advocates?area=${encodeURIComponent(a.name)}`} className="group block h-full">
+                <button onClick={() => openPostMatter(t.slug)} className="group block h-full w-full text-left">
                   <Card
                     hover
                     whileHover={{ y: -4 }}
                     transition={{ type: 'spring', stiffness: 350, damping: 20 }}
-                    // Two across on a phone leaves ~120px inside the card —
-                    // not enough for icon, label and arrow on one line, so
-                    // they stack there and sit in a row from sm up.
-                    className="flex h-full flex-col items-start gap-2.5 !p-5 hover:border-brand-200 sm:flex-row sm:items-center sm:gap-3.5"
+                    className="flex h-full flex-col items-start gap-2.5 !p-5 hover:border-brand-200"
                   >
-                    <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${TINTS[a.tint]}`}>
-                      <a.icon size={19} />
+                    <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${TINTS[t.tint] || TINTS.brand}`}>
+                      <t.icon size={19} />
                     </div>
-                    {/* min-w-0, or the label refuses to shrink and shoves the arrow out of the card. */}
-                    <span className="min-w-0 flex-1 text-[15.5px] font-bold text-ink-900">{a.name}</span>
-                    <ArrowUpRight
-                      size={16}
-                      className="hidden shrink-0 -translate-x-1 text-ink-200 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 group-hover:text-brand-500 sm:block"
-                    />
+                    <div className="min-w-0">
+                      <div className="text-[15.5px] font-bold leading-tight text-ink-900">{t.label}</div>
+                      <div className="mt-1 text-[13px] leading-snug text-ink-500">{t.blurb}</div>
+                    </div>
                   </Card>
-                </Link>
+                </button>
               </motion.div>
             ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <button onClick={() => openPostMatter('other')} className="text-[15px] font-bold text-brand-600 hover:underline">
+              Something else? Tell us in your own words →
+            </button>
+            <Link to="/advocates" className="text-[15px] font-semibold text-ink-500 hover:text-brand-600">
+              Or browse advocates by practice area
+            </Link>
           </div>
         </div>
       </section>

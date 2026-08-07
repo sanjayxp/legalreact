@@ -21,6 +21,7 @@ import {
   claimLead,
 } from '../../lib/cms';
 import { computeDaySlots, startOfWeek, dayKey } from '../../lib/slots';
+import { findMatterType } from '../../lib/matterTypes';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
 import Tabs from '../../components/ui/Tabs';
@@ -201,6 +202,11 @@ function OpenMattersList({ leads, onClaim, claiming }) {
         <Card key={l.id} className="!p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
+              {/* The kind of matter, so an advocate can tell at a glance
+                  whether it is one they take on. */}
+              {findMatterType(l.matter_type) && (
+                <Badge tone="blue" className="mb-1.5">{findMatterType(l.matter_type).label}</Badge>
+              )}
               <div className="text-[14.5px] font-bold text-ink-900">{l.matter || 'Legal matter'}</div>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-ink-500">
                 <span>{l.display_name}</span>

@@ -830,12 +830,16 @@ export async function requestAdvocateLead({ advocate_id, client_name, phone, ema
 
 // Public "Post your matter" capture — general enquiry, not yet assigned to
 // any advocate. Lands in the same admin Leads queue for triage/assignment.
-export async function submitMatterLead({ client_name, phone, email, matter, city, budget }) {
+export async function submitMatterLead({ client_name, phone, email, matter, matter_type, details, city, budget }) {
   const { error } = await supabase.from('leads').insert({
     client_name,
     phone,
     email: email || null,
     matter: matter || null,
+    // What the client picked, plus their answers for that type. matter stays
+    // the readable summary so anything already reading it is unaffected.
+    matter_type: matter_type || null,
+    details: details || null,
     city: city || null,
     budget: budget || null,
     source: 'post_case',
