@@ -230,11 +230,26 @@ export async function listMyBookingsByEmail(email) {
   if (!email) return [];
   const { data, error } = await supabase
     .from('booking_slots')
-    .select('*, advocate_profiles(id, photo_url, profiles!advocate_profiles_id_fkey(full_name))')
+    .select('*')
     .ilike('client_email', email)
     .order('slot_start', { ascending: false });
   if (error) throw error;
-  return data || [];
+
+  const rows = data || [];
+  if (!rows.length) return rows;
+
+  // booking_slots.advocate_id points at profiles, not advocate_profiles, so
+  // there is no relationship for PostgREST to embed through — asking for one
+  // fails the whole query. The advocate's display details are fetched
+  // separately and attached under the same key the callers already expect.
+  const ids = [...new Set(rows.map((r) => r.advocate_id).filter(Boolean))];
+  const { data: advocates } = await supabase
+    .from('advocate_profiles')
+    .select('id, photo_url, profiles!advocate_profiles_id_fkey(full_name)')
+    .in('id', ids);
+
+  const byId = new Map((advocates || []).map((a) => [a.id, a]));
+  return rows.map((r) => ({ ...r, advocate_profiles: byId.get(r.advocate_id) || null }));
 }
 // Client — their own submitted matters, matched by the email on their
 // account (leads has no client_id since posting a matter never requires login).
@@ -244,6 +259,10 @@ export async function listMyLeadsByEmail(email) {
     .from('leads')
     .select('*')
     .ilike('email', email)
+    // Booking an advocate also raises a lead so the advocate sees the enquiry.
+    // That is the same act as the consultation already listed above it, so it
+    // does not belong in the client's list of matters they posted.
+    .neq('source', 'booking')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];
