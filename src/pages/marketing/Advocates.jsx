@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, MapPin, BadgeCheck, Gavel, IndianRupee, X, Video, Phone, Building2, SlidersHorizontal } from 'lucide-react';
+import { Search, MapPin, BadgeCheck, Gavel, X, Video, Phone, Building2, SlidersHorizontal } from 'lucide-react';
 import { listApprovedAdvocatesPublic } from '../../lib/cms';
 import { PRACTICE_AREAS } from '../../lib/practiceAreas';
 import PublicNav from '../../components/marketing/PublicNav';
@@ -28,13 +28,6 @@ const EXPERIENCE_OPTIONS = [
   { value: '10', label: '10+ years' },
 ];
 
-const FEE_OPTIONS = [
-  { value: 'any', label: 'Any fee' },
-  { value: '1000', label: 'Under ₹1,000' },
-  { value: '2000', label: 'Under ₹2,000' },
-  { value: '5000', label: 'Under ₹5,000' },
-];
-
 function toggleInSet(set, value) {
   const next = new Set(set);
   if (next.has(value)) next.delete(value);
@@ -56,7 +49,6 @@ export default function Advocates() {
   const [state, setState] = useState('all');
   const [minExperience, setMinExperience] = useState('0');
   const [modes, setModes] = useState(new Set());
-  const [maxFee, setMaxFee] = useState('any');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
@@ -89,7 +81,6 @@ export default function Advocates() {
       if (state !== 'all' && a.state !== state) return false;
       if (Number(minExperience) > 0 && (a.experience_years || 0) < Number(minExperience)) return false;
       if (modes.size && !(a.consultation_modes || []).some((m) => modes.has(m))) return false;
-      if (maxFee !== 'any' && a.consultation_fee && a.consultation_fee > Number(maxFee)) return false;
       if (search) {
         const s = search.toLowerCase();
         const hay = [a.profiles?.full_name, a.headline, a.city, a.state, ...(a.practice_areas || [])].filter(Boolean).join(' ').toLowerCase();
@@ -97,9 +88,9 @@ export default function Advocates() {
       }
       return true;
     });
-  }, [advocates, search, areas, city, state, minExperience, modes, maxFee]);
+  }, [advocates, search, areas, city, state, minExperience, modes]);
 
-  const activeFilterCount = areas.size + modes.size + (city !== 'all' ? 1 : 0) + (state !== 'all' ? 1 : 0) + (Number(minExperience) > 0 ? 1 : 0) + (maxFee !== 'any' ? 1 : 0);
+  const activeFilterCount = areas.size + modes.size + (city !== 'all' ? 1 : 0) + (state !== 'all' ? 1 : 0) + (Number(minExperience) > 0 ? 1 : 0);
 
   function clearFilters() {
     setAreas(new Set());
@@ -129,12 +120,6 @@ export default function Advocates() {
       <FilterGroup label="Experience">
         <Select value={minExperience} onChange={(e) => setMinExperience(e.target.value)}>
           {EXPERIENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </Select>
-      </FilterGroup>
-
-      <FilterGroup label="Consultation fee">
-        <Select value={maxFee} onChange={(e) => setMaxFee(e.target.value)}>
-          {FEE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </Select>
       </FilterGroup>
 
@@ -244,11 +229,7 @@ export default function Advocates() {
                         </div>
                         <div className="mt-4 flex items-center justify-between border-t border-ink-50 pt-3">
                           <span className="text-[13px] text-ink-400">{a.experience_years ? `${a.experience_years} yrs experience` : ' '}</span>
-                          {a.consultation_fee && (
-                            <span className="flex items-center gap-0.5 text-[14px] font-bold text-brand-600">
-                              <IndianRupee size={13} />{a.consultation_fee}<span className="font-normal text-ink-400">/30min</span>
-                            </span>
-                          )}
+                          {a.city && <span className="text-[13px] text-ink-400">{a.city}</span>}
                         </div>
                       </Card>
                     </Link>

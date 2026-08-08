@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, BadgeCheck, IndianRupee, Video, Phone, Building2, Briefcase, GraduationCap, ArrowLeft, ArrowRight, CalendarDays, Download, UserPlus } from 'lucide-react';
+import { MapPin, BadgeCheck, Video, Phone, Building2, Briefcase, GraduationCap, ArrowLeft, ArrowRight, CalendarDays, Download, UserPlus } from 'lucide-react';
 import { getApprovedAdvocatePublic, incrementProfileView, requestAdvocateLead, listOpenSlotsPublic, requestSlot } from '../../lib/cms';
 import { googleCalendarUrl, downloadIcs } from '../../lib/calendarLinks';
 import { useAuth } from '../../lib/auth';
@@ -140,14 +140,11 @@ export default function AdvocateProfile() {
 
           <div className="hidden lg:block">
             <Card className="sticky top-24">
-              {advocate.consultation_fee && (
-                <div className="flex items-baseline gap-1">
-                  <IndianRupee size={20} className="text-ink-900" />
-                  <span className="text-[26px] font-extrabold text-ink-900">{advocate.consultation_fee}</span>
-                  <span className="text-[13px] text-ink-400">/ 30 min</span>
-                </div>
+              {/* Fees are not advertised publicly — the advocate confirms them
+                  directly once they take the matter on. */}
+              {advocate.experience_years && (
+                <div className="text-[15px] font-bold text-ink-900">{advocate.experience_years} years of experience</div>
               )}
-              {advocate.experience_years && <div className="mt-1 text-[13px] text-ink-500">{advocate.experience_years} years of experience</div>}
 
               {(advocate.consultation_modes || []).length > 0 && (
                 <div className="mt-4 space-y-2">
@@ -174,16 +171,12 @@ export default function AdvocateProfile() {
         </motion.div>
       </div>
 
-      {/* Mobile-only sticky booking bar — the fee + CTA would otherwise sit
-          below the entire bio/experience/education stack on small screens. */}
+      {/* Mobile-only sticky booking bar — the CTA would otherwise sit below
+          the entire bio/experience/education stack on small screens. */}
       <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-ink-100 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] lg:hidden">
-        {advocate.consultation_fee ? (
-          <div className="flex items-baseline gap-0.5">
-            <IndianRupee size={15} className="text-ink-900" />
-            <span className="text-[17px] font-extrabold text-ink-900">{advocate.consultation_fee}</span>
-            <span className="text-[11px] text-ink-400">/30min</span>
-          </div>
-        ) : <span />}
+        <span className="min-w-0 truncate text-[13px] text-ink-500">
+          {advocate.experience_years ? `${advocate.experience_years} years of experience` : 'Bar Council enrolment verified'}
+        </span>
         <Button onClick={() => setRequestOpen(true)}>Check availability</Button>
       </div>
       <div className="h-20 lg:hidden" />

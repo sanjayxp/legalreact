@@ -330,8 +330,12 @@ export default function Profile() {
           </div>
         </FormRow>
 
-        <Label>Consultation fee (₹, per 30 min)</Label>
+        <Label hint="(not shown publicly)">Consultation fee (₹, per 30 min)</Label>
         <Input type="number" min="0" placeholder="e.g. 1500" value={fee} onChange={(e) => setFee(e.target.value)} />
+        <p className="mt-1.5 text-[12px] text-ink-400">
+          Kept for your own records and visible to our team. It is not published on your public profile — Bar Council
+          rules do not permit advertising fees, so quote it to the client directly.
+        </p>
         <Label>About you</Label>
         <Textarea placeholder="A short professional bio clients will see on your profile." value={bio} onChange={(e) => setBio(e.target.value)} />
       </Card>
