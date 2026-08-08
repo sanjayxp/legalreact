@@ -1,3 +1,4 @@
+import { POLICY_LAST_UPDATED } from '../../lib/orgDetails';
 import LegalPageLayout, { LegalSection } from '../../components/marketing/LegalPageLayout';
 
 export default function Disclaimer() {
@@ -5,7 +6,7 @@ export default function Disclaimer() {
     <LegalPageLayout
       eyebrow="Legal"
       title="Disclaimer"
-      updated="[date]"
+      updated={POLICY_LAST_UPDATED}
     >
       <LegalSection title="No advertisement or solicitation">
         <p>

@@ -1,16 +1,17 @@
-import LegalPageLayout, { LegalSection, LegalList, Placeholder } from '../../components/marketing/LegalPageLayout';
+import { POLICY_LAST_UPDATED } from '../../lib/orgDetails';
+import LegalPageLayout, { LegalSection, LegalList, Placeholder, OrgField } from '../../components/marketing/LegalPageLayout';
 
 export default function Privacy() {
   return (
     <LegalPageLayout
       eyebrow="Legal"
       title="Privacy Policy"
-      updated="[date]"
+      updated={POLICY_LAST_UPDATED}
       intro="This Privacy Policy explains what personal data LegalConnects collects, why, and how it is used, shared, and protected, in line with the Digital Personal Data Protection Act, 2023 (DPDP Act)."
     >
       <LegalSection title="1. Who this applies to">
         <p>
-          This policy applies to clients, advocates, and visitors using the LegalConnects website and platform (the "Service"), operated by <Placeholder>registered entity name</Placeholder>, <Placeholder>registered address</Placeholder> ("we", "us").
+          This policy applies to clients, advocates, and visitors using the LegalConnects website and platform (the "Service"), operated by <OrgField name="legalName" hint="registered entity name" />, <OrgField name="registeredAddress" hint="registered address" /> ("we", "us").
         </p>
       </LegalSection>
 
@@ -58,7 +59,7 @@ export default function Privacy() {
 
       <LegalSection title="6. Data retention">
         <p>
-          We retain account and case data for as long as your account is active, and for <Placeholder>retention period, e.g. 7 years</Placeholder> afterward where needed for legal, tax, or dispute-resolution purposes. You can request earlier deletion under Section 8.
+          We retain account and case data for as long as your account is active, and for <OrgField name="dataRetention" hint="retention period, e.g. 7 years" /> afterward where needed for legal, tax, or dispute-resolution purposes. You can request earlier deletion under Section 8.
         </p>
       </LegalSection>
 
@@ -97,7 +98,7 @@ export default function Privacy() {
       </LegalSection>
 
       <LegalSection title="12. Contact">
-        <p>Questions about this policy or your data can be directed to <Placeholder>privacy email address</Placeholder>, or via the <a href="/contact" className="font-semibold text-brand-600 hover:underline">Contact page</a>.</p>
+        <p>Questions about this policy or your data can be directed to <OrgField name="privacyEmail" hint="privacy email address" />, or via the <a href="/contact" className="font-semibold text-brand-600 hover:underline">Contact page</a>.</p>
       </LegalSection>
     </LegalPageLayout>
   );

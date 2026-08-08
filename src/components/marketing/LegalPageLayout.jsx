@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import { orgField } from '../../lib/orgDetails';
 import PublicNav from './PublicNav';
 import Footer from './Footer';
 import HeroBanner from './HeroBanner';
@@ -52,4 +53,13 @@ export function LegalList({ items }) {
 
 export function Placeholder({ children }) {
   return <span className="rounded bg-gold-50 px-1 py-0.5 font-mono text-[13px] text-brand-700">[{children}]</span>;
+}
+
+// A business fact from the single org config. Until it is filled in it shows
+// as a marked placeholder, so an incomplete policy reads as incomplete rather
+// than quietly dropping the sentence's subject.
+export function OrgField({ name, hint }) {
+  const value = orgField(name);
+  if (value) return <>{value}</>;
+  return <Placeholder>{hint || name}</Placeholder>;
 }

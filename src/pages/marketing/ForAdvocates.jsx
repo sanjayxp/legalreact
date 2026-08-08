@@ -23,7 +23,7 @@ const FEATURES = [
   { icon: Gavel, title: 'A case workspace', body: 'Timeline, labels, documents, and hearing dates for every matter, plus CNR lookup via eCourts.' },
   { icon: Users, title: 'A private client & billing register', body: 'Track clients, linked cases, and invoices — separate from the public platform.' },
   { icon: FileText, title: 'Document generator', body: 'Eight ready-made templates — notices, vakalatnama, NDAs, and more — filled and printed in minutes.' },
-  { icon: MessageCircleQuestion, title: 'Answer public questions', body: 'Build visibility by answering Legal Q&A — free exposure to potential clients.' },
+  { icon: MessageCircleQuestion, title: 'Answer public questions', body: 'Contribute plain-language guidance to Legal Q&A, so people can understand where they stand.' },
 ];
 
 const STEPS = [
@@ -47,10 +47,10 @@ export default function ForAdvocates() {
             <h1 className="mt-5 text-[41px] font-extrabold leading-[1.1] text-ink-900 sm:text-[51px]">
               Practice management,
               <br />
-              <span className="text-brand-500">plus new clients.</span>
+              <span className="text-brand-500">in one place.</span>
             </h1>
             <p className="mt-5 max-w-lg text-[18px] leading-relaxed text-ink-500">
-              LegalConnects gives you a booking calendar, a case workspace, and a client register — and puts your verified profile in front of people searching for help, at no cost to list.
+              LegalConnects gives you a booking calendar, a case workspace, and a client register. Your enrolment particulars are listed so that people already looking for an advocate can find them. Free to list.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link to="/login#register">
@@ -126,7 +126,7 @@ export default function ForAdvocates() {
 
       <section className="border-t border-ink-100 py-20">
         <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
-          <h2 className="text-[31px] font-extrabold text-ink-900 sm:text-[39px]">Ready to take on new clients?</h2>
+          <h2 className="text-[31px] font-extrabold text-ink-900 sm:text-[39px]">Set up your practice on LegalConnects</h2>
           <p className="mt-3 text-[16.5px] text-ink-500">Free to join. Verification usually takes 2 working days.</p>
           <Link to="/login#register" className="mt-7 inline-block">
             <Button size="lg">Join as an advocate <ArrowRight size={17} /></Button>

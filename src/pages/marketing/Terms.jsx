@@ -1,11 +1,12 @@
-import LegalPageLayout, { LegalSection, LegalList, Placeholder } from '../../components/marketing/LegalPageLayout';
+import { POLICY_LAST_UPDATED } from '../../lib/orgDetails';
+import LegalPageLayout, { LegalSection, LegalList, Placeholder, OrgField } from '../../components/marketing/LegalPageLayout';
 
 export default function Terms() {
   return (
     <LegalPageLayout
       eyebrow="Legal"
       title="Terms of Service"
-      updated="[date]"
+      updated={POLICY_LAST_UPDATED}
       intro="These Terms govern your use of LegalConnects. By creating an account or using the Service, you agree to them."
     >
       <LegalSection title="1. What LegalConnects is">
@@ -69,7 +70,7 @@ export default function Terms() {
       </LegalSection>
 
       <LegalSection title="10. Governing law">
-        <p>These Terms are governed by the laws of India, and disputes are subject to the exclusive jurisdiction of the courts of <Placeholder>city, e.g. New Delhi</Placeholder>.</p>
+        <p>These Terms are governed by the laws of India, and disputes are subject to the exclusive jurisdiction of the courts of <OrgField name="jurisdictionCity" hint="city, e.g. New Delhi" />.</p>
       </LegalSection>
 
       <LegalSection title="11. Changes to these Terms">

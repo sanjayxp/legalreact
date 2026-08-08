@@ -152,7 +152,7 @@ export default function QuestionDetail() {
             {advVerification === 'approved' ? (
               <>
                 <h3 className="mb-2 text-[13.5px] font-bold text-ink-900">Post an answer</h3>
-                <Textarea rows={4} value={answerBody} onChange={(e) => setAnswerBody(e.target.value)} placeholder="Share plain-language guidance — this is public and helps build your visibility." />
+                <Textarea rows={4} value={answerBody} onChange={(e) => setAnswerBody(e.target.value)} placeholder="Share plain-language guidance. This is published publicly and is general information, not advice on this person's matter." />
                 {answerMsg && <div className="mt-2"><Toast text={answerMsg} kind="err" /></div>}
                 <Button size="sm" className="mt-3" onClick={handleAnswer} disabled={answering}>
                   <Send size={14} /> {answering ? 'Posting…' : 'Post answer'}

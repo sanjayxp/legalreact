@@ -3,7 +3,7 @@ import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import HeroBanner from '../../components/marketing/HeroBanner';
 import Card from '../../components/ui/Card';
-import { Placeholder } from '../../components/marketing/LegalPageLayout';
+import { Placeholder, OrgField } from '../../components/marketing/LegalPageLayout';
 
 export default function Contact() {
   return (
@@ -24,25 +24,25 @@ export default function Contact() {
           <Card>
             <Mail size={20} className="text-brand-600" />
             <h3 className="mt-3 text-[14.5px] font-bold text-ink-900">General support</h3>
-            <p className="mt-1 text-[13.5px] text-ink-500"><Placeholder>support email</Placeholder></p>
+            <p className="mt-1 text-[13.5px] text-ink-500"><OrgField name="supportEmail" hint="support email" /></p>
             <p className="mt-1 text-[13px] text-ink-400">For account help, bookings, or general questions.</p>
           </Card>
           <Card>
             <Phone size={20} className="text-brand-600" />
             <h3 className="mt-3 text-[14.5px] font-bold text-ink-900">Phone</h3>
-            <p className="mt-1 text-[13.5px] text-ink-500"><Placeholder>support phone number</Placeholder></p>
-            <p className="mt-1 text-[13px] text-ink-400"><Placeholder>hours, e.g. Mon–Fri, 10am–6pm IST</Placeholder></p>
+            <p className="mt-1 text-[13.5px] text-ink-500"><OrgField name="supportPhone" hint="support phone number" /></p>
+            <p className="mt-1 text-[13px] text-ink-400"><OrgField name="supportHours" hint="hours, e.g. Mon–Fri, 10am–6pm IST" /></p>
           </Card>
           <Card>
             <MapPin size={20} className="text-brand-600" />
             <h3 className="mt-3 text-[14.5px] font-bold text-ink-900">Registered address</h3>
-            <p className="mt-1 text-[13.5px] text-ink-500"><Placeholder>registered business address</Placeholder></p>
+            <p className="mt-1 text-[13.5px] text-ink-500"><OrgField name="registeredAddress" hint="registered business address" /></p>
           </Card>
           <Card>
             <ShieldCheck size={20} className="text-brand-600" />
             <h3 className="mt-3 text-[14.5px] font-bold text-ink-900">Grievance Officer</h3>
-            <p className="mt-1 text-[13.5px] text-ink-500"><Placeholder>grievance officer name</Placeholder> · <Placeholder>grievance officer email</Placeholder></p>
-            <p className="mt-1 text-[13px] text-ink-400">For data protection or platform grievances, per the DPDP Act and IT Rules. Responded to within <Placeholder>e.g. 30 days</Placeholder>.</p>
+            <p className="mt-1 text-[13.5px] text-ink-500"><OrgField name="grievanceOfficerName" hint="grievance officer name" /> · <OrgField name="grievanceOfficerEmail" hint="grievance officer email" /></p>
+            <p className="mt-1 text-[13px] text-ink-400">For data protection or platform grievances, per the DPDP Act and IT Rules. Responded to within <OrgField name="grievanceResponseDays" hint="e.g. 30 days" />.</p>
           </Card>
         </div>
       </section>

@@ -1,16 +1,17 @@
-import LegalPageLayout, { LegalSection, LegalList, Placeholder } from '../../components/marketing/LegalPageLayout';
+import { POLICY_LAST_UPDATED } from '../../lib/orgDetails';
+import LegalPageLayout, { LegalSection, LegalList, Placeholder, OrgField } from '../../components/marketing/LegalPageLayout';
 
 export default function RefundPolicy() {
   return (
     <LegalPageLayout
       eyebrow="Legal"
       title="Refund & Cancellation Policy"
-      updated="[date]"
+      updated={POLICY_LAST_UPDATED}
       intro="This policy covers cancelling or rescheduling a booked consultation, and how refunds — where applicable — are handled."
     >
       <LegalSection title="1. Cancelling a booking">
         <p>
-          Clients can cancel or reschedule a requested or confirmed consultation from their dashboard up to <Placeholder>e.g. 4 hours</Placeholder> before the scheduled time at no charge. Cancellations after that window, or missed appointments, may not be eligible for a refund.
+          Clients can cancel or reschedule a requested or confirmed consultation from their dashboard up to <OrgField name="cancellationNoticeHours" hint="e.g. 4 hours" /> before the scheduled time at no charge. Cancellations after that window, or missed appointments, may not be eligible for a refund.
         </p>
       </LegalSection>
 
@@ -22,7 +23,7 @@ export default function RefundPolicy() {
 
       <LegalSection title="3. Refund method and timeline">
         <p>
-          Eligible refunds are issued to the original payment method within <Placeholder>e.g. 5–7 business days</Placeholder>. <Placeholder>Update this section once a payment gateway is integrated — include any processing fees that are non-refundable.</Placeholder>
+          Eligible refunds are issued to the original payment method within <OrgField name="refundProcessingDays" hint="e.g. 5–7 business days" />. <Placeholder>Update this section once a payment gateway is integrated — include any processing fees that are non-refundable.</Placeholder>
         </p>
       </LegalSection>
 
@@ -40,7 +41,7 @@ export default function RefundPolicy() {
       </LegalSection>
 
       <LegalSection title="6. How to request a refund">
-        <p>Contact us via the <a href="/contact" className="font-semibold text-brand-600 hover:underline">Contact page</a> with your booking details, and we will respond within <Placeholder>e.g. 3 business days</Placeholder>.</p>
+        <p>Contact us via the <a href="/contact" className="font-semibold text-brand-600 hover:underline">Contact page</a> with your booking details, and we will respond within <OrgField name="advocateDeclineRefundDays" hint="e.g. 3 business days" />.</p>
       </LegalSection>
     </LegalPageLayout>
   );

@@ -258,7 +258,7 @@ export default function Home() {
 
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-10">
             <CalendarCheck2 size={26} className="text-brand-600" />
-            <h3 className="mt-5 text-[25px] font-extrabold text-ink-900">Practising and taking new clients?</h3>
+            <h3 className="mt-5 text-[25px] font-extrabold text-ink-900">Practising advocate?</h3>
             <p className="mt-3 max-w-sm text-[15.5px] leading-relaxed text-ink-500">
               Get a public profile, a booking calendar with real availability, a case workspace, and a private client &amp; billing register — after Bar Council verification.
             </p>

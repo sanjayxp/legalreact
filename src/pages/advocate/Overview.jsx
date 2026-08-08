@@ -250,12 +250,12 @@ export default function Overview() {
         </Card>
       </div>
 
-      {/* ---- Q&A opportunities: build visibility by answering (verified advocates only) ---- */}
+      {/* ---- Unanswered Q&A in the advocate's practice areas (verified only) ---- */}
       {isApproved && advProfile?.practice_areas?.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-6">
           <Card>
             <div className="flex items-center justify-between">
-              <CardHeading title="Answer & be seen" sub="Recent questions in your practice areas — answering builds public visibility." />
+              <CardHeading title="Unanswered questions" sub="Recent questions in your practice areas that nobody has answered yet." />
               <Link to="/qa" className="flex items-center gap-1 text-[13px] font-semibold text-brand-600">
                 All questions <ArrowRight size={13} />
               </Link>
@@ -351,7 +351,7 @@ function AnswerModal({ question, onClose, advocateId, onAnswered }) {
   return (
     <Modal open={!!question} onClose={onClose} title={question.title}>
       <p className="mb-3 text-[13.5px] text-ink-500 line-clamp-3">{question.body}</p>
-      <Textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Share plain-language guidance — this is public and helps build your visibility." />
+      <Textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Share plain-language guidance. This is published publicly and is general information, not advice on this person's matter." />
       {err && <div className="mt-3"><Toast text={err} kind="err" /></div>}
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
