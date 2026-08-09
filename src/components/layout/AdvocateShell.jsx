@@ -5,9 +5,11 @@ import {
   LayoutDashboard,
   UserRound,
   Inbox,
+  CalendarDays,
   Gavel,
   Users,
   FileText,
+  SlidersHorizontal,
   Globe,
   LogOut,
 } from 'lucide-react';
@@ -20,10 +22,12 @@ import Logo from '../brand/Logo';
 const NAV = [
   { to: '/dashboard/advocate', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/advocate/profile', label: 'Profile', icon: UserRound },
-  { to: '/dashboard/advocate/bookings', label: 'Enquiries & Bookings', icon: Inbox, badge: true },
+  { to: '/dashboard/advocate/enquiries', label: 'Enquiries', icon: Inbox, badge: true },
+  { to: '/dashboard/advocate/diary', label: 'My Diary', icon: CalendarDays },
   { to: '/dashboard/advocate/cases', label: 'My Cases', icon: Gavel },
   { to: '/dashboard/advocate/clients', label: 'Clients', icon: Users },
   { to: '/dashboard/advocate/documents', label: 'Documents', icon: FileText },
+  { to: '/dashboard/advocate/settings', label: 'Settings', icon: SlidersHorizontal },
 ];
 
 export default function AdvocateShell({ children }) {
