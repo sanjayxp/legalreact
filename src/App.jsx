@@ -24,9 +24,7 @@ import ClientDashboard from './pages/client/ClientDashboard';
 
 import AdvocateOverview from './pages/advocate/Overview';
 import AdvocateProfile from './pages/advocate/Profile';
-import AdvocateEnquiries from './pages/advocate/Enquiries';
-import AdvocateDiary from './pages/advocate/Diary';
-import AdvocateSettings from './pages/advocate/Settings';
+import AdvocateBookings from './pages/advocate/Bookings';
 import AdvocateCases from './pages/advocate/Cases';
 import AdvocateCaseWorkspace from './pages/advocate/CaseWorkspace';
 import AdvocateClientsBilling from './pages/advocate/ClientsBilling';
@@ -66,11 +64,7 @@ export default function App() {
 
       <Route path="/dashboard/advocate" element={<RequireRole role="advocate"><AdvocateOverview /></RequireRole>} />
       <Route path="/dashboard/advocate/profile" element={<RequireRole role="advocate"><AdvocateProfile /></RequireRole>} />
-      <Route path="/dashboard/advocate/enquiries" element={<RequireRole role="advocate"><AdvocateEnquiries /></RequireRole>} />
-      <Route path="/dashboard/advocate/diary" element={<RequireRole role="advocate"><AdvocateDiary /></RequireRole>} />
-      <Route path="/dashboard/advocate/settings" element={<RequireRole role="advocate"><AdvocateSettings /></RequireRole>} />
-      {/* The old combined page split in two; keep existing links working. */}
-      <Route path="/dashboard/advocate/bookings" element={<Navigate to="/dashboard/advocate/diary" replace />} />
+      <Route path="/dashboard/advocate/bookings" element={<RequireRole role="advocate"><AdvocateBookings /></RequireRole>} />
       <Route path="/dashboard/advocate/cases" element={<RequireRole role="advocate"><AdvocateCases /></RequireRole>} />
       <Route path="/dashboard/advocate/cases/:id" element={<RequireRole role="advocate"><AdvocateCaseWorkspace /></RequireRole>} />
       <Route path="/dashboard/advocate/clients" element={<RequireRole role="advocate"><AdvocateClientsBilling /></RequireRole>} />
