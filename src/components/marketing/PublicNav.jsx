@@ -70,7 +70,12 @@ export default function PublicNav() {
             </>
           )}
         </div>
-        <button className="ml-auto rounded-lg p-2 text-ink-800 lg:hidden" onClick={() => setOpen(!open)}>
+        <button
+          className="ml-auto rounded-lg p-2 text-ink-800 lg:hidden"
+          onClick={() => setOpen(!open)}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+        >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>

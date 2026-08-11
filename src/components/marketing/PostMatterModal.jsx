@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/auth';
 import { MATTER_TYPES, findMatterType, summariseMatter } from '../../lib/matterTypes';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, Textarea, Select, Label, FormRow } from '../ui/Field';
+import { Input, Textarea, Label, FormRow } from '../ui/Field';
 import IdentityFields from './IdentityFields';
 import MatterFields from './MatterFields';
 import { Toast } from '../ui/Misc';
@@ -29,6 +29,9 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
   const [form, setForm] = useState(EMPTY_FORM);
   // Step 1 picks the kind of matter; step 2 asks what that kind needs.
   const [typeSlug, setTypeSlug] = useState('');
+  // Which type `details` was filled in for — lets "back" return to the
+  // picker without losing answers already typed for that same type.
+  const [detailsTypeSlug, setDetailsTypeSlug] = useState('');
   const [details, setDetails] = useState({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -40,6 +43,19 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
     setDetails((d) => ({ ...d, [name]: value }));
   }
 
+  // Different matter types ask different questions, so switching to a new
+  // one starts fresh — but re-picking the type you just came from (e.g.
+  // after tapping "All matter types" to glance around) keeps what you'd
+  // already typed instead of throwing it away.
+  function pickType(slug) {
+    if (slug !== detailsTypeSlug) {
+      setDetails({});
+      setDetailsTypeSlug(slug);
+    }
+    setTypeSlug(slug);
+    setMsg('');
+  }
+
   function set(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
@@ -49,7 +65,8 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
 
   // Opening from a homepage tile skips straight to that type's questions.
   useEffect(() => {
-    if (open && preselect) setTypeSlug(preselect);
+    if (open && preselect) pickType(preselect);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, preselect]);
 
   // A signed-in visitor should not retype what their account already holds.
@@ -69,6 +86,7 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
     setTimeout(() => {
       setForm(EMPTY_FORM);
       setTypeSlug('');
+      setDetailsTypeSlug('');
       setDetails({});
       setMsg('');
       setDone(false);
@@ -80,6 +98,11 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
     if (!type) { setMsg('Pick what you need help with first.'); return; }
     if (!form.client_name.trim() || !form.phone.trim()) {
       setMsg('Name and phone are needed so an advocate can reach you.');
+      return;
+    }
+    const missing = type.fields.filter((f) => !f.optional && !String(details?.[f.name] ?? '').trim());
+    if (missing.length) {
+      setMsg(`Please fill in: ${missing.map((f) => f.label).join(', ')}.`);
       return;
     }
     if (!form.matter.trim() && !type.fields.length) {
@@ -143,7 +166,7 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
                 <button
                   key={t.slug}
                   type="button"
-                  onClick={() => setTypeSlug(t.slug)}
+                  onClick={() => pickType(t.slug)}
                   className="group flex flex-col items-start gap-2 rounded-xl border border-ink-100 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-[var(--shadow-card)]"
                 >
                   <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${TILE_TINTS[t.tint] || TILE_TINTS.brand}`}>
@@ -161,7 +184,7 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
         <form onSubmit={handleSubmit}>
           <button
             type="button"
-            onClick={() => { setTypeSlug(''); setDetails({}); setMsg(''); }}
+            onClick={() => { setTypeSlug(''); setMsg(''); }}
             className="mb-3 inline-flex items-center gap-1 text-[12.5px] font-semibold text-ink-500 hover:text-brand-600"
           >
             <ArrowLeft size={13} /> All matter types
@@ -183,19 +206,19 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
 
           <FormRow>
             <div>
-              <Label hint="(optional)">City</Label>
-              <Input value={form.city} onChange={set('city')} placeholder="e.g. Bengaluru" />
+              <Label htmlFor="pm-city" hint="(optional)">City</Label>
+              <Input id="pm-city" value={form.city} onChange={set('city')} placeholder="e.g. Bengaluru" />
             </div>
             <div>
-              <Label hint="(optional)">Budget</Label>
-              <Input value={form.budget} onChange={set('budget')} placeholder="e.g. ₹5,000–10,000" />
+              <Label htmlFor="pm-budget" hint="(optional)">Budget</Label>
+              <Input id="pm-budget" value={form.budget} onChange={set('budget')} placeholder="e.g. ₹5,000–10,000" />
             </div>
           </FormRow>
 
-          <Label required={!type.fields.length} hint={type.fields.length ? '(optional)' : undefined}>
+          <Label htmlFor="pm-notes" required={!type.fields.length} hint={type.fields.length ? '(optional)' : undefined}>
             Anything else we should know?
           </Label>
-          <Textarea rows={3} value={form.matter} onChange={set('matter')} placeholder="In your own words — this reaches the advocate as you write it." />
+          <Textarea id="pm-notes" rows={3} value={form.matter} onChange={set('matter')} placeholder="In your own words — this reaches the advocate as you write it." />
 
           <p className="mt-3 text-[11px] leading-relaxed text-ink-400">
             By submitting, you consent to LegalConnects sharing these details with a matched advocate, as

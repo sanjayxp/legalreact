@@ -1,9 +1,9 @@
 const baseInput =
   'w-full rounded-lg border border-ink-100 px-3.5 py-2.5 text-[14.5px] text-ink-900 placeholder:text-ink-300 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100';
 
-export function Label({ children, required, hint }) {
+export function Label({ children, required, hint, htmlFor }) {
   return (
-    <label className="mt-4 mb-1.5 block text-[12.5px] font-bold text-ink-700 first:mt-0">
+    <label htmlFor={htmlFor} className="mt-4 mb-1.5 block text-[12.5px] font-bold text-ink-700 first:mt-0">
       {children} {required && <span className="text-coral-500">*</span>}
       {hint && <span className="ml-1 font-normal text-ink-300">{hint}</span>}
     </label>

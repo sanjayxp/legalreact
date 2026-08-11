@@ -11,21 +11,24 @@ export default function MatterFields({ type, details, onChange }) {
         const value = details?.[f.name] ?? '';
         const set = (e) => onChange(f.name, e.target.value);
 
+        const fieldId = `matter-field-${f.name}`;
+
         return (
           <div key={f.name}>
-            <Label hint={f.optional ? '(optional)' : undefined} required={!f.optional}>
+            <Label htmlFor={fieldId} hint={f.optional ? '(optional)' : undefined} required={!f.optional}>
               {f.label}
             </Label>
 
             {f.type === 'select' ? (
-              <Select value={value} onChange={set}>
+              <Select id={fieldId} value={value} onChange={set}>
                 <option value="">Select…</option>
                 {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
               </Select>
             ) : f.type === 'textarea' ? (
-              <Textarea rows={3} value={value} onChange={set} placeholder={f.placeholder} />
+              <Textarea id={fieldId} rows={3} value={value} onChange={set} placeholder={f.placeholder} />
             ) : (
               <Input
+                id={fieldId}
                 type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
                 value={value}
                 onChange={set}

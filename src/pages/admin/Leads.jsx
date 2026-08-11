@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, StickyNote, Clock, AlertTriangle } from 'lucide-react';
 import { listLeads, listApprovedAdvocatesForAssignment, updateLead, deleteLead } from '../../lib/cms';
+import { useLiveRefresh } from '../../lib/realtime';
 import AdminShell from '../../components/layout/AdminShell';
 import StatTile from '../../components/ui/StatTile';
 import Badge from '../../components/ui/Badge';
 import { Input, Select } from '../../components/ui/Field';
 import Card from '../../components/ui/Card';
-import { Spinner } from '../../components/ui/Misc';
+import { Spinner, Toast } from '../../components/ui/Misc';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const STATUSES = ['new', 'contacted', 'converted', 'dropped'];
@@ -33,15 +34,19 @@ export default function Leads() {
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
+  // Called on mount (when `loading` already starts true) and again on every
+  // live update / reassignment — deliberately doesn't toggle `loading` back
+  // to true itself, or the whole table would flash to a spinner mid-session.
   async function load() {
-    setLoading(true);
     const [l, a] = await Promise.all([listLeads(), listApprovedAdvocatesForAssignment()]);
     setLeads(l);
     setAdvocates(a);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+  useLiveRefresh('admin-leads-live', [{ table: 'leads' }], load);
 
   const filtered = useMemo(() => {
     return leads.filter((l) => {
@@ -57,21 +62,40 @@ export default function Leads() {
   }, [leads, statusFilter, sourceFilter, search]);
 
   async function handleStatus(id, status) {
-    await updateLead(id, { status });
-    setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, status } : l)));
+    setErrorMsg('');
+    try {
+      await updateLead(id, { status });
+      setLeads((ls) => ls.map((l) => (l.id === id ? { ...l, status } : l)));
+    } catch {
+      // The <select> already shows the picked value — resync from the
+      // server so it doesn't keep displaying a change that never saved.
+      setErrorMsg("Couldn't update that lead's status. Please try again.");
+      load();
+    }
   }
   async function handleAssign(id, advocateId) {
-    await updateLead(id, { advocate_id: advocateId || null });
-    // Reassignment can reset status/assigned_at server-side (via trigger) —
-    // reload rather than patch local state, so the pending/overdue state
-    // shown here always matches what actually happened.
-    load();
+    setErrorMsg('');
+    try {
+      await updateLead(id, { advocate_id: advocateId || null });
+    } catch {
+      setErrorMsg("Couldn't reassign that lead. Please try again.");
+    } finally {
+      // Reassignment can reset status/assigned_at server-side (via trigger) —
+      // reload rather than patch local state, so the pending/overdue state
+      // shown here always matches what actually happened (success or not).
+      load();
+    }
   }
   async function handleNote(l) {
     const note = window.prompt('Note for this lead:', l.admin_notes || '');
     if (note === null) return;
-    await updateLead(l.id, { admin_notes: note });
-    setLeads((ls) => ls.map((x) => (x.id === l.id ? { ...x, admin_notes: note } : x)));
+    setErrorMsg('');
+    try {
+      await updateLead(l.id, { admin_notes: note });
+      setLeads((ls) => ls.map((x) => (x.id === l.id ? { ...x, admin_notes: note } : x)));
+    } catch {
+      setErrorMsg("Couldn't save that note. Please try again.");
+    }
   }
   async function handleDelete() {
     setDeleting(true);
@@ -96,6 +120,8 @@ export default function Leads() {
         <h1 className="font-heading text-[23px] font-extrabold text-ink-900">Leads</h1>
         <p className="mt-1 text-[14px] text-ink-500">Every enquiry captured from the public site.</p>
       </motion.div>
+
+      {errorMsg && <div className="mt-4"><Toast text={errorMsg} kind="err" /></div>}
 
       <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label="Total" value={counts.total} accent="brand" />
@@ -158,8 +184,8 @@ export default function Leads() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
-                      <button onClick={() => handleNote(l)} className="text-ink-400 hover:text-brand-600"><StickyNote size={15} /></button>
-                      <button onClick={() => setDeleteTarget(l)} className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
+                      <button onClick={() => handleNote(l)} aria-label="Edit note" className="text-ink-400 hover:text-brand-600"><StickyNote size={15} /></button>
+                      <button onClick={() => setDeleteTarget(l)} aria-label="Delete lead" className="text-ink-400 hover:text-coral-500"><Trash2 size={15} /></button>
                     </div>
                   </td>
                 </tr>

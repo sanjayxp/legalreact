@@ -41,20 +41,23 @@ export default function IdentityFields({ form, onChange }) {
 
   return (
     <>
-      <Label required>Your name</Label>
+      <Label htmlFor="pm-client-name" required>Your name</Label>
       <Input
+        id="pm-client-name"
         value={form.client_name}
         onChange={(e) => onChange('client_name', e.target.value)}
         placeholder="Full name"
       />
-      <Label required>Phone</Label>
+      <Label htmlFor="pm-phone" required>Phone</Label>
       <Input
+        id="pm-phone"
         value={form.phone}
         onChange={(e) => onChange('phone', e.target.value)}
         placeholder="10-digit mobile number"
       />
-      <Label hint="(optional)">Email</Label>
+      <Label htmlFor="pm-email" hint="(optional)">Email</Label>
       <Input
+        id="pm-email"
         type="email"
         value={form.email}
         onChange={(e) => onChange('email', e.target.value)}

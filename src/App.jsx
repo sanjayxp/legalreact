@@ -1,7 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { RequireRole, RequireAdminSection } from './components/layout/RouteGuards';
 import { PostMatterProvider } from './components/marketing/PostMatterContext';
+
+// The browser's own scroll-position memory (bfcache / history restoration)
+// can otherwise fight with the reset below on back/forward navigation.
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
 
 import Home from './pages/marketing/Home';
 import PublicQA from './pages/marketing/QA';
@@ -37,6 +43,29 @@ import AdminQA from './pages/admin/QA';
 import AdminJobsLearning from './pages/admin/JobsLearning';
 import AdminPeople from './pages/admin/People';
 
+// React Router doesn't reset scroll position on navigation the way a full
+// page load does — without this, going from the bottom of one page to
+// another leaves the visitor stranded mid-scroll on the new page.
+//
+// Uses `key` (not just `pathname`) so clicking Home/the logo while already
+// on "/" still resets scroll, and useLayoutEffect so the jump happens before
+// paint — no visible flash of the old scroll position.
+//
+// The behavior option is what defeats the global `scroll-behavior: smooth`
+// in index.css. An earlier version flipped that property inline around the
+// call instead, which silently did nothing at all: the style change is not
+// applied before scrollTo reads it, so the scroll stayed smooth and was then
+// cancelled when the property was put back. Asking for the behaviour on the
+// call itself needs no style recalculation and cannot race with one.
+function ScrollToTop() {
+  const { pathname, hash, key } = useLocation();
+  useLayoutEffect(() => {
+    if (hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname, key, hash]);
+  return null;
+}
+
 // React Router doesn't scroll to an in-page anchor on navigation the way a
 // full page load does — this restores that for links like /#how-it-works.
 function ScrollToHash() {
@@ -55,6 +84,7 @@ function ScrollToHash() {
 export default function App() {
   return (
     <PostMatterProvider>
+    <ScrollToTop />
     <ScrollToHash />
     <Routes>
       <Route path="/login" element={<Login />} />

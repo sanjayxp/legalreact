@@ -44,6 +44,7 @@ export default function Bookings() {
   const [enquiries, setEnquiries] = useState([]);
   const [openLeads, setOpenLeads] = useState([]);
   const [claiming, setClaiming] = useState('');
+  const [confirmingSlot, setConfirmingSlot] = useState('');
   // { kind, id, label } — nothing that reassigns or drops a matter should
   // happen on a single stray click.
   const [confirm, setConfirm] = useState(null);
@@ -97,12 +98,16 @@ export default function Bookings() {
   }
 
   async function handleConfirm(id) {
+    if (confirmingSlot) return;
+    setConfirmingSlot(id);
     try {
       await confirmBookingRequest(id);
       say('Confirmed.');
-      loadAll();
+      await loadAll();
     } catch (e) {
       say(e.message, 'err');
+    } finally {
+      setConfirmingSlot('');
     }
   }
   async function handleDecline(id) {
@@ -228,6 +233,7 @@ export default function Bookings() {
             requests={requests}
             onConfirm={handleConfirm}
             onDecline={(id, label) => setConfirm({ kind: 'decline-slot', id, label })}
+            confirmingSlot={confirmingSlot}
           />
         )}
         {tab === 'upcoming' && <BookingList list={upcoming} onStatus={handleStatus} showComplete />}
@@ -324,7 +330,7 @@ function EnquiriesList({ enquiries, onAccept, onDecline }) {
             {actionable ? (
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => onAccept(l.id, l.client_name || 'This enquiry')}><UserPlus size={14} /> Accept &amp; add as client</Button>
-                <Button size="sm" variant="ghost" onClick={() => onDecline(l.id, l.matter || 'This matter')}><XIcon size={14} /> Decline</Button>
+                <Button size="sm" variant="danger" onClick={() => onDecline(l.id, l.matter || 'This matter')}><XIcon size={14} /> Decline</Button>
               </div>
             ) : l.status === 'converted' ? (
               <Link to="/dashboard/advocate/clients" className="flex items-center gap-1 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700">
@@ -338,7 +344,7 @@ function EnquiriesList({ enquiries, onAccept, onDecline }) {
   );
 }
 
-function RequestsList({ requests, onConfirm, onDecline }) {
+function RequestsList({ requests, onConfirm, onDecline, confirmingSlot }) {
   if (!requests.length) return <EmptyState title="No booking requests right now" sub="New consultation-slot requests will show up here." />;
   const byTime = {};
   requests.forEach((l) => {
@@ -357,8 +363,10 @@ function RequestsList({ requests, onConfirm, onDecline }) {
                 {s.client_notes && <div className="mt-1 text-[12.5px] italic text-ink-400">"{s.client_notes}"</div>}
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => onConfirm(s.id)}><Check size={14} /> Confirm</Button>
-                <Button size="sm" variant="danger" onClick={() => onDecline(s.id, s.client_name || 'This client')}><XIcon size={14} /> Decline</Button>
+                <Button size="sm" onClick={() => onConfirm(s.id)} disabled={!!confirmingSlot}>
+                  <Check size={14} /> {confirmingSlot === s.id ? 'Confirming…' : 'Confirm'}
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => onDecline(s.id, s.client_name || 'This client')} disabled={!!confirmingSlot}><XIcon size={14} /> Decline</Button>
               </div>
             </div>
           ))}
@@ -407,13 +415,13 @@ function CalendarView({ weekStart, setWeekStart, availability, timeOff, slots, o
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <button onClick={() => setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() - 7); return d; })} className="rounded-lg border border-ink-100 p-2 hover:border-brand-300">
+        <button onClick={() => setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() - 7); return d; })} aria-label="Previous week" className="rounded-lg border border-ink-100 p-2 hover:border-brand-300">
           <ChevronLeft size={16} />
         </button>
         <div className="text-[14px] font-bold text-ink-800">
           {days[0].toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} – {days[6].toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
-        <button onClick={() => setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() + 7); return d; })} className="rounded-lg border border-ink-100 p-2 hover:border-brand-300">
+        <button onClick={() => setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() + 7); return d; })} aria-label="Next week" className="rounded-lg border border-ink-100 p-2 hover:border-brand-300">
           <ChevronRight size={16} />
         </button>
       </div>
@@ -472,7 +480,7 @@ function CalendarView({ weekStart, setWeekStart, availability, timeOff, slots, o
                   {picker.end && ` – ${picker.end.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`}
                 </div>
               </div>
-              <button onClick={() => setPicker(null)} className="rounded-full p-1.5 text-ink-400 hover:bg-ink-50 hover:text-ink-700">
+              <button onClick={() => setPicker(null)} aria-label="Close" className="rounded-full p-1.5 text-ink-400 hover:bg-ink-50 hover:text-ink-700">
                 <XIcon size={18} />
               </button>
             </div>

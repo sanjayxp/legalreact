@@ -16,7 +16,7 @@ export default function Modal({ open, onClose, title, children, width = 'max-w-l
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-[16px] font-bold text-ink-900">{title}</h3>
-          <button onClick={onClose} className="rounded-full p-1.5 text-ink-400 hover:bg-ink-50 hover:text-ink-700">
+          <button onClick={onClose} aria-label="Close" className="rounded-full p-1.5 text-ink-400 hover:bg-ink-50 hover:text-ink-700">
             <X size={18} />
           </button>
         </div>
