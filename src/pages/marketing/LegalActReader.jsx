@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpen, AlertTriangle } from 'lucide-react';
 import { getPublishedAct } from '../../lib/cms';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import ShareButtons from '../../components/marketing/ShareButtons';
 import Badge from '../../components/ui/Badge';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
@@ -72,6 +73,7 @@ export default function LegalActReader() {
             <Badge tone="blue">{act.category}</Badge>
             <h1 className="mt-2 text-[27px] font-extrabold text-ink-900 sm:text-[32px]">{act.title}</h1>
             {act.summary && <p className="mt-2 max-w-2xl text-[14.5px] leading-relaxed text-ink-500">{act.summary}</p>}
+            <ShareButtons title={act.short_title || act.title} className="mt-5" />
           </motion.div>
         </div>
       </section>

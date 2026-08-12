@@ -6,6 +6,7 @@ import { getQuestionDetail, incrementQuestionViews, toggleAnswerVote, listMyVote
 import { useAuth } from '../../lib/auth';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
+import ShareButtons from '../../components/marketing/ShareButtons';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -145,6 +146,7 @@ export default function QuestionDetail() {
           </div>
           <p className="mt-5 whitespace-pre-line text-[15.5px] leading-relaxed text-ink-700">{question.body}</p>
           {question.budget && <div className="mt-3 text-[13.5px] font-semibold text-brand-600">Budget: ₹{question.budget}</div>}
+          <ShareButtons title={question.title} className="mt-6 border-t border-ink-100 pt-5" />
         </motion.div>
 
         {canAnswer && (

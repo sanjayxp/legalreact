@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import Logo from '../brand/Logo';
+import { LinkedInIcon, InstagramIcon } from '../brand/SocialIcons';
+import { orgField } from '../../lib/orgDetails';
 import { usePostMatter } from './PostMatterContext';
 
 const COLUMNS = [
@@ -41,6 +43,15 @@ const COLUMNS = [
 export default function Footer() {
   const { openPostMatter } = usePostMatter();
 
+  // Only render a profile we actually have. An icon that leads nowhere, or to
+  // a page that isn't ours, is worse than leaving it out.
+  const socials = [
+    { key: 'linkedinUrl', label: 'LinkedIn', icon: LinkedInIcon },
+    { key: 'instagramUrl', label: 'Instagram', icon: InstagramIcon },
+  ]
+    .map((s) => ({ ...s, href: orgField(s.key) }))
+    .filter((s) => s.href);
+
   return (
     <footer className="border-t border-ink-900/[0.08] bg-ink-900 text-white/70">
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
@@ -50,6 +61,24 @@ export default function Footer() {
             <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-white/50">
               Connecting people with Bar Council-verified advocates across India — plain-language legal help, without the guesswork.
             </p>
+
+            {socials.length > 0 && (
+              <div className="mt-5 flex items-center gap-2.5">
+                {socials.map((s) => (
+                  <a
+                    key={s.key}
+                    href={s.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`LegalConnects on ${s.label}`}
+                    title={`LegalConnects on ${s.label}`}
+                    className="grid h-9 w-9 place-items-center rounded-lg border border-white/15 text-white/60 transition-colors hover:border-gold-300 hover:text-gold-300"
+                  >
+                    <s.icon size={17} />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
           {COLUMNS.map((col, i) => (
             <div key={col.title}>

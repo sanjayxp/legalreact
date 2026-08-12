@@ -32,16 +32,23 @@ export const ORG = {
   // How long personal data is kept after an account closes.
   dataRetention: null,
 
+  // Public profiles. Only the ones filled in are shown — a social icon that
+  // leads nowhere is worse than no icon.
+  linkedinUrl: null,
+  instagramUrl: null,
+
   // Cancellation and refund windows.
   cancellationNoticeHours: null,
   refundProcessingDays: null,
   advocateDeclineRefundDays: null,
 };
 
-// True once nothing is left unfilled — lets a page warn while it is incomplete.
-export const ORG_IS_COMPLETE = Object.values(ORG).every(
-  (v) => v !== null && v !== undefined && String(v).trim() !== '',
-);
+// True once the fields the legal pages depend on are filled. Social profiles
+// are optional and deliberately excluded — the site is complete without them.
+const OPTIONAL_KEYS = ['linkedinUrl', 'instagramUrl'];
+export const ORG_IS_COMPLETE = Object.entries(ORG)
+  .filter(([k]) => !OPTIONAL_KEYS.includes(k))
+  .every(([, v]) => v !== null && v !== undefined && String(v).trim() !== '');
 
 // Reads a field for display. Missing values are marked rather than rendered as
 // an empty string, so an incomplete policy is obvious instead of looking whole.
