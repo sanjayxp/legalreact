@@ -163,6 +163,18 @@ export function signedInWithPassword(user) {
   return providers.includes('email');
 }
 
+// Where to send the user after they log in, when it shouldn't be their
+// usual role home — e.g. back to the question they wanted to ask. Stored in
+// localStorage (not router state) because OAuth does a full-page redirect.
+export function setReturnTo(path) {
+  localStorage.setItem('lc_return_to', path);
+}
+export function consumeReturnTo() {
+  const path = localStorage.getItem('lc_return_to');
+  localStorage.removeItem('lc_return_to');
+  return path;
+}
+
 export async function oauthLogin(provider, intendedRole) {
   localStorage.setItem('lc_role_intent', intendedRole);
   await supabase.auth.signInWithOAuth({

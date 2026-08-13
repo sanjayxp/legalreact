@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MessageCircleQuestion, Eye, MessageSquare, Plus } from 'lucide-react';
 import { listQuestionsPublic, submitQuestion } from '../../lib/cms';
-import { useAuth } from '../../lib/auth';
+import { useAuth, setReturnTo } from '../../lib/auth';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import HeroBanner from '../../components/marketing/HeroBanner';
@@ -16,6 +16,9 @@ import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 import { PRACTICE_AREAS as TOPICS } from '../../lib/practiceAreas';
 
 export default function QA() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
   const [topic, setTopic] = useState('all');
@@ -27,6 +30,25 @@ export default function QA() {
     setLoading(false);
   }
   useEffect(() => { load(topic); }, [topic]);
+
+  // Coming back here after logging in specifically to ask a question.
+  useEffect(() => {
+    if (searchParams.get('ask') === '1' && user) {
+      setAskOpen(true);
+      searchParams.delete('ask');
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  function handleAskClick() {
+    if (!user) {
+      setReturnTo('/qa?ask=1');
+      navigate('/login');
+      return;
+    }
+    setAskOpen(true);
+  }
 
   return (
     <div className="bg-white">
@@ -41,7 +63,7 @@ export default function QA() {
               <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Legal Q&amp;A</h1>
               <p className="mt-2 max-w-lg text-[16px] text-ink-500">Ask a legal question for free — verified advocates answer in plain language.</p>
             </div>
-            <Button size="lg" onClick={() => setAskOpen(true)}><Plus size={17} /> Ask a question</Button>
+            <Button size="lg" onClick={handleAskClick}><Plus size={17} /> Ask a question</Button>
           </div>
         </div>
       </section>
@@ -108,16 +130,17 @@ function AskQuestionModal({ open, onClose, onAsked }) {
   const [err, setErr] = useState('');
 
   async function handleSubmit() {
+    if (!user) { setErr('Log in to post your question.'); return; }
     if (!form.title.trim() || !form.body.trim()) { setErr('Please fill in a title and details.'); return; }
     setBusy(true);
     setErr('');
     try {
       // Attributing the question to the signed-in asker is what lets it show
-      // up on their dashboard later; visitors without an account still ask.
+      // up on their dashboard later.
       const q = await submitQuestion({
         ...form,
         budget: form.budget ? Number(form.budget) : null,
-        client_id: user?.id || null,
+        client_id: user.id,
       });
       setForm({ topic: 'Civil', title: '', body: '', budget: '' });
       onAsked(q.id);

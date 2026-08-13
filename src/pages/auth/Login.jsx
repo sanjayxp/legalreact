@@ -10,6 +10,7 @@ import {
   getCurrentProfile,
   hasAdvocateProfileRow,
   roleHomePath,
+  consumeReturnTo,
   useAuth,
 } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
@@ -26,6 +27,10 @@ export default function Login() {
   // Carried over from the public "Post your matter" flow — never in the
   // URL, just router state, so no PII ends up in the address bar or history.
   const prefill = location.state?.prefill;
+
+  // Set by QA.jsx when someone tries to ask a question while logged out —
+  // just a peek (not consumed) so we can show why they landed here.
+  const askIntent = (localStorage.getItem('lc_return_to') || '').startsWith('/qa');
 
   const [mode, setMode] = useState(location.hash === '#register' || prefill ? 'reg' : 'login');
   const [role, setRole] = useState('client');
@@ -56,6 +61,13 @@ export default function Login() {
     // so doing that killed the session the admin console had just created.
     if (profile.role === 'admin') {
       navigate('/admin');
+      return;
+    }
+    // Someone who was sent here to log in before doing something specific
+    // (e.g. asking a question) goes back there instead of their dashboard.
+    const returnTo = consumeReturnTo();
+    if (returnTo) {
+      navigate(returnTo);
       return;
     }
     if (profile.role === 'advocate') {
@@ -211,6 +223,11 @@ export default function Login() {
         {/* Right — form card */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mx-auto w-full max-w-md">
           <div className="rounded-2xl border border-ink-100 bg-white p-7 shadow-[var(--shadow-card)]">
+            {askIntent && (
+              <div className="mb-5 rounded-xl bg-brand-50 px-4 py-3 text-[13px] font-semibold text-brand-700">
+                Log in to post your question — it only takes a moment.
+              </div>
+            )}
             <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-ink-50 p-1">
               <button
                 onClick={() => { setMode('login'); setMsg(''); }}
