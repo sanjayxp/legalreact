@@ -123,13 +123,15 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Height, width, padding and logo size all match PublicNav, so the mark
+          sits in the same place here as on every other page. */}
       <header className="border-b border-ink-100">
-        <div className="mx-auto flex h-16 max-w-6xl items-center px-5">
-          <Link to="/"><Logo /></Link>
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center px-5 sm:px-8">
+          <Link to="/"><Logo size="lg" /></Link>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-10 px-5 py-10 lg:grid-cols-2 lg:py-16">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-10 px-5 py-10 sm:px-8 lg:grid-cols-2 lg:py-16">
         {/* Left — hero */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="hidden lg:block">
           <div className="relative rounded-3xl bg-gradient-to-br from-brand-50 via-white to-brand-50 p-10">
