@@ -124,6 +124,45 @@ export async function getCurrentProfile() {
   return fetchProfile(user.id);
 }
 
+// Supabase lets a signed-in user set a new password without proving the old
+// one. Re-authenticating first means someone at an unattended laptop cannot
+// change the password and lock the owner out of their own account.
+export async function changePassword({ currentPassword, newPassword }) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error('You need to be signed in to change your password.');
+
+  const { error: reauthError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (reauthError) throw new Error('Your current password is not correct.');
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+// Sends the recovery mail. The link lands on /reset-password, which must be on
+// the redirect allow-list in the Supabase dashboard or the link is rejected.
+export async function requestPasswordReset(email) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+  if (error) throw error;
+}
+
+// Used only from the recovery link, where Supabase has already put the user in
+// a temporary session — so there is no old password to prove here.
+export async function setNewPassword(newPassword) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+// Someone who signed in with Google or LinkedIn has no password to change.
+export function signedInWithPassword(user) {
+  const providers = user?.app_metadata?.providers || [user?.app_metadata?.provider].filter(Boolean);
+  return providers.includes('email');
+}
+
 export async function oauthLogin(provider, intendedRole) {
   localStorage.setItem('lc_role_intent', intendedRole);
   await supabase.auth.signInWithOAuth({

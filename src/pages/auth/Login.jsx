@@ -6,6 +6,7 @@ import {
   loginUser,
   registerUser,
   oauthLogin,
+  requestPasswordReset,
   getCurrentProfile,
   hasAdvocateProfileRow,
   roleHomePath,
@@ -31,6 +32,7 @@ export default function Login() {
   const [msg, setMsg] = useState('');
   const [msgKind, setMsgKind] = useState('err');
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const [liEmail, setLiEmail] = useState('');
   const [liPass, setLiPass] = useState('');
@@ -80,6 +82,20 @@ export default function Login() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
+
+  async function handleForgot() {
+    if (!liEmail.trim()) return say('Enter your email address first, then choose Forgot password.');
+    setBusy(true);
+    try {
+      await requestPasswordReset(liEmail);
+      setResetSent(true);
+      setMsg('');
+    } catch (e) {
+      say(e.message || 'Could not send the reset email.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleLogin() {
     if (!liEmail.trim() || !liPass) return say('Enter your email and password.');
@@ -227,7 +243,26 @@ export default function Login() {
                     onChange={(e) => setLiPass(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                   />
-                  <Button className="mt-5 w-full" onClick={handleLogin} disabled={busy}>
+                  <div className="mt-2 text-right">
+                    <button
+                      type="button"
+                      onClick={handleForgot}
+                      className="text-[12.5px] font-semibold text-brand-600 hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+
+                  {resetSent && (
+                    <div className="mt-3">
+                      <Toast
+                        kind="ok"
+                        text={`If an account exists for ${liEmail.trim()}, a reset link is on its way. Check spam if it hasn't arrived in a minute.`}
+                      />
+                    </div>
+                  )}
+
+                  <Button className="mt-4 w-full" onClick={handleLogin} disabled={busy}>
                     {busy ? 'Please wait…' : 'Log in'} <ArrowRight size={16} />
                   </Button>
 

@@ -26,11 +26,13 @@ import RefundPolicy from './pages/marketing/RefundPolicy';
 import Contact from './pages/marketing/Contact';
 import Careers from './pages/marketing/Careers';
 import Login from './pages/auth/Login';
+import ResetPassword from './pages/auth/ResetPassword';
 import ClientDashboard from './pages/client/ClientDashboard';
 
 import AdvocateOverview from './pages/advocate/Overview';
 import AdvocateProfile from './pages/advocate/Profile';
 import AdvocateBookings from './pages/advocate/Bookings';
+import AdvocateSettings from './pages/advocate/Settings';
 import AdvocateCases from './pages/advocate/Cases';
 import AdvocateCaseWorkspace from './pages/advocate/CaseWorkspace';
 import AdvocateClientsBilling from './pages/advocate/ClientsBilling';
@@ -88,6 +90,7 @@ export default function App() {
     <ScrollToHash />
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/admin/login" element={<AdminLogin />} />
 
       <Route path="/dashboard/client" element={<RequireRole role="client"><ClientDashboard /></RequireRole>} />
@@ -99,6 +102,7 @@ export default function App() {
       <Route path="/dashboard/advocate/cases/:id" element={<RequireRole role="advocate"><AdvocateCaseWorkspace /></RequireRole>} />
       <Route path="/dashboard/advocate/clients" element={<RequireRole role="advocate"><AdvocateClientsBilling /></RequireRole>} />
       <Route path="/dashboard/advocate/documents" element={<RequireRole role="advocate"><AdvocateDocuments /></RequireRole>} />
+      <Route path="/dashboard/advocate/settings" element={<RequireRole role="advocate"><AdvocateSettings /></RequireRole>} />
 
       <Route path="/admin" element={<RequireRole role="admin"><AdminOverview /></RequireRole>} />
       <Route path="/admin/leads" element={<RequireRole role="admin"><RequireAdminSection section="leads"><AdminLeads /></RequireAdminSection></RequireRole>} />

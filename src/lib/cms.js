@@ -485,6 +485,39 @@ export async function lookupCaseByCNR(cnr, { full = false } = {}) {
   return data.data;
 }
 
+// ---------- ADVOCATE ACCOUNT SETTINGS ----------
+// Phone is written once by the signup trigger and had no field anywhere, so a
+// wrong number entered at signup could never be corrected.
+export async function updateOwnPhone(userId, phone) {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ phone: phone.trim() || null, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+// Hides the advocate from the public directory without touching their
+// verification, so coming back needs no re-review.
+export async function setListingPaused(userId, paused) {
+  const { error } = await supabase
+    .from('advocate_profiles')
+    .update({ listing_paused: paused })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+// The DPDP Act's right to erasure. Uploaded files are not cascaded by the
+// database, so they go first — same order as the admin route.
+export async function deleteOwnAccount(userId) {
+  for (const bucket of ['advocate-photos', 'bar-certificates']) {
+    const { data: files } = await supabase.storage.from(bucket).list(userId);
+    const paths = (files || []).map((f) => `${userId}/${f.name}`);
+    if (paths.length) await supabase.storage.from(bucket).remove(paths);
+  }
+  const { error } = await supabase.rpc('delete_own_account');
+  if (error) throw new Error(error.message || 'Could not delete your account.');
+}
+
 // ---------- PRECEDENT RESEARCH ----------
 // Every result comes back from the eCourts search with a real CNR. Nothing on
 // screen is invented by a model — the relevance line only explains a record

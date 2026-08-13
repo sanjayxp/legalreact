@@ -8,6 +8,7 @@ import {
   Gavel,
   Users,
   FileText,
+  SlidersHorizontal,
   Globe,
   LogOut,
   Menu,
@@ -26,6 +27,7 @@ const NAV = [
   { to: '/dashboard/advocate/cases', label: 'My Cases', icon: Gavel },
   { to: '/dashboard/advocate/clients', label: 'Clients', icon: Users },
   { to: '/dashboard/advocate/documents', label: 'Documents', icon: FileText },
+  { to: '/dashboard/advocate/settings', label: 'Settings', icon: SlidersHorizontal },
 ];
 
 export default function AdvocateShell({ children }) {
