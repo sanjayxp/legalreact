@@ -143,6 +143,7 @@ export default function QuestionDetail() {
           <div className="mt-2 flex items-center gap-3 text-[13px] text-ink-400">
             <span>{new Date(question.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</span>
             <span className="flex items-center gap-1"><Eye size={13} /> {question.view_count ?? 0} views</span>
+            {!question.client_id && <span>· Asked by {question.guest_name || 'Anonymous'}</span>}
           </div>
           <p className="mt-5 whitespace-pre-line text-[15.5px] leading-relaxed text-ink-700">{question.body}</p>
           {question.budget && <div className="mt-3 text-[13.5px] font-semibold text-brand-600">Budget: ₹{question.budget}</div>}

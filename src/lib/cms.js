@@ -756,15 +756,19 @@ export async function uploadResume(jobId, file) {
 }
 
 // ---------- LEGAL Q&A (public forum) ----------
+// Columns exposed to anonymous readers — guest_email is deliberately left out
+// so an asker's contact email is never sent to the browser on a public page.
+const PUBLIC_QUESTION_COLUMNS = 'id, topic, title, body, budget, view_count, status, client_id, guest_name, created_at';
+
 export async function listQuestionsPublic(topic) {
-  let q = supabase.from('questions').select('*, answers(count)').order('created_at', { ascending: false });
+  let q = supabase.from('questions').select(`${PUBLIC_QUESTION_COLUMNS}, answers(count)`).order('created_at', { ascending: false });
   if (topic && topic !== 'all') q = q.ilike('topic', topic); // case-insensitive: some seeded topics are lowercase
   const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
 export async function getQuestionDetail(questionId) {
-  const { data: question, error: qErr } = await supabase.from('questions').select('*').eq('id', questionId).maybeSingle();
+  const { data: question, error: qErr } = await supabase.from('questions').select(PUBLIC_QUESTION_COLUMNS).eq('id', questionId).maybeSingle();
   if (qErr) throw qErr;
   if (!question) return null;
   const { data: answers, error: aErr } = await supabase
@@ -794,8 +798,12 @@ export async function incrementQuestionViews(questionId) {
   const { error } = await supabase.rpc('increment_question_views', { q_id: questionId });
   if (error) throw error;
 }
-export async function submitQuestion({ topic, title, body, budget, client_id }) {
-  const { data, error } = await supabase.from('questions').insert({ topic, title, body, budget, client_id: client_id || null }).select().maybeSingle();
+export async function submitQuestion({ topic, title, body, budget, client_id, guest_email, guest_name }) {
+  const { data, error } = await supabase
+    .from('questions')
+    .insert({ topic, title, body, budget, client_id: client_id || null, guest_email: guest_email || null, guest_name: guest_name || null })
+    .select(PUBLIC_QUESTION_COLUMNS)
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

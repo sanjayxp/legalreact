@@ -16,8 +16,6 @@ import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 import { PRACTICE_AREAS as TOPICS } from '../../lib/practiceAreas';
 
 export default function QA() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
@@ -31,24 +29,15 @@ export default function QA() {
   }
   useEffect(() => { load(topic); }, [topic]);
 
-  // Coming back here after logging in specifically to ask a question.
+  // Coming back here after choosing "log in instead" partway through asking.
   useEffect(() => {
-    if (searchParams.get('ask') === '1' && user) {
+    if (searchParams.get('ask') === '1') {
       setAskOpen(true);
       searchParams.delete('ask');
       setSearchParams(searchParams, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  function handleAskClick() {
-    if (!user) {
-      setReturnTo('/qa?ask=1');
-      navigate('/login');
-      return;
-    }
-    setAskOpen(true);
-  }
+  }, []);
 
   return (
     <div className="bg-white">
@@ -63,7 +52,7 @@ export default function QA() {
               <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Legal Q&amp;A</h1>
               <p className="mt-2 max-w-lg text-[16px] text-ink-500">Ask a legal question for free — verified advocates answer in plain language.</p>
             </div>
-            <Button size="lg" onClick={handleAskClick}><Plus size={17} /> Ask a question</Button>
+            <Button size="lg" onClick={() => setAskOpen(true)}><Plus size={17} /> Ask a question</Button>
           </div>
         </div>
       </section>
@@ -123,26 +112,64 @@ export default function QA() {
   );
 }
 
+const QA_DRAFT_KEY = 'lc_qa_draft';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function AskQuestionModal({ open, onClose, onAsked }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ topic: 'Civil', title: '', body: '', budget: '' });
+  const [postAs, setPostAs] = useState('anonymous');
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
+  // Restore whatever was typed if the visitor left mid-ask to log in instead.
+  useEffect(() => {
+    if (!open) return;
+    const saved = sessionStorage.getItem(QA_DRAFT_KEY);
+    if (saved) {
+      sessionStorage.removeItem(QA_DRAFT_KEY);
+      try {
+        const draft = JSON.parse(saved);
+        setForm(draft.form);
+        setPostAs(draft.postAs);
+        setGuestName(draft.guestName);
+        setGuestEmail(draft.guestEmail);
+      } catch { /* ignore a corrupted draft */ }
+    }
+  }, [open]);
+
+  function handleLoginInstead() {
+    sessionStorage.setItem(QA_DRAFT_KEY, JSON.stringify({ form, postAs, guestName, guestEmail }));
+    setReturnTo('/qa?ask=1');
+    navigate('/login');
+  }
+
   async function handleSubmit() {
-    if (!user) { setErr('Log in to post your question.'); return; }
     if (!form.title.trim() || !form.body.trim()) { setErr('Please fill in a title and details.'); return; }
+    if (!user) {
+      if (!EMAIL_RE.test(guestEmail.trim())) { setErr('Enter a valid email address.'); return; }
+      if (postAs === 'name' && !guestName.trim()) { setErr('Enter your name, or choose to post anonymously.'); return; }
+    }
     setBusy(true);
     setErr('');
     try {
-      // Attributing the question to the signed-in asker is what lets it show
-      // up on their dashboard later.
+      // Signed-in askers are attributed by client_id, which is what lets the
+      // question show up on their dashboard later. Guests are identified only
+      // by an email (for notifications) and an optional public display name.
       const q = await submitQuestion({
         ...form,
         budget: form.budget ? Number(form.budget) : null,
-        client_id: user.id,
+        client_id: user?.id || null,
+        guest_email: user ? null : guestEmail.trim(),
+        guest_name: user ? null : (postAs === 'name' ? guestName.trim() : null),
       });
       setForm({ topic: 'Civil', title: '', body: '', budget: '' });
+      setPostAs('anonymous');
+      setGuestName('');
+      setGuestEmail('');
       onAsked(q.id);
     } catch (e) {
       setErr(e.message || 'Could not post your question.');
@@ -163,6 +190,44 @@ function AskQuestionModal({ open, onClose, onAsked }) {
       <Textarea rows={5} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Share the relevant facts — no personal identifying details needed." />
       <Label hint="(optional)">Budget for a paid consultation (₹)</Label>
       <Input type="number" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
+
+      {!user && (
+        <div className="mt-4 rounded-xl border border-ink-100 bg-ink-50/60 p-4">
+          <div className="text-[13px] font-bold text-ink-800">How should we post this?</div>
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setPostAs('anonymous')}
+              className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold ${postAs === 'anonymous' ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-ink-100 text-ink-500 hover:border-brand-200'}`}
+            >
+              Post anonymously
+            </button>
+            <button
+              type="button"
+              onClick={() => setPostAs('name')}
+              className={`rounded-full border px-3.5 py-1.5 text-[13px] font-semibold ${postAs === 'name' ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-ink-100 text-ink-500 hover:border-brand-200'}`}
+            >
+              Post with my name
+            </button>
+          </div>
+
+          {postAs === 'name' && (
+            <>
+              <Label required>Your name</Label>
+              <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="As you'd like it shown publicly" />
+            </>
+          )}
+
+          <Label required>Your email</Label>
+          <Input type="email" value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} placeholder="you@example.com" />
+          <p className="mt-1 text-[12px] text-ink-400">Only used to notify you when an advocate answers — never shown publicly.</p>
+
+          <button type="button" onClick={handleLoginInstead} className="mt-3 text-[12.5px] font-semibold text-brand-600 hover:underline">
+            Already have an account, or want one? Log in or sign up instead →
+          </button>
+        </div>
+      )}
+
       {err && <div className="mt-3"><Toast text={err} kind="err" /></div>}
       <Button className="mt-5 w-full" onClick={handleSubmit} disabled={busy}>{busy ? 'Posting…' : 'Post question'}</Button>
     </Modal>
