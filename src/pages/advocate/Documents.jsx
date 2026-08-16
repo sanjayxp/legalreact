@@ -76,10 +76,10 @@ export default function Documents() {
           {template.fields.map((f, i) => (
             <div key={f.key}>
               {f.group === 'letterhead' && i === 0 && (
-                <div className="mb-1 mt-0 text-[11px] font-bold uppercase tracking-wide text-ink-400">Letterhead (optional) — appears at the top of the document</div>
+                <div className="mb-1 mt-0 text-[11px] font-bold uppercase tracking-wide text-ink-600">Letterhead (optional) — appears at the top of the document</div>
               )}
               {template.fields[i - 1]?.group === 'letterhead' && f.group !== 'letterhead' && (
-                <div className="mb-1 mt-5 border-t border-ink-100 pt-4 text-[11px] font-bold uppercase tracking-wide text-ink-400">Document details</div>
+                <div className="mb-1 mt-5 border-t border-ink-100 pt-4 text-[11px] font-bold uppercase tracking-wide text-ink-600">Document details</div>
               )}
               <Label required={f.required}>{f.label}</Label>
               {f.type === 'textarea' ? (

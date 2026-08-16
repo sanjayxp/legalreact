@@ -206,11 +206,11 @@ export default function Login() {
             <div className="mt-8 flex items-center gap-8">
               <div>
                 <div className="font-heading text-[22px] font-extrabold text-ink-900">Free</div>
-                <div className="text-[12px] text-ink-400">To ask a question</div>
+                <div className="text-[12px] text-ink-600">To ask a question</div>
               </div>
               <div>
                 <div className="font-heading text-[22px] font-extrabold text-ink-900">Verified</div>
-                <div className="text-[12px] text-ink-400">Bar Council checked</div>
+                <div className="text-[12px] text-ink-600">Bar Council checked</div>
               </div>
             </div>
           </div>
@@ -222,13 +222,13 @@ export default function Login() {
             <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-ink-50 p-1">
               <button
                 onClick={() => { setMode('login'); setMsg(''); }}
-                className={`rounded-lg py-2.5 text-[14px] font-bold transition-colors ${mode === 'login' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-400'}`}
+                className={`rounded-lg py-2.5 text-[14px] font-bold transition-colors ${mode === 'login' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-600'}`}
               >
                 Log in
               </button>
               <button
                 onClick={() => { setMode('reg'); setMsg(''); }}
-                className={`rounded-lg py-2.5 text-[14px] font-bold transition-colors ${mode === 'reg' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-400'}`}
+                className={`rounded-lg py-2.5 text-[14px] font-bold transition-colors ${mode === 'reg' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-600'}`}
               >
                 Create account
               </button>
@@ -314,7 +314,7 @@ export default function Login() {
 
                   <Divider text="or sign up with" />
                   <OAuthButtons onGoogle={() => handleOAuth('google', true)} onLinkedIn={() => handleOAuth('linkedin_oidc', true)} />
-                  <p className="mt-2 text-center text-[11.5px] text-ink-400">
+                  <p className="mt-2 text-center text-[11.5px] text-ink-600">
                     Signing up as: <b className="text-ink-700">{role}</b> — pick your role above first.
                   </p>
 
@@ -329,11 +329,11 @@ export default function Login() {
             </div>
 
             {msg && <div className="mt-4"><Toast text={msg} kind={msgKind} /></div>}
-            <p className="mt-4 text-center text-[11.5px] text-ink-300">Advocate profiles go live after Bar Council verification.</p>
+            <p className="mt-4 text-center text-[11.5px] font-medium text-ink-700">Advocate profiles go live after Bar Council verification.</p>
           </div>
-          <p className="mt-4 text-center text-[12.5px] text-ink-400">
+          <p className="mt-4 text-center text-[12.5px] text-ink-600">
             Admin?{' '}
-            <Link to="/admin/login" className="font-semibold text-ink-600 underline">
+            <Link to="/admin/login" className="font-semibold text-ink-700 underline">
               Sign in at the admin console
             </Link>
           </p>
