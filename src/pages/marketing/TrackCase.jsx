@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Gavel, Calendar, FileText, Landmark, LogIn, UserPlus } from 'lucide-react';
-import { lookupCaseByCNR } from '../../lib/cms';
+import { Search, Gavel, Calendar, FileText, Landmark, LogIn, UserPlus, Users, ArrowLeft } from 'lucide-react';
+import { lookupCaseByCNR, searchCasesByName } from '../../lib/cms';
 import { useAuth } from '../../lib/auth';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
@@ -19,6 +19,13 @@ export default function TrackCase() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [result, setResult] = useState(null);
+
+  // Not everyone has their CNR handy — this lets them find it by name first.
+  const [mode, setMode] = useState('cnr');
+  const [nameQuery, setNameQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchErr, setSearchErr] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
 
   // Arriving with ?cnr= (from precedent research, say) should just show the
   // record rather than making the advocate press the button again.
@@ -44,6 +51,29 @@ export default function TrackCase() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleSearch() {
+    const q = nameQuery.trim();
+    if (q.length < 3) { setSearchErr('Enter at least 3 characters — a name or part of one.'); return; }
+    setSearching(true);
+    setSearchErr('');
+    setSearchResults(null);
+    try {
+      const data = await searchCasesByName(q);
+      setSearchResults(data.results);
+    } catch (e) {
+      setSearchErr(e.message || 'Search failed. Please try again.');
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function pickSearchResult(cnrValue) {
+    setMode('cnr');
+    setCnr(cnrValue);
+    setSearchResults(null);
+    handleLookup(cnrValue);
   }
 
   return (
@@ -77,19 +107,76 @@ export default function TrackCase() {
         ) : (
           <>
             <Card>
-              <Label>CNR number</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={cnr}
-                  onChange={(e) => setCnr(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
-                  placeholder="e.g. DLHC010001232024"
-                  className="flex-1"
-                />
-                <Button onClick={handleLookup} disabled={busy}><Search size={16} /> {busy ? 'Looking up…' : 'Track'}</Button>
-              </div>
-              <p className="mt-2 text-[12.5px] text-ink-400">Find your 16-digit CNR on your case filing receipt or the eCourts portal.</p>
-              {err && <div className="mt-4"><Toast text={err} kind="err" /></div>}
+              {mode === 'cnr' ? (
+                <>
+                  <Label>CNR number</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={cnr}
+                      onChange={(e) => setCnr(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
+                      placeholder="e.g. DLHC010001232024"
+                      className="flex-1"
+                    />
+                    <Button onClick={handleLookup} disabled={busy}><Search size={16} /> {busy ? 'Looking up…' : 'Track'}</Button>
+                  </div>
+                  <p className="mt-2 text-[12.5px] text-ink-400">
+                    Find your 16-digit CNR on your case filing receipt or the eCourts portal, or{' '}
+                    <button type="button" onClick={() => setMode('name')} className="font-semibold text-brand-600 hover:underline">
+                      search by party or advocate name instead
+                    </button>.
+                  </p>
+                  {err && <div className="mt-4"><Toast text={err} kind="err" /></div>}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setMode('cnr'); setSearchResults(null); setSearchErr(''); }}
+                    className="mb-3 inline-flex items-center gap-1 text-[12.5px] font-semibold text-ink-500 hover:text-brand-600"
+                  >
+                    <ArrowLeft size={13} /> Search by CNR instead
+                  </button>
+                  <Label>Party or advocate name</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={nameQuery}
+                      onChange={(e) => setNameQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      placeholder="e.g. Ritambhra Sharma"
+                      className="flex-1"
+                    />
+                    <Button onClick={handleSearch} disabled={searching}><Users size={16} /> {searching ? 'Searching…' : 'Search'}</Button>
+                  </div>
+                  <p className="mt-2 text-[12.5px] text-ink-400">Searches petitioners, respondents, and advocates across the eCourts network.</p>
+                  {searchErr && <div className="mt-4"><Toast text={searchErr} kind="err" /></div>}
+
+                  {searchResults && (
+                    <div className="mt-4 space-y-2">
+                      {searchResults.length === 0 ? (
+                        <p className="text-[13.5px] text-ink-500">No cases matched that name. Try a different spelling, or search by CNR if you have it.</p>
+                      ) : (
+                        searchResults.map((r) => (
+                          <button
+                            key={r.cnr}
+                            type="button"
+                            onClick={() => pickSearchResult(r.cnr)}
+                            className="block w-full rounded-xl border border-ink-100 p-3.5 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50"
+                          >
+                            <div className="text-[13.5px] font-bold text-ink-900">{r.case_title}</div>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-500">
+                              {r.court_name && <span>{r.court_name}</span>}
+                              {r.case_status && <span>· {r.case_status}</span>}
+                              {r.next_hearing_date && <span>· Next hearing {new Date(r.next_hearing_date).toLocaleDateString('en-IN')}</span>}
+                            </div>
+                            <div className="mt-1 text-[11.5px] text-ink-400">CNR: {r.cnr}</div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </Card>
 
             {result && (

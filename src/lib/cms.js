@@ -484,6 +484,24 @@ export async function lookupCaseByCNR(cnr, { full = false } = {}) {
   if (data?.error) throw new Error(data.error);
   return data.data;
 }
+// For someone who doesn't have their CNR handy — full-text search across
+// party names, advocates, and case metadata. Returns a page of lightweight
+// results; call lookupCaseByCNR on the chosen one for the full record.
+export async function searchCasesByName(query, page = 1) {
+  const { data, error } = await supabase.functions.invoke('ecourts-search', { body: { query, page } });
+  if (error) {
+    let msg = 'Search failed. Please try again.';
+    try {
+      const body = await error.context.json();
+      if (body?.error) msg = body.error;
+    } catch (_) {
+      /* fall back to generic message */
+    }
+    throw new Error(msg);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data.data;
+}
 
 // ---------- ADVOCATE ACCOUNT SETTINGS ----------
 // Phone is written once by the signup trigger and had no field anywhere, so a
