@@ -103,7 +103,7 @@ export default function ForAdvocates() {
         </div>
       </section>
 
-      <section className="bg-brand-50/50 py-24">
+      <section id="verification" className="bg-brand-50/50 py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <div className="max-w-xl">
             <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">Verification</span>

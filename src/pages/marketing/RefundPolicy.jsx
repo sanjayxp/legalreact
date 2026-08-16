@@ -1,5 +1,5 @@
 import { POLICY_LAST_UPDATED } from '../../lib/orgDetails';
-import LegalPageLayout, { LegalSection, LegalList, Placeholder, OrgField } from '../../components/marketing/LegalPageLayout';
+import LegalPageLayout, { LegalSection, LegalList, OrgField } from '../../components/marketing/LegalPageLayout';
 
 export default function RefundPolicy() {
   return (
@@ -23,7 +23,7 @@ export default function RefundPolicy() {
 
       <LegalSection title="3. Refund method and timeline">
         <p>
-          Eligible refunds are issued to the original payment method within <OrgField name="refundProcessingDays" hint="e.g. 5–7 business days" />. <Placeholder>Update this section once a payment gateway is integrated — include any processing fees that are non-refundable.</Placeholder>
+          LegalConnects does not process consultation payments — fees are paid directly to the advocate, by whatever method they agree with the client. Where a fee has been paid and a refund becomes due under this policy (Section 2), it is the advocate's responsibility to issue it, by the same method the payment was made, within <OrgField name="refundProcessingDays" hint="e.g. 5–7 business days" />. Contact us if an advocate does not honour a refund you are entitled to under this policy.
         </p>
       </LegalSection>
 

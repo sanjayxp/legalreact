@@ -1,5 +1,5 @@
 import { POLICY_LAST_UPDATED } from '../../lib/orgDetails';
-import LegalPageLayout, { LegalSection, LegalList, Placeholder, OrgField } from '../../components/marketing/LegalPageLayout';
+import LegalPageLayout, { LegalSection, LegalList, OrgField } from '../../components/marketing/LegalPageLayout';
 
 export default function Terms() {
   return (
@@ -33,7 +33,7 @@ export default function Terms() {
 
       <LegalSection title="4. Bookings, fees, and payments">
         <p>
-          Consultation fees are set by individual advocates and are payable as agreed between the client and advocate. <Placeholder>Describe how payments are processed on the platform, if applicable — e.g. via a payment gateway, or offline between client and advocate.</Placeholder> See our <a href="/refund-policy" className="font-semibold text-brand-600 hover:underline">Refund & Cancellation Policy</a> for cancellation terms.
+          Consultation fees are set by individual advocates. LegalConnects does not process payments on the platform — fees are payable directly between the client and advocate, by whatever method they agree on. Advocates may record invoices for their own bookkeeping within their dashboard; this is a record-keeping tool only and does not constitute a payment made through LegalConnects. See our <a href="/refund-policy" className="font-semibold text-brand-600 hover:underline">Refund & Cancellation Policy</a> for cancellation terms.
         </p>
       </LegalSection>
 

@@ -8,29 +8,34 @@
 // Fill these in and every page updates together.
 
 // Shown as "Last updated" on every legal page. Bump when the wording changes.
-export const POLICY_LAST_UPDATED = '8 August 2026';
+export const POLICY_LAST_UPDATED = '16 August 2026';
 
 export const ORG = {
   // Registered entity and address, as they appear on incorporation documents.
+  // Not yet incorporated — kept as a placeholder deliberately rather than
+  // guessed, since a wrong legal name here is a real liability issue.
   legalName: null,
-  registeredAddress: null,
+  registeredAddress: 'Gurgaon, Haryana, India',
 
   // Where the public can reach you.
-  supportEmail: null,
+  supportEmail: 'support@legalconnects.in',
   supportPhone: null,
   supportHours: null,
 
   // Data protection. Required to be named and reachable under the DPDP Act.
-  privacyEmail: null,
+  privacyEmail: 'support@legalconnects.in',
+  // Name intentionally left as a placeholder until a specific person is
+  // formally designated — the DPDP Act requires this to be a real named
+  // individual, not a generic team inbox. The contact email is real.
   grievanceOfficerName: null,
-  grievanceOfficerEmail: null,
-  grievanceResponseDays: 30,
+  grievanceOfficerEmail: 'support@legalconnects.in',
+  grievanceResponseDays: '30 days',
 
   // Courts of which city have exclusive jurisdiction under the Terms.
-  jurisdictionCity: null,
+  jurisdictionCity: 'Gurgaon, Haryana',
 
   // How long personal data is kept after an account closes.
-  dataRetention: null,
+  dataRetention: '7 years',
 
   // Public profiles. Only the ones filled in are shown — a social icon that
   // leads nowhere is worse than no icon.
@@ -38,9 +43,9 @@ export const ORG = {
   instagramUrl: null,
 
   // Cancellation and refund windows.
-  cancellationNoticeHours: null,
-  refundProcessingDays: null,
-  advocateDeclineRefundDays: null,
+  cancellationNoticeHours: '4 hours',
+  refundProcessingDays: '5–7 business days',
+  advocateDeclineRefundDays: '3 business days',
 };
 
 // True once the fields the legal pages depend on are filled. Social profiles
