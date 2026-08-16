@@ -18,7 +18,7 @@ const COLUMNS = [
     links: [
       { label: 'Join as an advocate', to: '/login#register' },
       { label: 'Verification process', to: '/for-advocates#verification' },
-      { label: 'Advocate console', to: '/jobs' },
+      { label: 'Jobs & Learning', to: '/jobs' },
     ],
   },
   {
