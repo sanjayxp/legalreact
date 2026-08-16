@@ -172,10 +172,25 @@ export default function Overview() {
       </motion.div>
 
       {availability.length === 0 && (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13.5px] text-amber-800">
-          You haven't set your weekly availability yet.{' '}
-          <Link to="/dashboard/advocate/bookings" className="font-bold underline">Set it up</Link> so clients can book you.
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mt-4 flex items-start gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 p-5"
+        >
+          <Clock size={20} className="mt-0.5 shrink-0 text-amber-600" />
+          <div className="flex-1">
+            <div className="font-bold text-amber-900">Set your working hours</div>
+            <div className="mt-1 text-[13.5px] text-amber-700">
+              You won't appear in client searches until you set your availability. Go to Settings to add your working hours and get discovered.
+            </div>
+          </div>
+          <Link to="/dashboard/advocate/settings" className="shrink-0">
+            <Button size="sm" variant="primary">
+              <Clock size={14} /> Set up now
+            </Button>
+          </Link>
+        </motion.div>
       )}
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
