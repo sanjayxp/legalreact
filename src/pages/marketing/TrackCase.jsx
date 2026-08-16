@@ -86,6 +86,7 @@ export default function TrackCase() {
           <span className="text-[13.5px] font-bold uppercase tracking-wide text-brand-500">eCourts network</span>
           <h1 className="mt-2 text-[35px] font-extrabold text-ink-900 sm:text-[43px]">Track Your Case</h1>
           <p className="mt-3 text-[16px] text-ink-500">Enter your case's CNR (Case Number Record) to pull the latest status directly from the official eCourts data network.</p>
+          <p className="mt-2 text-[13.5px] text-ink-400">Covers District &amp; High Courts plus 21+ tribunals — NCLT, ITAT, CESTAT, consumer forums, and more.</p>
         </div>
       </section>
 
