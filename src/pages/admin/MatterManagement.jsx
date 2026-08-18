@@ -2,28 +2,13 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Filter, Check, X } from 'lucide-react';
 import { listAllMatters, getMatterStats, updateLead } from '../../lib/cms';
+import { MATTER_TYPES, findMatterType } from '../../lib/matterTypes';
 import AdminShell from '../../components/layout/AdminShell';
 import Card, { CardHeading } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Field';
 import { Spinner, Toast } from '../../components/ui/Misc';
-
-const MATTER_TYPES = {
-  traffic_challan: 'Traffic Challan',
-  property_related: 'Property',
-  family_law: 'Family Law',
-  criminal: 'Criminal',
-  civil: 'Civil',
-  corporate: 'Corporate',
-  labor_law: 'Labor Law',
-  consumer_protection: 'Consumer',
-  land_dispute: 'Land Dispute',
-  inheritance: 'Inheritance',
-  contract_dispute: 'Contract',
-  cheque_bounce: 'Cheque Bounce',
-  other: 'Other',
-};
 
 export default function MatterManagement() {
   const [loading, setLoading] = useState(true);
@@ -115,12 +100,12 @@ export default function MatterManagement() {
       <Card className="mt-6">
         <CardHeading title="Matters" sub="Filter by type and status." />
 
-        <div className="mb-4 flex gap-3">
-          <Input placeholder="Search by client, matter, or city…" value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
+        <div className="mb-4 flex flex-wrap gap-3">
+          <Input placeholder="Search by client, matter, or city…" value={search} onChange={(e) => setSearch(e.target.value)} className="min-w-[200px] flex-1" />
           <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-40">
             <option value="">All types</option>
-            {Object.entries(MATTER_TYPES).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
+            {MATTER_TYPES.map((t) => (
+              <option key={t.slug} value={t.slug}>{t.label}</option>
             ))}
           </Select>
           <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-40">
@@ -137,7 +122,7 @@ export default function MatterManagement() {
             <div key={m.id} className="flex items-start justify-between rounded-lg border border-ink-100 p-3 hover:bg-ink-50">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <Badge tone="gray">{MATTER_TYPES[m.matter_type] || m.matter_type}</Badge>
+                  <Badge tone="gray">{findMatterType(m.matter_type)?.label || 'General enquiry'}</Badge>
                   <Badge tone={m.status === 'new' ? 'amber' : m.status === 'converted' ? 'green' : 'gray'}>
                     {m.status}
                   </Badge>

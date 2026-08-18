@@ -82,8 +82,8 @@ export default function AdvocatePerformance() {
       <Card className="mt-6">
         <CardHeading title="Rankings" sub="Sort by performance metrics." />
 
-        <div className="mb-4 flex gap-3">
-          <Input placeholder="Search by name…" value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
+        <div className="mb-4 flex flex-wrap gap-3">
+          <Input placeholder="Search by name…" value={search} onChange={(e) => setSearch(e.target.value)} className="min-w-[200px] flex-1" />
           <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-48">
             <option value="consultations">Consultations</option>
             <option value="cases">Cases Handled</option>

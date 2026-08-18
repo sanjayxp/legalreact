@@ -146,7 +146,7 @@ export default function SupportTickets() {
             <h2 className="font-heading text-[19px] font-bold text-ink-900">{selectedTicket.title}</h2>
             <div className="mt-2 flex items-center gap-2">
               <Badge tone={PRIORITIES[selectedTicket.priority]}>{selectedTicket.priority}</Badge>
-              <Badge tone="gray">{CATEGORIES[selectedTicket.category]}</Badge>
+              <Badge tone="gray">{CATEGORIES[selectedTicket.category] || selectedTicket.category}</Badge>
               <Badge tone={selectedTicket.status === 'resolved' ? 'green' : 'amber'}>{selectedTicket.status}</Badge>
             </div>
             <div className="mt-4 text-[13.5px] text-ink-700">{selectedTicket.description}</div>
