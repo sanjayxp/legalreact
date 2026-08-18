@@ -1131,3 +1131,98 @@ export async function getAnalyticsSummary() {
   };
 }
 
+
+// ---------- ADMIN: ADVOCATE PERFORMANCE ----------
+export async function getAdvocatePerformance() {
+  const { data: advocates } = await supabase.from('advocate_profiles')
+    .select('id, full_name, verification_status, view_count, created_at');
+  
+  if (!advocates) return [];
+  
+  return Promise.all(advocates.map(async (adv) => {
+    const { count: slots } = await supabase.from('booking_slots')
+      .select('*', { count: 'exact', head: true })
+      .eq('advocate_id', adv.id)
+      .eq('status', 'confirmed');
+    
+    const { count: leads } = await supabase.from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('advocate_id', adv.id)
+      .eq('status', 'converted');
+    
+    return {
+      ...adv,
+      consultations: slots || 0,
+      cases: leads || 0,
+      rating: Math.random() * 2 + 3, // placeholder
+    };
+  }));
+}
+
+// ---------- ADMIN: MATTER MANAGEMENT ----------
+export async function listAllMatters(filter = {}) {
+  let q = supabase.from('leads').select('*');
+  if (filter.status) q = q.eq('status', filter.status);
+  if (filter.type) q = q.eq('matter_type', filter.type);
+  const { data, error } = await q.order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getMatterStats() {
+  const { data } = await supabase.from('leads').select('status, matter_type');
+  if (!data) return {};
+  
+  const stats = {
+    total: data.length,
+    byStatus: {},
+    byType: {},
+  };
+  
+  data.forEach((m) => {
+    stats.byStatus[m.status] = (stats.byStatus[m.status] || 0) + 1;
+    stats.byType[m.matter_type] = (stats.byType[m.matter_type] || 0) + 1;
+  });
+  
+  return stats;
+}
+
+// ---------- ADMIN: NOTIFICATIONS/ALERTS ----------
+export async function getAdminAlerts() {
+  const [pendingAdvocates, overdueLead, openTickets] = await Promise.all([
+    listPendingAdvocates(),
+    supabase.from('leads').select('*')
+      .eq('status', 'new')
+      .lt('created_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
+    listSupportTickets({ status: 'open' }),
+  ]);
+  
+  return {
+    pendingAdvocates: pendingAdvocates?.length || 0,
+    overdueLeads: (pendingAdvocates || []).length || 0,
+    openTickets: openTickets?.length || 0,
+  };
+}
+
+// ---------- ADMIN: BULK OPERATIONS ----------
+export async function bulkApproveAdvocates(advocateIds) {
+  const { error } = await supabase.from('advocate_profiles')
+    .update({ verification_status: 'approved' })
+    .in('id', advocateIds);
+  if (error) throw error;
+}
+
+export async function bulkRejectAdvocates(advocateIds) {
+  const { error } = await supabase.from('advocate_profiles')
+    .update({ verification_status: 'rejected' })
+    .in('id', advocateIds);
+  if (error) throw error;
+}
+
+export async function bulkAssignLeads(leadIds, advocateId) {
+  const { error } = await supabase.from('leads')
+    .update({ advocate_id: advocateId, assigned_at: new Date().toISOString() })
+    .in('id', leadIds);
+  if (error) throw error;
+}
+

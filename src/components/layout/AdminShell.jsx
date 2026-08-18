@@ -13,6 +13,9 @@ const NAV = [
   { to: '/admin/people', label: 'People', section: 'people', badge: true },
   { to: '/admin/support', label: 'Support Tickets' },
   { to: '/admin/audit', label: 'Audit Log' },
+  { to: '/admin/alerts', label: 'Alerts' },
+  { to: '/admin/performance', label: 'Performance' },
+  { to: '/admin/matters', label: 'Matters' },
 ];
 
 export default function AdminShell({ children }) {
