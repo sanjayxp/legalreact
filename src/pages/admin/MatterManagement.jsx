@@ -138,7 +138,7 @@ export default function MatterManagement() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Badge tone="gray">{MATTER_TYPES[m.matter_type] || m.matter_type}</Badge>
-                  <Badge tone={m.status === 'new' ? 'sun' : m.status === 'converted' ? 'emerald' : 'gray'}>
+                  <Badge tone={m.status === 'new' ? 'amber' : m.status === 'converted' ? 'green' : 'gray'}>
                     {m.status}
                   </Badge>
                 </div>

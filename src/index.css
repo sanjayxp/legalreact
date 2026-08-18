@@ -27,8 +27,11 @@
 
   --color-ink-50: #f6f7f9;
   --color-ink-100: #e9eaef;
+  --color-ink-200: #c9ccd6;
   --color-ink-300: #a9adbd;
+  --color-ink-400: #868ca0;
   --color-ink-500: #636a83;
+  --color-ink-600: #535a73;
   --color-ink-700: #434a63;
   --color-ink-800: #363b51;
   --color-ink-900: #292e3e;
@@ -37,8 +40,10 @@
 
   --color-sun-400: #ffb238;
   --color-sun-500: #ff9d1f;
+  --color-sun-600: #e8830a;
   --color-coral-400: #ff7a8a;
   --color-coral-500: #f2456b;
+  --color-coral-600: #c63958;
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
   --shadow-card-hover: 0 4px 10px rgba(15, 23, 42, 0.06), 0 16px 36px rgba(15, 23, 42, 0.1);

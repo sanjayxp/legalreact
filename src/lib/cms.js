@@ -141,6 +141,7 @@ export async function reviewAdvocateProfile(userId, status, reviewerId) {
     .update({ verification_status: status, reviewed_at: new Date().toISOString(), reviewed_by: reviewerId })
     .eq('id', userId);
   if (error) throw error;
+  await logSelfAction('advocate_' + status, 'advocate_profile', userId, { status }, null);
 }
 export async function adminUpdateAdvocateProfile(userId, fields) {
   const { error } = await supabase.from('advocate_profiles').update(fields).eq('id', userId);
@@ -186,6 +187,7 @@ export async function findProfileByEmail(email) {
 export async function promoteToAdmin(userId) {
   const { error } = await supabase.from('profiles').update({ role: 'admin' }).eq('id', userId);
   if (error) throw error;
+  await logSelfAction('promote_to_admin', 'profile', userId, null, null);
 }
 export async function updateOwnName(userId, fullName) {
   const { error } = await supabase.from('profiles').update({ full_name: fullName }).eq('id', userId);
@@ -427,14 +429,17 @@ export async function listAdminPermissions() {
 export async function grantAdminSection(adminId, section, grantedBy) {
   const { error } = await supabase.from('admin_permissions').upsert({ admin_id: adminId, section, granted_by: grantedBy }, { onConflict: 'admin_id,section' });
   if (error) throw error;
+  await logSelfAction('grant_admin_section', 'admin_permissions', adminId, { section }, null);
 }
 export async function revokeAdminSection(adminId, section) {
   const { error } = await supabase.from('admin_permissions').delete().eq('admin_id', adminId).eq('section', section);
   if (error) throw error;
+  await logSelfAction('revoke_admin_section', 'admin_permissions', adminId, { section }, null);
 }
 export async function demoteAdmin(userId) {
   const { error } = await supabase.from('profiles').update({ role: 'client', is_super_admin: false }).eq('id', userId);
   if (error) throw error;
+  await logSelfAction('demote_admin', 'profile', userId, null, null);
 }
 
 // ---------- CASE TRACKING ----------
@@ -1082,6 +1087,7 @@ export async function updateTicket(id, updates) {
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
+  if (updates.status) await logSelfAction('ticket_' + updates.status, 'support_ticket', id, updates, updates.resolution_notes || null);
 }
 
 // ---------- ADMIN: AUDIT LOG ----------
@@ -1090,6 +1096,19 @@ export async function logAdminAction(admin_id, admin_email, action, target_type,
     admin_id, admin_email, action, target_type, target_id, changes, notes
   });
   if (error) throw error;
+}
+
+// Resolves the signed-in admin itself, so call sites don't have to plumb
+// id/email through. Best-effort: a logging failure must never block the
+// action it's describing, so errors are swallowed rather than thrown.
+async function logSelfAction(action, target_type, target_id, changes, notes) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await logAdminAction(user.id, user.email, action, target_type, target_id, changes, notes);
+  } catch (e) {
+    console.error('audit log failed', e);
+  }
 }
 
 export async function listAuditLog(limit = 50) {
@@ -1196,10 +1215,10 @@ export async function getAdminAlerts() {
       .lt('created_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
     listSupportTickets({ status: 'open' }),
   ]);
-  
+
   return {
     pendingAdvocates: pendingAdvocates?.length || 0,
-    overdueLeads: (pendingAdvocates || []).length || 0,
+    overdueLeads: (overdueLead?.data || []).length,
     openTickets: openTickets?.length || 0,
   };
 }
@@ -1210,6 +1229,7 @@ export async function bulkApproveAdvocates(advocateIds) {
     .update({ verification_status: 'approved' })
     .in('id', advocateIds);
   if (error) throw error;
+  await logSelfAction('bulk_advocate_approved', 'advocate_profile', null, { advocateIds }, null);
 }
 
 export async function bulkRejectAdvocates(advocateIds) {
@@ -1217,6 +1237,7 @@ export async function bulkRejectAdvocates(advocateIds) {
     .update({ verification_status: 'rejected' })
     .in('id', advocateIds);
   if (error) throw error;
+  await logSelfAction('bulk_advocate_rejected', 'advocate_profile', null, { advocateIds }, null);
 }
 
 export async function bulkAssignLeads(leadIds, advocateId) {
@@ -1224,5 +1245,67 @@ export async function bulkAssignLeads(leadIds, advocateId) {
     .update({ advocate_id: advocateId, assigned_at: new Date().toISOString() })
     .in('id', leadIds);
   if (error) throw error;
+  await logSelfAction('bulk_leads_assigned', 'lead', null, { leadIds, advocateId }, null);
+}
+
+// ---------- ADMIN: EMAIL TEMPLATES ----------
+export async function listEmailTemplates() {
+  const { data, error } = await supabase.from('email_templates').select('*').order('name', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function saveEmailTemplate(template) {
+  const { id, ...fields } = template;
+  fields.updated_at = new Date().toISOString();
+  if (id) {
+    const { error } = await supabase.from('email_templates').update(fields).eq('id', id);
+    if (error) throw error;
+    await logSelfAction('email_template_updated', 'email_template', id, { name: fields.name }, null);
+    return id;
+  }
+  const { data, error } = await supabase.from('email_templates').insert(fields).select('id').single();
+  if (error) throw error;
+  await logSelfAction('email_template_created', 'email_template', data.id, { name: fields.name }, null);
+  return data.id;
+}
+
+export async function deleteEmailTemplate(id) {
+  const { error } = await supabase.from('email_templates').delete().eq('id', id);
+  if (error) throw error;
+  await logSelfAction('email_template_deleted', 'email_template', id, null, null);
+}
+
+// ---------- ADMIN: COMPLIANCE (DPDP Act 2023) ----------
+export async function getComplianceSnapshot() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const twoDaysAgo = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+
+  const [erasureLog, pendingStale, missingCert, ticketBreaches, incomplete] = await Promise.all([
+    supabase.from('audit_log').select('*')
+      .in('action', ['account_deleted', 'self_account_deletion'])
+      .order('created_at', { ascending: false })
+      .limit(20),
+    supabase.from('advocate_profiles')
+      .select('id, profiles!advocate_profiles_id_fkey(full_name, email), submitted_at')
+      .eq('verification_status', 'pending')
+      .lt('submitted_at', sevenDaysAgo),
+    supabase.from('advocate_profiles')
+      .select('id, profiles!advocate_profiles_id_fkey(full_name, email)')
+      .eq('verification_status', 'approved')
+      .is('bar_certificate_url', null),
+    supabase.from('support_tickets').select('*')
+      .in('status', ['open', 'in_progress'])
+      .lt('created_at', twoDaysAgo),
+    listIncompleteAdvocateSignups(),
+  ]);
+
+  return {
+    erasureRequests: erasureLog.data || [],
+    stalePendingReview: pendingStale.data || [],
+    missingBarCertificate: missingCert.data || [],
+    ticketSlaBreaches: ticketBreaches.data || [],
+    incompleteSignups: incomplete || [],
+  };
 }
 

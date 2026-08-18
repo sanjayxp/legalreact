@@ -9,17 +9,27 @@ import { Input } from '../../components/ui/Field';
 import { Spinner } from '../../components/ui/Misc';
 
 const ACTION_ICONS = {
-  approve_advocate: CheckCircle2,
-  reject_advocate: XCircle,
-  assign_lead: Edit3,
-  update_lead: Edit3,
+  advocate_approved: CheckCircle2,
+  advocate_rejected: XCircle,
+  bulk_advocate_approved: CheckCircle2,
+  bulk_advocate_rejected: XCircle,
+  bulk_leads_assigned: Edit3,
+  account_deleted: XCircle,
+  self_account_deletion: XCircle,
 };
 
 const ACTION_TONES = {
-  approve_advocate: 'green',
-  reject_advocate: 'coral',
-  assign_lead: 'brand',
-  update_lead: 'brand',
+  advocate_approved: 'green',
+  bulk_advocate_approved: 'green',
+  advocate_rejected: 'red',
+  bulk_advocate_rejected: 'red',
+  bulk_leads_assigned: 'blue',
+  account_deleted: 'red',
+  self_account_deletion: 'red',
+  promote_to_admin: 'blue',
+  demote_admin: 'amber',
+  ticket_resolved: 'green',
+  ticket_closed: 'gray',
 };
 
 export default function AuditLog() {

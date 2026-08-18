@@ -49,6 +49,8 @@ import AdminAuditLog from './pages/admin/AuditLog';
 import AdminAdvocatePerformance from './pages/admin/AdvocatePerformance';
 import AdminNotificationsHub from './pages/admin/NotificationsHub';
 import AdminMatterManagement from './pages/admin/MatterManagement';
+import AdminEmailTemplates from './pages/admin/EmailTemplates';
+import AdminCompliance from './pages/admin/Compliance';
 
 // React Router doesn't reset scroll position on navigation the way a full
 // page load does — without this, going from the bottom of one page to
@@ -119,6 +121,8 @@ export default function App() {
       <Route path="/admin/performance" element={<RequireRole role="admin"><AdminAdvocatePerformance /></RequireRole>} />
       <Route path="/admin/alerts" element={<RequireRole role="admin"><AdminNotificationsHub /></RequireRole>} />
       <Route path="/admin/matters" element={<RequireRole role="admin"><AdminMatterManagement /></RequireRole>} />
+      <Route path="/admin/email-templates" element={<RequireRole role="admin"><AdminEmailTemplates /></RequireRole>} />
+      <Route path="/admin/compliance" element={<RequireRole role="admin"><AdminCompliance /></RequireRole>} />
       <Route path="/admin/courses" element={<Navigate to="/admin/jobs?tab=courses" replace />} />
       <Route path="/admin/team" element={<Navigate to="/admin/people?tab=team" replace />} />
       <Route path="/admin/clients" element={<Navigate to="/admin/people?tab=clients" replace />} />

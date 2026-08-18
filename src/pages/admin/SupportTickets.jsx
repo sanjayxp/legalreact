@@ -11,7 +11,7 @@ import { Input, Select } from '../../components/ui/Field';
 import { Spinner, Toast } from '../../components/ui/Misc';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
-const PRIORITIES = { low: 'blue', normal: 'gray', high: 'sun', urgent: 'coral' };
+const PRIORITIES = { low: 'blue', normal: 'gray', high: 'amber', urgent: 'red' };
 const CATEGORIES = { technical: 'Tech Issue', billing: 'Billing', verification: 'Verification', other: 'Other' };
 
 export default function SupportTickets() {
