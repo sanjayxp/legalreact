@@ -1058,3 +1058,76 @@ export async function deleteActSection(id) {
   const { error } = await supabase.from('legal_act_sections').delete().eq('id', id);
   if (error) throw error;
 }
+
+// ---------- ADMIN: SUPPORT TICKETS ----------
+export async function createSupportTicket({ user_id, user_email, user_name, category, title, description }) {
+  const { error } = await supabase.from('support_tickets').insert({
+    user_id, user_email, user_name, category, title, description, status: 'open'
+  });
+  if (error) throw error;
+}
+
+export async function listSupportTickets(filter = {}) {
+  let q = supabase.from('support_tickets').select('*');
+  if (filter.status) q = q.eq('status', filter.status);
+  if (filter.priority) q = q.eq('priority', filter.priority);
+  if (filter.category) q = q.eq('category', filter.category);
+  const { data, error } = await q.order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function updateTicket(id, updates) {
+  const { error } = await supabase.from('support_tickets')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- ADMIN: AUDIT LOG ----------
+export async function logAdminAction(admin_id, admin_email, action, target_type, target_id, changes, notes) {
+  const { error } = await supabase.from('audit_log').insert({
+    admin_id, admin_email, action, target_type, target_id, changes, notes
+  });
+  if (error) throw error;
+}
+
+export async function listAuditLog(limit = 50) {
+  const { data, error } = await supabase.from('audit_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data || [];
+}
+
+// ---------- ADMIN: ANALYTICS ----------
+export async function getAnalyticsSummary() {
+  const { data: tickets } = await supabase.from('support_tickets').select('*');
+  const { data: leads } = await supabase.from('leads').select('*');
+  const { data: profiles } = await supabase.from('profiles').select('role');
+  const { data: slots } = await supabase.from('booking_slots').select('status');
+  
+  return {
+    tickets: {
+      total: tickets?.length || 0,
+      open: tickets?.filter(t => t.status === 'open').length || 0,
+      urgent: tickets?.filter(t => t.priority === 'urgent').length || 0,
+    },
+    leads: {
+      total: leads?.length || 0,
+      new: leads?.filter(l => l.status === 'new').length || 0,
+      converted: leads?.filter(l => l.status === 'converted').length || 0,
+    },
+    users: {
+      advocates: profiles?.filter(p => p.role === 'advocate').length || 0,
+      clients: profiles?.filter(p => p.role === 'client').length || 0,
+      total: profiles?.length || 0,
+    },
+    consultations: {
+      confirmed: slots?.filter(s => s.status === 'confirmed').length || 0,
+      pending: slots?.filter(s => s.status === 'requested').length || 0,
+    }
+  };
+}
+

@@ -11,6 +11,8 @@ const NAV = [
   { to: '/admin/qa', label: 'Q&A', section: 'qa' },
   { to: '/admin/jobs', label: 'Jobs & Learning', section: 'jobs_learning' },
   { to: '/admin/people', label: 'People', section: 'people', badge: true },
+  { to: '/admin/support', label: 'Support Tickets' },
+  { to: '/admin/audit', label: 'Audit Log' },
 ];
 
 export default function AdminShell({ children }) {
