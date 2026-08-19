@@ -1153,26 +1153,46 @@ export async function getAnalyticsSummary() {
 
 // ---------- ADMIN: ADVOCATE PERFORMANCE ----------
 export async function getAdvocatePerformance() {
-  const { data: advocates } = await supabase.from('advocate_profiles')
-    .select('id, full_name, verification_status, view_count, created_at');
-  
-  if (!advocates) return [];
-  
+  const { data: advocates, error } = await supabase.from('advocate_profiles')
+    .select('*');
+
+  if (error) {
+    console.error('getAdvocatePerformance error:', error);
+    return [];
+  }
+  if (!advocates || advocates.length === 0) return [];
+
   return Promise.all(advocates.map(async (adv) => {
-    const { count: slots } = await supabase.from('booking_slots')
-      .select('*', { count: 'exact', head: true })
-      .eq('advocate_id', adv.id)
-      .eq('status', 'confirmed');
-    
-    const { count: leads } = await supabase.from('leads')
-      .select('*', { count: 'exact', head: true })
-      .eq('advocate_id', adv.id)
-      .eq('status', 'converted');
-    
+    let slots = 0, leads = 0;
+
+    try {
+      const { count, error: e1 } = await supabase.from('booking_slots')
+        .select('id', { count: 'exact', head: true })
+        .eq('advocate_id', adv.id)
+        .eq('status', 'confirmed');
+      if (!e1) slots = count || 0;
+    } catch (e) {
+      console.error(`booking_slots query failed for ${adv.id}:`, e);
+    }
+
+    try {
+      const { count, error: e2 } = await supabase.from('leads')
+        .select('id', { count: 'exact', head: true })
+        .eq('advocate_id', adv.id)
+        .eq('status', 'converted');
+      if (!e2) leads = count || 0;
+    } catch (e) {
+      console.error(`leads query failed for ${adv.id}:`, e);
+    }
+
     return {
-      ...adv,
-      consultations: slots || 0,
-      cases: leads || 0,
+      id: adv.id,
+      full_name: adv.full_name || 'Advocate',
+      verification_status: adv.verification_status,
+      view_count: adv.view_count || 0,
+      created_at: adv.created_at,
+      consultations: slots,
+      cases: leads,
       rating: Math.random() * 2 + 3, // placeholder
     };
   }));
