@@ -1170,9 +1170,8 @@ export async function getAnalyticsSummary() {
 
 // ---------- ADMIN: ADVOCATE PERFORMANCE ----------
 export async function getAdvocatePerformance() {
-  // Get all advocates with their profile info
   const { data: advocates, error } = await supabase.from('advocate_profiles')
-    .select('id, verification_status, view_count, created_at, profiles:id(full_name)');
+    .select('id, verification_status, view_count, created_at');
 
   if (error) {
     console.error('getAdvocatePerformance error:', error);
@@ -1180,49 +1179,32 @@ export async function getAdvocatePerformance() {
   }
   if (!advocates || advocates.length === 0) return [];
 
-  return Promise.all(advocates.map(async (adv) => {
-    let slots = 0, leads = 0;
+  const ids = advocates.map((a) => a.id);
 
-    try {
-      const { count, error: e1 } = await supabase.from('booking_slots')
-        .select('id', { count: 'exact', head: true })
-        .eq('advocate_id', adv.id)
-        .eq('status', 'confirmed');
-      if (!e1) slots = count || 0;
-    } catch (e) {
-      console.error(`booking_slots query failed for ${adv.id}:`, e);
-    }
+  // Three batched queries instead of two per advocate.
+  const [profilesRes, slotsRes, leadsRes] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, email').in('id', ids),
+    supabase.from('booking_slots').select('advocate_id').in('advocate_id', ids).eq('status', 'confirmed'),
+    supabase.from('leads').select('advocate_id').in('advocate_id', ids).eq('status', 'converted'),
+  ]);
 
-    try {
-      const { count, error: e2 } = await supabase.from('leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('advocate_id', adv.id)
-        .eq('status', 'converted');
-      if (!e2) leads = count || 0;
-    } catch (e) {
-      console.error(`leads query failed for ${adv.id}:`, e);
-    }
+  const nameById = new Map((profilesRes.data || []).map((p) => [p.id, p.full_name || p.email]));
+  const countBy = (rows) => {
+    const m = new Map();
+    (rows || []).forEach((r) => m.set(r.advocate_id, (m.get(r.advocate_id) || 0) + 1));
+    return m;
+  };
+  const slotCounts = countBy(slotsRes.data);
+  const leadCounts = countBy(leadsRes.data);
 
-    // Safely get profile name from nested data
-    let fullName = 'Unknown Advocate';
-    if (adv.profiles) {
-      if (Array.isArray(adv.profiles) && adv.profiles[0]?.full_name) {
-        fullName = adv.profiles[0].full_name;
-      } else if (typeof adv.profiles === 'object' && adv.profiles.full_name) {
-        fullName = adv.profiles.full_name;
-      }
-    }
-
-    return {
-      id: adv.id,
-      full_name: fullName,
-      verification_status: adv.verification_status || 'pending',
-      view_count: adv.view_count || 0,
-      created_at: adv.created_at,
-      consultations: slots,
-      cases: leads,
-      rating: Math.random() * 2 + 3, // placeholder
-    };
+  return advocates.map((adv) => ({
+    id: adv.id,
+    full_name: nameById.get(adv.id) || 'Unknown Advocate',
+    verification_status: adv.verification_status || 'pending',
+    view_count: adv.view_count || 0,
+    created_at: adv.created_at,
+    consultations: slotCounts.get(adv.id) || 0,
+    cases: leadCounts.get(adv.id) || 0,
   }));
 }
 

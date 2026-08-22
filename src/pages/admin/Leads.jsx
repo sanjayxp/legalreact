@@ -124,10 +124,10 @@ export default function Leads() {
       {errorMsg && <div className="mt-4"><Toast text={errorMsg} kind="err" /></div>}
 
       <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatTile label="Total" value={counts.total} accent="brand" />
-        <StatTile label="New" value={counts.new} accent="coral" />
-        <StatTile label="Contacted" value={counts.contacted} accent="sun" />
-        <StatTile label="Converted" value={counts.converted} accent="green" />
+        <StatTile label="Total" value={counts.total} accent="brand" onClick={() => setStatusFilter('')} active={statusFilter === ''} />
+        <StatTile label="New" value={counts.new} accent="coral" onClick={() => setStatusFilter('new')} active={statusFilter === 'new'} />
+        <StatTile label="Contacted" value={counts.contacted} accent="sun" onClick={() => setStatusFilter('contacted')} active={statusFilter === 'contacted'} />
+        <StatTile label="Converted" value={counts.converted} accent="green" onClick={() => setStatusFilter('converted')} active={statusFilter === 'converted'} />
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">

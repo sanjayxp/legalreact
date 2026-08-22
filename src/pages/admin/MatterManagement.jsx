@@ -1,8 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, Check, X, Eye, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { listAllMatters, getMatterStats, updateLead, deleteLead } from '../../lib/cms';
+import { Check, X, Eye, Trash2, Briefcase } from 'lucide-react';
+import { listAllMatters, updateLead, deleteLead } from '../../lib/cms';
 import { MATTER_TYPES, findMatterType } from '../../lib/matterTypes';
 import AdminShell from '../../components/layout/AdminShell';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -13,10 +12,20 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Select } from '../../components/ui/Field';
 import { Spinner, Toast } from '../../components/ui/Misc';
 
+const STATUS_LABELS = { new: 'New', contacted: 'Contacted', converted: 'Completed', dropped: 'Declined' };
+
+// Tile styling per status filter — all classes are static so Tailwind compiles them.
+const TILES = [
+  { key: '', label: 'Total', valueClass: 'text-ink-900', activeClass: 'border-brand-300 bg-brand-50' },
+  { key: 'new', label: 'New', valueClass: 'text-amber-600', activeClass: 'border-amber-300 bg-amber-50' },
+  { key: 'contacted', label: 'Contacted', valueClass: 'text-brand-600', activeClass: 'border-brand-300 bg-brand-50' },
+  { key: 'converted', label: 'Completed', valueClass: 'text-emerald-600', activeClass: 'border-emerald-300 bg-emerald-50' },
+  { key: 'dropped', label: 'Declined', valueClass: 'text-ink-400', activeClass: 'border-ink-300 bg-ink-50' },
+];
+
 export default function MatterManagement() {
   const [loading, setLoading] = useState(true);
   const [matters, setMatters] = useState([]);
-  const [stats, setStats] = useState({});
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -27,14 +36,10 @@ export default function MatterManagement() {
 
   async function load() {
     try {
-      const [m, s] = await Promise.all([
-        listAllMatters(),
-        getMatterStats(),
-      ]);
-      setMatters(m);
-      setStats(s);
+      setMatters(await listAllMatters());
     } catch (e) {
       console.error(e);
+      setMsg(e.message || 'Could not load matters.');
     } finally {
       setLoading(false);
     }
@@ -43,6 +48,16 @@ export default function MatterManagement() {
   useEffect(() => {
     load();
   }, []);
+
+  // Derived from the same list the table shows, so tiles never drift
+  // out of sync after Done / Decline / Delete.
+  const stats = useMemo(() => ({
+    total: matters.length,
+    new: matters.filter((m) => m.status === 'new').length,
+    contacted: matters.filter((m) => m.status === 'contacted').length,
+    converted: matters.filter((m) => m.status === 'converted').length,
+    dropped: matters.filter((m) => m.status === 'dropped').length,
+  }), [matters]);
 
   const filtered = useMemo(() => {
     return matters.filter((m) => {
@@ -57,23 +72,11 @@ export default function MatterManagement() {
     });
   }, [matters, typeFilter, statusFilter, search]);
 
-  const filteredStats = useMemo(() => {
-    return {
-      total: filtered.length,
-      byStatus: {
-        new: filtered.filter((m) => m.status === 'new').length,
-        contacted: filtered.filter((m) => m.status === 'contacted').length,
-        converted: filtered.filter((m) => m.status === 'converted').length,
-        dropped: filtered.filter((m) => m.status === 'dropped').length,
-      },
-    };
-  }, [filtered]);
-
   async function handleAction(matterId, status) {
     try {
       await updateLead(matterId, { status });
       setMatters((ms) => ms.map((m) => (m.id === matterId ? { ...m, status } : m)));
-      setMsg(`Matter marked as ${status}.`);
+      setMsg(`Matter marked as ${STATUS_LABELS[status].toLowerCase()}.`);
     } catch (e) {
       setMsg(e.message || 'Action failed.');
     }
@@ -99,77 +102,40 @@ export default function MatterManagement() {
     <AdminShell>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-heading text-[25px] font-extrabold text-ink-900">Matter Management</h1>
-        <p className="mt-1 text-[14.5px] text-ink-500">All cases posted by clients — view, assign, and track.</p>
+        <p className="mt-1 text-[14.5px] text-ink-500">All cases posted by clients — click a tile to filter, click a matter to see the full request.</p>
       </motion.div>
 
       {msg && <div className="mt-4"><Toast text={msg} kind={msg.includes('failed') || msg.includes('Could not') ? 'err' : 'ok'} /></div>}
 
-      {/* Stats - Clickable Filters */}
+      {/* Status tiles double as filters; counts always match the data below. */}
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <button
-          onClick={() => { setStatusFilter(''); setTypeFilter(''); setSearch(''); }}
-          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
-            !statusFilter && !typeFilter && !search
-              ? 'border-brand-300 bg-brand-50 shadow-[var(--shadow-card-hover)]'
-              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
-          }`}
-        >
-          <div className="text-[11px] text-ink-500">Total</div>
-          <div className="mt-1 text-[24px] font-bold">{matters.length}</div>
-        </button>
-        <button
-          onClick={() => { setStatusFilter('new'); setTypeFilter(''); setSearch(''); }}
-          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
-            statusFilter === 'new'
-              ? 'border-sun-300 bg-sun-50 shadow-[var(--shadow-card-hover)]'
-              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
-          }`}
-        >
-          <div className="text-[11px] text-ink-500">New</div>
-          <div className="mt-1 text-[24px] font-bold text-sun-600">{stats.byStatus?.new || 0}</div>
-        </button>
-        <button
-          onClick={() => { setStatusFilter('contacted'); setTypeFilter(''); setSearch(''); }}
-          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
-            statusFilter === 'contacted'
-              ? 'border-brand-300 bg-brand-50 shadow-[var(--shadow-card-hover)]'
-              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
-          }`}
-        >
-          <div className="text-[11px] text-ink-500">Contacted</div>
-          <div className="mt-1 text-[24px] font-bold text-brand-600">{stats.byStatus?.contacted || 0}</div>
-        </button>
-        <button
-          onClick={() => { setStatusFilter('converted'); setTypeFilter(''); setSearch(''); }}
-          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
-            statusFilter === 'converted'
-              ? 'border-emerald-300 bg-emerald-50 shadow-[var(--shadow-card-hover)]'
-              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
-          }`}
-        >
-          <div className="text-[11px] text-ink-500">Completed</div>
-          <div className="mt-1 text-[24px] font-bold text-emerald-600">{stats.byStatus?.converted || 0}</div>
-        </button>
-        <button
-          onClick={() => { setStatusFilter('dropped'); setTypeFilter(''); setSearch(''); }}
-          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
-            statusFilter === 'dropped'
-              ? 'border-red-300 bg-red-50 shadow-[var(--shadow-card-hover)]'
-              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
-          }`}
-        >
-          <div className="text-[11px] text-ink-500">Declined</div>
-          <div className="mt-1 text-[24px] font-bold text-ink-400">{stats.byStatus?.dropped || 0}</div>
-        </button>
+        {TILES.map((t) => {
+          const active = statusFilter === t.key || (t.key === '' && !statusFilter);
+          const count = t.key === '' ? stats.total : stats[t.key];
+          return (
+            <button
+              key={t.label}
+              onClick={() => setStatusFilter(t.key)}
+              className={`rounded-2xl border p-3 text-center transition-all ${
+                active
+                  ? `${t.activeClass} shadow-[var(--shadow-card-hover)]`
+                  : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
+              }`}
+            >
+              <div className="text-[11px] font-semibold text-ink-500">{t.label}</div>
+              <div className={`mt-1 text-[24px] font-bold ${t.valueClass}`}>{count}</div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Filters & Table */}
+      {/* Filters & list */}
       <Card className="mt-6">
-        <CardHeading title="Matters" sub="View all cases posted by clients." />
+        <CardHeading title="Matters" sub={statusFilter ? `Showing ${STATUS_LABELS[statusFilter].toLowerCase()} matters.` : 'Showing all matters.'} />
 
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <Input placeholder="Search by client, matter, or city…" value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
-          <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-full sm:w-40">
+          <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-full sm:w-44">
             <option value="">All types</option>
             {MATTER_TYPES.map((t) => (
               <option key={t.slug} value={t.slug}>{t.label}</option>
@@ -189,81 +155,61 @@ export default function MatterManagement() {
             <div
               key={m.id}
               onClick={() => setViewing(m)}
-              className="cursor-pointer rounded-lg border border-ink-100 p-4 transition-all hover:border-brand-300 hover:bg-brand-50"
+              className="cursor-pointer rounded-lg border border-ink-100 p-4 transition-all hover:border-brand-300 hover:bg-brand-50/50"
             >
               <div className="flex flex-col justify-between gap-4 sm:flex-row">
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="gray">{findMatterType(m.matter_type)?.label || 'General enquiry'}</Badge>
-                    <Badge
-                      tone={
-                        m.status === 'new' ? 'amber'
-                          : m.status === 'converted' ? 'green'
-                            : m.status === 'dropped' ? 'red'
-                              : 'blue'
-                      }
-                    >
-                      {m.status === 'converted' ? 'Completed' : m.status === 'dropped' ? 'Declined' : m.status}
+                    <Badge tone={m.status === 'new' ? 'amber' : m.status === 'converted' ? 'green' : m.status === 'dropped' ? 'red' : 'blue'}>
+                      {STATUS_LABELS[m.status] || m.status}
                     </Badge>
                   </div>
                   <div className="mt-2">
                     <div className="font-bold text-ink-900">{m.matter}</div>
                     <div className="mt-0.5 text-[12px] text-ink-500">
-                      {m.client_name} · {m.city} · {new Date(m.created_at).toLocaleDateString()}
+                      {m.client_name} · {m.city} · {new Date(m.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
                     </div>
                     {m.description && (
-                      <div className="mt-1.5 text-[13px] text-ink-600 line-clamp-2">{m.description}</div>
+                      <div className="mt-1.5 line-clamp-2 text-[13px] text-ink-600">{m.description}</div>
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:flex-col sm:flex-nowrap sm:justify-end">
-                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setViewing(m); }}>
-                    <Eye size={14} /> View
-                  </Button>
+                <div className="flex flex-wrap items-start gap-2 sm:shrink-0">
                   {m.status !== 'converted' && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAction(m.id, 'converted');
-                      }}
-                    >
+                    <Button size="sm" variant="primary" onClick={(e) => { e.stopPropagation(); handleAction(m.id, 'converted'); }}>
                       <Check size={14} /> Done
                     </Button>
                   )}
                   {m.status !== 'dropped' && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAction(m.id, 'dropped');
-                      }}
-                    >
+                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleAction(m.id, 'dropped'); }}>
                       <X size={14} /> Decline
                     </Button>
                   )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteTarget(m);
-                    }}
-                  >
+                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setViewing(m); }}>
+                    <Eye size={14} /> View
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setDeleteTarget(m); }}>
                     <Trash2 size={14} /> Delete
                   </Button>
                 </div>
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div className="py-6 text-center text-[13px] text-ink-400">No matters found.</div>}
+          {filtered.length === 0 && (
+            <div className="py-10 text-center">
+              <Briefcase size={28} className="mx-auto text-ink-300" />
+              <div className="mt-3 text-[14px] font-semibold text-ink-900">No matters found</div>
+              <div className="mt-1 text-[12.5px] text-ink-500">
+                {matters.length === 0 ? 'Matters appear here when clients post cases.' : 'Try clearing the filters or search.'}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
-      {/* Details Modal */}
-      <Modal open={!!viewing} onClose={() => setViewing(null)} title="Matter Details" width="max-w-2xl">
+      {/* Details modal */}
+      <Modal open={!!viewing} onClose={() => setViewing(null)} title="Matter details" width="max-w-2xl">
         {viewing && (
           <div className="space-y-4">
             <div>
@@ -273,11 +219,11 @@ export default function MatterManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="text-[12px] uppercase tracking-wide text-ink-400">Posted by</h3>
-                <p className="mt-1 text-[14px] text-ink-900">{viewing.client_name}</p>
+                <p className="mt-1 text-[14px] text-ink-900">{viewing.client_name || '—'}</p>
               </div>
               <div>
                 <h3 className="text-[12px] uppercase tracking-wide text-ink-400">Contact</h3>
-                <p className="mt-1 text-[14px] text-ink-900">{viewing.phone || viewing.email || 'N/A'}</p>
+                <p className="mt-1 text-[14px] text-ink-900">{[viewing.phone, viewing.email].filter(Boolean).join(' · ') || '—'}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -289,7 +235,7 @@ export default function MatterManagement() {
                 <h3 className="text-[12px] uppercase tracking-wide text-ink-400">Status</h3>
                 <div className="mt-1">
                   <Badge tone={viewing.status === 'converted' ? 'green' : viewing.status === 'dropped' ? 'red' : 'amber'}>
-                    {viewing.status === 'converted' ? 'Completed' : viewing.status === 'dropped' ? 'Declined' : viewing.status}
+                    {STATUS_LABELS[viewing.status] || viewing.status}
                   </Badge>
                 </div>
               </div>
@@ -297,24 +243,35 @@ export default function MatterManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <h3 className="text-[12px] uppercase tracking-wide text-ink-400">City</h3>
-                <p className="mt-1 text-[14px] text-ink-900">{viewing.city}</p>
+                <p className="mt-1 text-[14px] text-ink-900">{viewing.city || '—'}</p>
               </div>
               <div>
                 <h3 className="text-[12px] uppercase tracking-wide text-ink-400">Posted</h3>
-                <p className="mt-1 text-[14px] text-ink-900">{new Date(viewing.created_at).toLocaleDateString()}</p>
+                <p className="mt-1 text-[14px] text-ink-900">{new Date(viewing.created_at).toLocaleDateString('en-IN', { dateStyle: 'long' })}</p>
               </div>
             </div>
             {viewing.description && (
               <div>
-                <h3 className="text-[12px] uppercase tracking-wide text-ink-400">Description & Requirements</h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-ink-700">{viewing.description}</p>
+                <h3 className="text-[12px] uppercase tracking-wide text-ink-400">Description &amp; requirements</h3>
+                <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed text-ink-700">{viewing.description}</p>
               </div>
             )}
+            <div className="flex gap-2 border-t border-ink-100 pt-4">
+              {viewing.status !== 'converted' && (
+                <Button size="sm" onClick={() => { handleAction(viewing.id, 'converted'); setViewing(null); }}>
+                  <Check size={14} /> Mark completed
+                </Button>
+              )}
+              {viewing.status !== 'dropped' && (
+                <Button size="sm" variant="ghost" onClick={() => { handleAction(viewing.id, 'dropped'); setViewing(null); }}>
+                  <X size={14} /> Decline
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </Modal>
 
-      {/* Delete Confirmation */}
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
