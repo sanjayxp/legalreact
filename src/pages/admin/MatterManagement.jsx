@@ -104,28 +104,63 @@ export default function MatterManagement() {
 
       {msg && <div className="mt-4"><Toast text={msg} kind={msg.includes('failed') || msg.includes('Could not') ? 'err' : 'ok'} /></div>}
 
-      {/* Stats - Clickable (Shows filtered counts) */}
+      {/* Stats - Clickable Filters */}
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+        <button
+          onClick={() => { setStatusFilter(''); setTypeFilter(''); setSearch(''); }}
+          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
+            !statusFilter && !typeFilter && !search
+              ? 'border-brand-300 bg-brand-50 shadow-[var(--shadow-card-hover)]'
+              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
+          }`}
+        >
           <div className="text-[11px] text-ink-500">Total</div>
-          <div className="mt-1 text-[24px] font-bold">{filteredStats.total}</div>
-        </Card>
-        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="mt-1 text-[24px] font-bold">{matters.length}</div>
+        </button>
+        <button
+          onClick={() => { setStatusFilter('new'); setTypeFilter(''); setSearch(''); }}
+          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
+            statusFilter === 'new'
+              ? 'border-sun-300 bg-sun-50 shadow-[var(--shadow-card-hover)]'
+              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
+          }`}
+        >
           <div className="text-[11px] text-ink-500">New</div>
-          <div className="mt-1 text-[24px] font-bold text-sun-600">{filteredStats.byStatus.new}</div>
-        </Card>
-        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="mt-1 text-[24px] font-bold text-sun-600">{stats.byStatus?.new || 0}</div>
+        </button>
+        <button
+          onClick={() => { setStatusFilter('contacted'); setTypeFilter(''); setSearch(''); }}
+          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
+            statusFilter === 'contacted'
+              ? 'border-brand-300 bg-brand-50 shadow-[var(--shadow-card-hover)]'
+              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
+          }`}
+        >
           <div className="text-[11px] text-ink-500">Contacted</div>
-          <div className="mt-1 text-[24px] font-bold text-brand-600">{filteredStats.byStatus.contacted}</div>
-        </Card>
-        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="mt-1 text-[24px] font-bold text-brand-600">{stats.byStatus?.contacted || 0}</div>
+        </button>
+        <button
+          onClick={() => { setStatusFilter('converted'); setTypeFilter(''); setSearch(''); }}
+          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
+            statusFilter === 'converted'
+              ? 'border-emerald-300 bg-emerald-50 shadow-[var(--shadow-card-hover)]'
+              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
+          }`}
+        >
           <div className="text-[11px] text-ink-500">Completed</div>
-          <div className="mt-1 text-[24px] font-bold text-emerald-600">{filteredStats.byStatus.converted}</div>
-        </Card>
-        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="mt-1 text-[24px] font-bold text-emerald-600">{stats.byStatus?.converted || 0}</div>
+        </button>
+        <button
+          onClick={() => { setStatusFilter('dropped'); setTypeFilter(''); setSearch(''); }}
+          className={`rounded-2xl border p-3 text-center transition-all cursor-pointer ${
+            statusFilter === 'dropped'
+              ? 'border-red-300 bg-red-50 shadow-[var(--shadow-card-hover)]'
+              : 'border-ink-100 bg-white hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]'
+          }`}
+        >
           <div className="text-[11px] text-ink-500">Declined</div>
-          <div className="mt-1 text-[24px] font-bold text-ink-400">{filteredStats.byStatus.dropped}</div>
-        </Card>
+          <div className="mt-1 text-[24px] font-bold text-ink-400">{stats.byStatus?.dropped || 0}</div>
+        </button>
       </div>
 
       {/* Filters & Table */}
