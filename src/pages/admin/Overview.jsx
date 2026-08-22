@@ -114,11 +114,31 @@ export default function Overview() {
       </motion.div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        {can('people') && <StatTile label="Total users" value={counts.total} icon={<Users size={16} />} accent="brand" />}
-        {can('people') && <StatTile label="Advocates" value={counts.advocates} icon={<Gavel size={16} />} accent="coral" />}
-        {can('people') && <StatTile label="Clients" value={counts.clients} icon={<UserCheck size={16} />} accent="green" />}
-        {can('leads') && <StatTile label="New leads" value={newLeads} icon={<Inbox size={16} />} accent="sun" />}
-        {can('people') && <StatTile label="Pending verifications" value={pending.length} icon={<Clock size={16} />} accent="sun" />}
+        {can('people') && (
+          <Link to="/admin/people">
+            <StatTile label="Total users" value={counts.total} icon={<Users size={16} />} accent="brand" />
+          </Link>
+        )}
+        {can('people') && (
+          <Link to="/admin/people?tab=advocates">
+            <StatTile label="Advocates" value={counts.advocates} icon={<Gavel size={16} />} accent="coral" />
+          </Link>
+        )}
+        {can('people') && (
+          <Link to="/admin/people?tab=clients">
+            <StatTile label="Clients" value={counts.clients} icon={<UserCheck size={16} />} accent="green" />
+          </Link>
+        )}
+        {can('leads') && (
+          <Link to="/admin/leads">
+            <StatTile label="New leads" value={newLeads} icon={<Inbox size={16} />} accent="sun" />
+          </Link>
+        )}
+        {can('people') && (
+          <Link to="/admin/people?tab=advocates">
+            <StatTile label="Pending verifications" value={pending.length} icon={<Clock size={16} />} accent="sun" />
+          </Link>
+        )}
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">

@@ -11,7 +11,7 @@ export default function StatTile({ label, value, icon, accent = 'brand' }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-ink-100 bg-white p-5 shadow-[var(--shadow-card)]"
+      className="cursor-pointer rounded-2xl border border-ink-100 bg-white p-5 shadow-[var(--shadow-card)] transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]"
     >
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-semibold text-ink-500">{label}</span>
