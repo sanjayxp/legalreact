@@ -13,13 +13,19 @@ export default function AdvocatePerformance() {
   const [advocates, setAdvocates] = useState([]);
   const [sortBy, setSortBy] = useState('consultations');
   const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
 
   async function load() {
     try {
+      setError('');
       const data = await getAdvocatePerformance();
-      setAdvocates(data);
+      setAdvocates(data || []);
+      if (!data || data.length === 0) {
+        console.log('No advocate performance data available');
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Error loading advocate performance:', e);
+      setError(e.message || 'Failed to load advocate data');
     } finally {
       setLoading(false);
     }
@@ -93,6 +99,20 @@ export default function AdvocatePerformance() {
         </div>
 
         <div className="space-y-2 border-t border-ink-100 pt-4">
+          {error && (
+            <div className="rounded-lg bg-coral-50 p-3 text-[13px] text-coral-700">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+          {!error && advocates.length === 0 && !loading && (
+            <div className="py-8 text-center">
+              <div className="text-[14px] font-semibold text-ink-900">No advocates yet</div>
+              <div className="mt-1 text-[12px] text-ink-500">Advocates will appear here once they complete their profiles and get verified.</div>
+            </div>
+          )}
+          {filtered.length === 0 && advocates.length > 0 && !loading && (
+            <div className="py-4 text-center text-[13px] text-ink-400">No advocates match your search.</div>
+          )}
           {filtered.map((a, i) => (
             <div key={a.id} className="flex items-center gap-4 rounded-lg border border-ink-100 p-4 hover:bg-ink-50">
               <div className="text-[18px] font-bold text-ink-400 w-8">{i + 1}</div>
@@ -124,6 +144,11 @@ export default function AdvocatePerformance() {
               </div>
             </div>
           ))}
+          {filtered.length > 0 && advocates.length > 0 && !loading && (
+            <div className="mt-2 text-center text-[12px] text-ink-400">
+              Showing {filtered.length} of {advocates.length} advocates
+            </div>
+          )}
         </div>
       </Card>
     </AdminShell>
