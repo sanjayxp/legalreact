@@ -40,7 +40,7 @@ export default function RoleSelector() {
       const profile = await getCurrentProfile();
       if (!profile) throw new Error('Profile not found');
 
-      await supabase.from('profiles').update({ role, role_confirmed: true }).eq('id', profile.id);
+      await supabase.from('profiles').update({ role }).eq('id', profile.id);
 
       if (role === 'advocate') {
         navigate('/dashboard/advocate/profile?welcome=1');

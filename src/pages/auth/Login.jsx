@@ -12,7 +12,6 @@ import {
   roleHomePath,
   consumeReturnTo,
   useAuth,
-  ensureOAuthProfile,
 } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
@@ -80,36 +79,43 @@ export default function Login() {
     if (!session) return;
     (async () => {
       const provider = localStorage.getItem('lc_oauth_provider');
-      const isNewOAuthUser = localStorage.getItem('lc_oauth_new_user') === 'true';
       const intent = localStorage.getItem('lc_role_intent');
       localStorage.removeItem('lc_oauth_provider');
       localStorage.removeItem('lc_oauth_new_user');
       localStorage.removeItem('lc_role_intent');
 
-      // For new OAuth users, ensure profile exists
-      if (provider && isNewOAuthUser && session.user) {
-        await ensureOAuthProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name);
-      }
-
       const profile = await getCurrentProfile();
-      if (!profile) return navigate('/login');
-
-      // Check if account was deleted (marked as deleted in DB)
-      if (profile.deleted_at) {
-        await supabase.auth.signOut();
+      if (!profile) {
+        // No profile found - create one for this user
+        if (session.user) {
+          await supabase.from('profiles').insert({
+            id: session.user.id,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+            phone: session.user.user_metadata?.phone || null,
+            role: 'client',
+          });
+          // If OAuth, redirect to role selector instead of home
+          if (provider) {
+            navigate('/choose-role');
+            return;
+          }
+        }
         return navigate('/login');
-      }
-
-      // OAuth user without confirmed role — send to role selector
-      if (provider && !profile.role_confirmed) {
-        navigate('/choose-role');
-        return;
       }
 
       // Email/password registration with advocate intent
       if (intent === 'advocate' && profile.role === 'client') {
-        await supabase.from('profiles').update({ role: 'advocate', role_confirmed: true }).eq('id', profile.id);
+        await supabase.from('profiles').update({ role: 'advocate' }).eq('id', profile.id);
       }
+
+      // For OAuth signups, check if user just created profile (no role confirmation yet)
+      if (provider && profile.role === 'client') {
+        // If they came from OAuth and still have client role, send to role selector
+        navigate('/choose-role');
+        return;
+      }
+
       goToRoleHome();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

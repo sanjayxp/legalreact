@@ -185,28 +185,6 @@ export async function oauthLogin(provider, intendedRole) {
   });
 }
 
-// Ensure profile exists for OAuth users (called on first OAuth redirect back)
-export async function ensureOAuthProfile(userId, email, fullName) {
-  const { data: profile, error: fetchError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
-
-  // Profile doesn't exist, create it
-  if (!profile && !fetchError) {
-    await supabase.from('profiles').insert({
-      id: userId,
-      email,
-      full_name: fullName || email.split('@')[0],
-      role: 'client',
-      role_confirmed: false,
-    });
-    return true; // New profile created
-  }
-
-  return false; // Profile already existed
-}
 
 // Returns the dashboard path a profile should land on.
 export function roleHomePath(profile, hasAdvocateProfile) {
