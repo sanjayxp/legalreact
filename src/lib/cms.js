@@ -1170,8 +1170,9 @@ export async function getAnalyticsSummary() {
 
 // ---------- ADMIN: ADVOCATE PERFORMANCE ----------
 export async function getAdvocatePerformance() {
+  // Get all advocates with their profile info
   const { data: advocates, error } = await supabase.from('advocate_profiles')
-    .select('id, verification_status, view_count, created_at');
+    .select('id, verification_status, view_count, created_at, profiles:id(full_name)');
 
   if (error) {
     console.error('getAdvocatePerformance error:', error);
@@ -1180,14 +1181,7 @@ export async function getAdvocatePerformance() {
   if (!advocates || advocates.length === 0) return [];
 
   return Promise.all(advocates.map(async (adv) => {
-    let slots = 0, leads = 0, profile = null;
-
-    try {
-      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', adv.id).maybeSingle();
-      profile = p;
-    } catch (e) {
-      console.error(`profile query failed for ${adv.id}:`, e);
-    }
+    let slots = 0, leads = 0;
 
     try {
       const { count, error: e1 } = await supabase.from('booking_slots')
@@ -1209,10 +1203,20 @@ export async function getAdvocatePerformance() {
       console.error(`leads query failed for ${adv.id}:`, e);
     }
 
+    // Safely get profile name from nested data
+    let fullName = 'Unknown Advocate';
+    if (adv.profiles) {
+      if (Array.isArray(adv.profiles) && adv.profiles[0]?.full_name) {
+        fullName = adv.profiles[0].full_name;
+      } else if (typeof adv.profiles === 'object' && adv.profiles.full_name) {
+        fullName = adv.profiles.full_name;
+      }
+    }
+
     return {
       id: adv.id,
-      full_name: profile?.full_name || 'Unknown Advocate',
-      verification_status: adv.verification_status,
+      full_name: fullName,
+      verification_status: adv.verification_status || 'pending',
       view_count: adv.view_count || 0,
       created_at: adv.created_at,
       consultations: slots,
