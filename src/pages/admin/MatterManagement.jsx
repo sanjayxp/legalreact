@@ -57,6 +57,18 @@ export default function MatterManagement() {
     });
   }, [matters, typeFilter, statusFilter, search]);
 
+  const filteredStats = useMemo(() => {
+    return {
+      total: filtered.length,
+      byStatus: {
+        new: filtered.filter((m) => m.status === 'new').length,
+        contacted: filtered.filter((m) => m.status === 'contacted').length,
+        converted: filtered.filter((m) => m.status === 'converted').length,
+        dropped: filtered.filter((m) => m.status === 'dropped').length,
+      },
+    };
+  }, [filtered]);
+
   async function handleAction(matterId, status) {
     try {
       await updateLead(matterId, { status });
@@ -92,38 +104,28 @@ export default function MatterManagement() {
 
       {msg && <div className="mt-4"><Toast text={msg} kind={msg.includes('failed') || msg.includes('Could not') ? 'err' : 'ok'} /></div>}
 
-      {/* Stats - Clickable */}
+      {/* Stats - Clickable (Shows filtered counts) */}
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Link to="/admin/matters">
-          <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
-            <div className="text-[11px] text-ink-500">Total</div>
-            <div className="mt-1 text-[24px] font-bold">{stats.total || 0}</div>
-          </Card>
-        </Link>
-        <Link to="/admin/matters?status=new">
-          <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
-            <div className="text-[11px] text-ink-500">New</div>
-            <div className="mt-1 text-[24px] font-bold text-sun-600">{stats.byStatus?.new || 0}</div>
-          </Card>
-        </Link>
-        <Link to="/admin/matters?status=contacted">
-          <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
-            <div className="text-[11px] text-ink-500">Contacted</div>
-            <div className="mt-1 text-[24px] font-bold text-brand-600">{stats.byStatus?.contacted || 0}</div>
-          </Card>
-        </Link>
-        <Link to="/admin/matters?status=converted">
-          <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
-            <div className="text-[11px] text-ink-500">Completed</div>
-            <div className="mt-1 text-[24px] font-bold text-emerald-600">{stats.byStatus?.converted || 0}</div>
-          </Card>
-        </Link>
-        <Link to="/admin/matters?status=dropped">
-          <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
-            <div className="text-[11px] text-ink-500">Declined</div>
-            <div className="mt-1 text-[24px] font-bold text-ink-400">{stats.byStatus?.dropped || 0}</div>
-          </Card>
-        </Link>
+        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="text-[11px] text-ink-500">Total</div>
+          <div className="mt-1 text-[24px] font-bold">{filteredStats.total}</div>
+        </Card>
+        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="text-[11px] text-ink-500">New</div>
+          <div className="mt-1 text-[24px] font-bold text-sun-600">{filteredStats.byStatus.new}</div>
+        </Card>
+        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="text-[11px] text-ink-500">Contacted</div>
+          <div className="mt-1 text-[24px] font-bold text-brand-600">{filteredStats.byStatus.contacted}</div>
+        </Card>
+        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="text-[11px] text-ink-500">Completed</div>
+          <div className="mt-1 text-[24px] font-bold text-emerald-600">{filteredStats.byStatus.converted}</div>
+        </Card>
+        <Card className="cursor-pointer p-3 text-center transition-all hover:border-ink-200 hover:shadow-[var(--shadow-card-hover)]">
+          <div className="text-[11px] text-ink-500">Declined</div>
+          <div className="mt-1 text-[24px] font-bold text-ink-400">{filteredStats.byStatus.dropped}</div>
+        </Card>
       </div>
 
       {/* Filters & Table */}
