@@ -12,6 +12,7 @@ import {
   roleHomePath,
   consumeReturnTo,
   useAuth,
+  ensureOAuthProfile,
 } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
@@ -79,22 +80,35 @@ export default function Login() {
     if (!session) return;
     (async () => {
       const provider = localStorage.getItem('lc_oauth_provider');
+      const isNewOAuthUser = localStorage.getItem('lc_oauth_new_user') === 'true';
       const intent = localStorage.getItem('lc_role_intent');
       localStorage.removeItem('lc_oauth_provider');
+      localStorage.removeItem('lc_oauth_new_user');
       localStorage.removeItem('lc_role_intent');
+
+      // For new OAuth users, ensure profile exists
+      if (provider && isNewOAuthUser && session.user) {
+        await ensureOAuthProfile(session.user.id, session.user.email, session.user.user_metadata?.full_name);
+      }
 
       const profile = await getCurrentProfile();
       if (!profile) return navigate('/login');
 
-      // OAuth user with default 'client' role — ask them to choose
-      if (provider && profile.role === 'client') {
+      // Check if account was deleted (marked as deleted in DB)
+      if (profile.deleted_at) {
+        await supabase.auth.signOut();
+        return navigate('/login');
+      }
+
+      // OAuth user without confirmed role — send to role selector
+      if (provider && !profile.role_confirmed) {
         navigate('/choose-role');
         return;
       }
 
       // Email/password registration with advocate intent
       if (intent === 'advocate' && profile.role === 'client') {
-        await supabase.from('profiles').update({ role: 'advocate' }).eq('id', profile.id);
+        await supabase.from('profiles').update({ role: 'advocate', role_confirmed: true }).eq('id', profile.id);
       }
       goToRoleHome();
     })();

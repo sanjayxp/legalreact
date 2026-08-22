@@ -164,20 +164,27 @@ export async function adminDeleteUserAccount(userId) {
     if (paths.length) await supabase.storage.from(bucket).remove(paths);
   }
 
-  // Delete via RPC function
-  let error;
+  // Mark user as deleted FIRST (soft delete) so they can't access even if session is still valid
+  const { error: softDelError } = await supabase.from('profiles')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', userId);
+
+  if (softDelError) console.error('Soft delete error:', softDelError);
+
+  // Try to delete auth user via RPC
+  let hardDeleteError;
   try {
     const result = await supabase.rpc('admin_delete_user', { target_id: userId });
-    error = result.error;
+    hardDeleteError = result.error;
   } catch (e) {
-    error = e;
+    hardDeleteError = e;
   }
 
-  if (error) {
-    console.error('Delete user RPC error:', error);
-    // Fallback: delete from profiles directly (which cascades)
+  // Fallback: hard delete profile if RPC fails
+  if (hardDeleteError) {
+    console.error('Delete user RPC error:', hardDeleteError);
     const { error: deleteError } = await supabase.from('profiles').delete().eq('id', userId);
-    if (deleteError) throw deleteError || error;
+    if (deleteError) console.error('Hard delete profile error:', deleteError);
   }
 
   // Log the deletion for audit trail
@@ -1255,6 +1262,7 @@ export async function getAdminAlerts() {
     listSupportTickets({ status: 'open' }),
     supabase.from('profiles').select('*')
       .gt('created_at', last24h)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(50),
   ]);

@@ -177,11 +177,35 @@ export function consumeReturnTo() {
 
 export async function oauthLogin(provider, intendedRole) {
   localStorage.setItem('lc_oauth_provider', provider);
+  localStorage.setItem('lc_oauth_new_user', 'true');
   if (intendedRole) localStorage.setItem('lc_role_intent', intendedRole);
   await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo: window.location.origin + '/login' },
   });
+}
+
+// Ensure profile exists for OAuth users (called on first OAuth redirect back)
+export async function ensureOAuthProfile(userId, email, fullName) {
+  const { data: profile, error: fetchError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle();
+
+  // Profile doesn't exist, create it
+  if (!profile && !fetchError) {
+    await supabase.from('profiles').insert({
+      id: userId,
+      email,
+      full_name: fullName || email.split('@')[0],
+      role: 'client',
+      role_confirmed: false,
+    });
+    return true; // New profile created
+  }
+
+  return false; // Profile already existed
 }
 
 // Returns the dashboard path a profile should land on.
