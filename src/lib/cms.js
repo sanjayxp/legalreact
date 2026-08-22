@@ -1171,7 +1171,7 @@ export async function getAnalyticsSummary() {
 // ---------- ADMIN: ADVOCATE PERFORMANCE ----------
 export async function getAdvocatePerformance() {
   const { data: advocates, error } = await supabase.from('advocate_profiles')
-    .select('id, verification_status, view_count, created_at');
+    .select('id, verification_status, view_count, submitted_at');
 
   if (error) {
     console.error('getAdvocatePerformance error:', error);
@@ -1202,7 +1202,7 @@ export async function getAdvocatePerformance() {
     full_name: nameById.get(adv.id) || 'Unknown Advocate',
     verification_status: adv.verification_status || 'pending',
     view_count: adv.view_count || 0,
-    created_at: adv.created_at,
+    created_at: adv.submitted_at,
     consultations: slotCounts.get(adv.id) || 0,
     cases: leadCounts.get(adv.id) || 0,
   }));
