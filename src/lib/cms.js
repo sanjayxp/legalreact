@@ -1171,7 +1171,7 @@ export async function getAnalyticsSummary() {
 // ---------- ADMIN: ADVOCATE PERFORMANCE ----------
 export async function getAdvocatePerformance() {
   const { data: advocates, error } = await supabase.from('advocate_profiles')
-    .select('*');
+    .select('id, verification_status, view_count, created_at');
 
   if (error) {
     console.error('getAdvocatePerformance error:', error);
@@ -1180,7 +1180,14 @@ export async function getAdvocatePerformance() {
   if (!advocates || advocates.length === 0) return [];
 
   return Promise.all(advocates.map(async (adv) => {
-    let slots = 0, leads = 0;
+    let slots = 0, leads = 0, profile = null;
+
+    try {
+      const { data: p } = await supabase.from('profiles').select('full_name').eq('id', adv.id).maybeSingle();
+      profile = p;
+    } catch (e) {
+      console.error(`profile query failed for ${adv.id}:`, e);
+    }
 
     try {
       const { count, error: e1 } = await supabase.from('booking_slots')
@@ -1204,7 +1211,7 @@ export async function getAdvocatePerformance() {
 
     return {
       id: adv.id,
-      full_name: adv.full_name || 'Advocate',
+      full_name: profile?.full_name || 'Unknown Advocate',
       verification_status: adv.verification_status,
       view_count: adv.view_count || 0,
       created_at: adv.created_at,

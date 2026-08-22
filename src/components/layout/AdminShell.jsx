@@ -6,7 +6,7 @@ import {
   LifeBuoy, History, Bell, TrendingUp, Briefcase, Mail, ShieldCheck,
 } from 'lucide-react';
 import { signOut, useAdminAccess } from '../../lib/auth';
-import { listPendingAdvocates } from '../../lib/cms';
+import { listPendingAdvocates, getAdminAlerts } from '../../lib/cms';
 import Logo from '../brand/Logo';
 
 const NAV_GROUPS = [
@@ -49,15 +49,28 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 export default function AdminShell({ children }) {
   const [pendingCount, setPendingCount] = useState(0);
+  const [alertCount, setAlertCount] = useState(0);
   const { can, isSuper } = useAdminAccess();
   const canSee = (item) => !item.section || can(item.section);
 
   useEffect(() => {
-    if (!can('people')) return;
     let mounted = true;
-    listPendingAdvocates()
-      .then((rows) => { if (mounted) setPendingCount(rows.length); })
+
+    if (can('people')) {
+      listPendingAdvocates()
+        .then((rows) => { if (mounted) setPendingCount(rows.length); })
+        .catch(() => {});
+    }
+
+    getAdminAlerts()
+      .then((alerts) => {
+        if (mounted) {
+          const total = (alerts.pendingAdvocates || 0) + (alerts.overdueLeads || 0) + (alerts.openTickets || 0);
+          setAlertCount(total);
+        }
+      })
       .catch(() => {});
+
     return () => { mounted = false; };
   }, [can]);
 
@@ -82,6 +95,7 @@ export default function AdminShell({ children }) {
                 <div className="space-y-0.5">
                   {items.map((item) => {
                     const Icon = item.icon;
+                    const badgeCount = item.badge ? pendingCount : item.to === '/admin/alerts' ? alertCount : 0;
                     return (
                       <NavLink
                         key={item.to}
@@ -95,9 +109,9 @@ export default function AdminShell({ children }) {
                       >
                         <Icon size={16} className="shrink-0" />
                         <span className="flex-1 truncate">{item.label}</span>
-                        {item.badge && pendingCount > 0 && (
+                        {badgeCount > 0 && (
                           <span className="rounded-full bg-coral-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                            {pendingCount}
+                            {badgeCount}
                           </span>
                         )}
                       </NavLink>
