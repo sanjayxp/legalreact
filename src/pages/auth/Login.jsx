@@ -74,47 +74,42 @@ export default function Login() {
     navigate(roleHomePath(profile, false));
   }
 
-  // Returning session (normal revisit or OAuth redirect back)
+  // Returning session (normal revisit or OAuth redirect back).
+  //
+  // Role routing relies on profiles.role_confirmed, set by the DB signup
+  // trigger: email/password signups carry an explicit role in metadata
+  // (chosen on the register form) so they arrive confirmed; OAuth signups
+  // don't, so they must pick client/advocate on /choose-role before
+  // reaching any dashboard. No timing heuristics, no provider sniffing.
   useEffect(() => {
     if (!session) return;
     (async () => {
-      const provider = localStorage.getItem('lc_oauth_provider');
       const intent = localStorage.getItem('lc_role_intent');
       localStorage.removeItem('lc_oauth_provider');
       localStorage.removeItem('lc_oauth_new_user');
       localStorage.removeItem('lc_role_intent');
 
-      const profile = await getCurrentProfile();
-      if (!profile) {
-        // No profile found - create one for this user
-        if (session.user) {
-          await supabase.from('profiles').insert({
-            id: session.user.id,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            phone: session.user.user_metadata?.phone || null,
-            role: 'client',
-          });
-          // If OAuth, redirect to role selector instead of home
-          if (provider) {
-            navigate('/choose-role');
-            return;
-          }
-        }
-        return navigate('/login');
+      let profile = await getCurrentProfile();
+      if (!profile && session.user) {
+        // Safety net if the signup trigger ever misses — mirror its behavior.
+        await supabase.from('profiles').insert({
+          id: session.user.id,
+          email: session.user.email,
+          full_name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          phone: session.user.user_metadata?.phone || null,
+          role: 'client',
+          role_confirmed: false,
+        });
+        profile = await getCurrentProfile();
       }
+      if (!profile) return;
 
-      // Email/password registration with advocate intent
-      if (intent === 'advocate' && profile.role === 'client') {
-        await supabase.from('profiles').update({ role: 'advocate' }).eq('id', profile.id);
-      }
-
-      // For NEW OAuth signups: if profile was just created (within last 10 seconds),
-      // redirect to role selector. This distinguishes new signups from returning users.
-      if (provider && profile.role === 'client') {
-        const profileAge = Date.now() - new Date(profile.created_at).getTime();
-        const isNewProfile = profileAge < 10000; // 10 seconds
-        if (isNewProfile) {
+      if (!profile.role_confirmed && profile.role !== 'admin') {
+        // They started OAuth from the register tab with "advocate" selected —
+        // that's an explicit choice, so honor it without re-asking.
+        if (intent === 'advocate') {
+          await supabase.from('profiles').update({ role: 'advocate', role_confirmed: true }).eq('id', profile.id);
+        } else {
           navigate('/choose-role');
           return;
         }

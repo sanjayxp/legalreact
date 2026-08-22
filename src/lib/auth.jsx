@@ -175,10 +175,12 @@ export function consumeReturnTo() {
   return path;
 }
 
+// intendedRole carries an explicit role choice (register tab with "advocate"
+// selected) across the OAuth full-page redirect. Everything else is decided
+// by profiles.role_confirmed when the user lands back on /login.
 export async function oauthLogin(provider, intendedRole) {
-  localStorage.setItem('lc_oauth_provider', provider);
-  localStorage.setItem('lc_oauth_new_user', 'true');
   if (intendedRole) localStorage.setItem('lc_role_intent', intendedRole);
+  else localStorage.removeItem('lc_role_intent');
   await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo: window.location.origin + '/login' },

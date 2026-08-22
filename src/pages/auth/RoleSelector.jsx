@@ -1,46 +1,56 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Gavel } from 'lucide-react';
-import { getCurrentProfile, useAuth } from '../../lib/auth';
+import { getCurrentProfile, roleHomePath, hasAdvocateProfileRow, useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import { Toast } from '../../components/ui/Misc';
 import Logo from '../../components/brand/Logo';
 
+// Shown to OAuth signups (Google / LinkedIn) who haven't picked a role yet.
+// Anyone whose role is already confirmed is sent straight to their dashboard.
 export default function RoleSelector() {
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, loading } = useAuth();
   const [role, setRole] = useState('client');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    if (loading) return;
     if (!session) {
       navigate('/login');
       return;
     }
-    // Check if user already has a role set (not 'client' default)
     (async () => {
       const profile = await getCurrentProfile();
-      if (profile && profile.role !== 'client') {
-        // Already chose a role, send to home
+      if (profile?.role_confirmed) {
+        // Already chose (or is an email signup / admin) — nothing to ask.
         if (profile.role === 'advocate') {
-          navigate('/dashboard/advocate/profile?welcome=1');
-        } else if (profile.role === 'client') {
-          navigate('/dashboard/client');
+          const hasProfile = await hasAdvocateProfileRow(profile.id);
+          navigate(roleHomePath(profile, hasProfile));
+        } else {
+          navigate(roleHomePath(profile, false));
         }
+        return;
       }
+      setChecking(false);
     })();
-  }, [session, navigate]);
+  }, [session, loading, navigate]);
 
   async function handleConfirm() {
     if (!role) return setMsg('Please select a role.');
     setBusy(true);
     try {
       const profile = await getCurrentProfile();
-      if (!profile) throw new Error('Profile not found');
+      if (!profile) throw new Error('Your profile could not be found. Please sign in again.');
 
-      await supabase.from('profiles').update({ role }).eq('id', profile.id);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role, role_confirmed: true })
+        .eq('id', profile.id);
+      if (error) throw error;
 
       if (role === 'advocate') {
         navigate('/dashboard/advocate/profile?welcome=1');
@@ -54,6 +64,8 @@ export default function RoleSelector() {
     }
   }
 
+  if (loading || checking) return null;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-md">
@@ -62,10 +74,10 @@ export default function RoleSelector() {
         </div>
 
         <h1 className="text-center text-[28px] font-bold text-ink-900 mb-2">What brings you here?</h1>
-        <p className="text-center text-[14px] text-ink-500 mb-8">Choose your role to get started</p>
+        <p className="text-center text-[14px] text-ink-500 mb-8">Choose how you want to use LegalConnects</p>
 
         <div className="space-y-4 mb-8">
-          {/* Client Option */}
+          {/* Client option */}
           <button
             onClick={() => setRole('client')}
             className={`w-full p-6 rounded-lg border-2 transition-all ${
@@ -83,7 +95,7 @@ export default function RoleSelector() {
             </div>
           </button>
 
-          {/* Advocate Option */}
+          {/* Advocate option */}
           <button
             onClick={() => setRole('advocate')}
             className={`w-full p-6 rounded-lg border-2 transition-all ${
@@ -105,11 +117,11 @@ export default function RoleSelector() {
         {msg && <Toast text={msg} kind="err" />}
 
         <Button className="w-full mb-4" onClick={handleConfirm} disabled={busy}>
-          {busy ? 'Setting up...' : 'Continue'}
+          {busy ? 'Setting up…' : 'Continue'}
         </Button>
 
         <p className="text-center text-[12px] text-ink-500">
-          You can change this later in your settings.
+          Advocate accounts go through Bar Council verification before going live.
         </p>
       </div>
     </div>

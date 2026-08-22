@@ -17,6 +17,11 @@ export function RequireRole({ role, children }) {
   const location = useLocation();
   if (loading || session === undefined) return <Spinner className="min-h-screen" />;
   if (!session) return <Navigate to="/login" state={{ from: location }} replace />;
+  // OAuth signups must pick client/advocate before entering any dashboard —
+  // otherwise a direct URL would drop them in as the trigger's default client.
+  if (profile && !profile.role_confirmed && profile.role !== 'admin') {
+    return <Navigate to="/choose-role" replace />;
+  }
   if (profile && profile.role !== role) {
     const routes = { client: '/dashboard/client', advocate: '/dashboard/advocate', admin: '/admin' };
     return <Navigate to={routes[profile.role] || '/login'} replace />;
