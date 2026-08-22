@@ -109,11 +109,15 @@ export default function Login() {
         await supabase.from('profiles').update({ role: 'advocate' }).eq('id', profile.id);
       }
 
-      // For OAuth signups, check if user just created profile (no role confirmation yet)
+      // For NEW OAuth signups: if profile was just created (within last 10 seconds),
+      // redirect to role selector. This distinguishes new signups from returning users.
       if (provider && profile.role === 'client') {
-        // If they came from OAuth and still have client role, send to role selector
-        navigate('/choose-role');
-        return;
+        const profileAge = Date.now() - new Date(profile.created_at).getTime();
+        const isNewProfile = profileAge < 10000; // 10 seconds
+        if (isNewProfile) {
+          navigate('/choose-role');
+          return;
+        }
       }
 
       goToRoleHome();
