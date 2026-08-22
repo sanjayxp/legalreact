@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, CheckCircle2, Clock, Inbox } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Inbox, UserPlus } from 'lucide-react';
 import { getAdminAlerts, listPendingAdvocates, listSupportTickets } from '../../lib/cms';
 import AdminShell from '../../components/layout/AdminShell';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -41,6 +41,14 @@ export default function NotificationsHub() {
   if (loading) return <AdminShell><Spinner /></AdminShell>;
 
   const alertItems = [
+    {
+      icon: UserPlus,
+      tone: 'brand',
+      title: 'New Account Signups (24h)',
+      count: alerts.newAccounts || 0,
+      action: 'View',
+      link: '/admin/people?tab=clients',
+    },
     {
       icon: AlertCircle,
       tone: 'coral',

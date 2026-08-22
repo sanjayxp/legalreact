@@ -27,6 +27,7 @@ import Contact from './pages/marketing/Contact';
 import Careers from './pages/marketing/Careers';
 import Login from './pages/auth/Login';
 import ResetPassword from './pages/auth/ResetPassword';
+import RoleSelector from './pages/auth/RoleSelector';
 import ClientDashboard from './pages/client/ClientDashboard';
 
 import AdvocateOverview from './pages/advocate/Overview';
@@ -98,6 +99,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/choose-role" element={<RoleSelector />} />
       <Route path="/admin/login" element={<AdminLogin />} />
 
       <Route path="/dashboard/client" element={<RequireRole role="client"><ClientDashboard /></RequireRole>} />

@@ -78,13 +78,23 @@ export default function Login() {
   useEffect(() => {
     if (!session) return;
     (async () => {
+      const provider = localStorage.getItem('lc_oauth_provider');
       const intent = localStorage.getItem('lc_role_intent');
+      localStorage.removeItem('lc_oauth_provider');
       localStorage.removeItem('lc_role_intent');
-      if (intent === 'advocate') {
-        const profile = await getCurrentProfile();
-        if (profile && profile.role === 'client') {
-          await supabase.from('profiles').update({ role: 'advocate' }).eq('id', profile.id);
-        }
+
+      const profile = await getCurrentProfile();
+      if (!profile) return navigate('/login');
+
+      // OAuth user with default 'client' role — ask them to choose
+      if (provider && profile.role === 'client') {
+        navigate('/choose-role');
+        return;
+      }
+
+      // Email/password registration with advocate intent
+      if (intent === 'advocate' && profile.role === 'client') {
+        await supabase.from('profiles').update({ role: 'advocate' }).eq('id', profile.id);
       }
       goToRoleHome();
     })();

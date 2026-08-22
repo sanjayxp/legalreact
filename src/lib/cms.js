@@ -157,13 +157,31 @@ export async function deleteAdvocateProfile(userId) {
 // and takes bookings, answers, cases and the rest with it. Uploaded files are
 // not cascaded by the database, so they're cleared here first.
 export async function adminDeleteUserAccount(userId) {
+  // Delete storage files first
   for (const bucket of ['advocate-photos', 'bar-certificates']) {
     const { data: files } = await supabase.storage.from(bucket).list(userId);
     const paths = (files || []).map((f) => `${userId}/${f.name}`);
     if (paths.length) await supabase.storage.from(bucket).remove(paths);
   }
-  const { error } = await supabase.rpc('admin_delete_user', { target_id: userId });
-  if (error) throw error;
+
+  // Delete via RPC function
+  let error;
+  try {
+    const result = await supabase.rpc('admin_delete_user', { target_id: userId });
+    error = result.error;
+  } catch (e) {
+    error = e;
+  }
+
+  if (error) {
+    console.error('Delete user RPC error:', error);
+    // Fallback: delete from profiles directly (which cascades)
+    const { error: deleteError } = await supabase.from('profiles').delete().eq('id', userId);
+    if (deleteError) throw deleteError || error;
+  }
+
+  // Log the deletion for audit trail
+  await logSelfAction('account_deleted_by_admin', 'profile', userId, null, 'Admin deleted user account');
 }
 
 // ---------- CLIENTS (admin, read-only on profiles) ----------
@@ -1228,18 +1246,25 @@ export async function getMatterStats() {
 
 // ---------- ADMIN: NOTIFICATIONS/ALERTS ----------
 export async function getAdminAlerts() {
-  const [pendingAdvocates, overdueLead, openTickets] = await Promise.all([
+  const last24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const [pendingAdvocates, overdueLead, openTickets, newAccounts] = await Promise.all([
     listPendingAdvocates(),
     supabase.from('leads').select('*')
       .eq('status', 'new')
-      .lt('created_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
+      .lt('created_at', last24h),
     listSupportTickets({ status: 'open' }),
+    supabase.from('profiles').select('*')
+      .gt('created_at', last24h)
+      .order('created_at', { ascending: false })
+      .limit(50),
   ]);
 
   return {
     pendingAdvocates: pendingAdvocates?.length || 0,
     overdueLeads: (overdueLead?.data || []).length,
     openTickets: openTickets?.length || 0,
+    newAccounts: (newAccounts?.data || []).length,
+    recentSignups: (newAccounts?.data || []),
   };
 }
 

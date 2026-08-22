@@ -176,7 +176,8 @@ export function consumeReturnTo() {
 }
 
 export async function oauthLogin(provider, intendedRole) {
-  localStorage.setItem('lc_role_intent', intendedRole);
+  localStorage.setItem('lc_oauth_provider', provider);
+  if (intendedRole) localStorage.setItem('lc_role_intent', intendedRole);
   await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo: window.location.origin + '/login' },
