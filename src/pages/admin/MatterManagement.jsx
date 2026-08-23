@@ -164,6 +164,11 @@ export default function MatterManagement() {
                     <Badge tone={m.status === 'new' ? 'amber' : m.status === 'converted' ? 'green' : m.status === 'dropped' ? 'red' : 'blue'}>
                       {STATUS_LABELS[m.status] || m.status}
                     </Badge>
+                    {m.advocate_name ? (
+                      <Badge tone="blue">Assigned · {m.advocate_name}</Badge>
+                    ) : (
+                      <Badge tone="gray">Unclaimed</Badge>
+                    )}
                   </div>
                   <div className="mt-2">
                     <div className="font-bold text-ink-900">{m.matter}</div>
@@ -239,6 +244,12 @@ export default function MatterManagement() {
                   </Badge>
                 </div>
               </div>
+            </div>
+            <div>
+              <h3 className="text-[12px] uppercase tracking-wide text-ink-400">Advocate</h3>
+              <p className="mt-1 text-[14px] text-ink-900">
+                {viewing.advocate_name ? `Assigned to ${viewing.advocate_name}` : 'Unclaimed — no advocate assigned yet'}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

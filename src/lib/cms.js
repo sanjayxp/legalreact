@@ -1209,13 +1209,27 @@ export async function getAdvocatePerformance() {
 }
 
 // ---------- ADMIN: MATTER MANAGEMENT ----------
+// Attaches advocate_name so the admin Matters list can show "Assigned to X"
+// vs. "Unclaimed" instead of leaving assignment state invisible — status
+// alone ('new') doesn't tell you whether a matter already has an advocate.
 export async function listAllMatters(filter = {}) {
   let q = supabase.from('leads').select('*');
   if (filter.status) q = q.eq('status', filter.status);
   if (filter.type) q = q.eq('matter_type', filter.type);
   const { data, error } = await q.order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  const matters = data || [];
+
+  const advocateIds = [...new Set(matters.map((m) => m.advocate_id).filter(Boolean))];
+  if (advocateIds.length === 0) return matters;
+
+  const { data: advocates } = await supabase
+    .from('advocate_profiles')
+    .select('id, profiles!advocate_profiles_id_fkey(full_name)')
+    .in('id', advocateIds);
+  const nameById = new Map((advocates || []).map((a) => [a.id, a.profiles?.full_name]));
+
+  return matters.map((m) => ({ ...m, advocate_name: m.advocate_id ? nameById.get(m.advocate_id) || 'Advocate' : null }));
 }
 
 export async function getMatterStats() {
@@ -1236,7 +1250,6 @@ export async function getMatterStats() {
   return stats;
 }
 
-// ---------- ADMIN: NOTIFICATIONS/ALERTS ----------
 // ---------- ADMIN: NOTIFICATIONS ----------
 // Real event feed, populated by database triggers on leads/profiles/
 // advocate_profiles/support_tickets — see migration add_admin_notifications_system.
