@@ -3,14 +3,17 @@ import { supabase } from './supabase';
 
 const AuthContext = createContext(null);
 
+// notFound (Postgrest PGRST116, ".single()" got zero rows) means the id
+// itself is real but the row is gone — distinct from a transient fetch
+// error, which shouldn't be treated as "this account no longer exists".
 async function fetchProfile(userId) {
-  if (!userId) return null;
+  if (!userId) return { data: null, notFound: false };
   const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
   if (error) {
-    console.error('getCurrentProfile error', error);
-    return null;
+    if (error.code !== 'PGRST116') console.error('getCurrentProfile error', error);
+    return { data: null, notFound: error.code === 'PGRST116' };
   }
-  return data;
+  return { data, notFound: false };
 }
 
 export function AuthProvider({ children }) {
@@ -18,8 +21,20 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Deleting a user (e.g. from the Supabase dashboard) removes their
+  // profiles row immediately, but doesn't revoke an access token already
+  // sitting in the browser — Supabase JWTs are stateless and just expire on
+  // their own schedule. Without this, a deleted account stays "logged in"
+  // with a null profile, and route guards that only branch on `profile &&
+  // ...` treat null as "no restriction" and let them keep using dashboards.
+  // Detecting the missing row is the authoritative signal, so sign out
+  // locally the moment a profile fetch comes back not-found.
   const refreshProfile = useCallback(async (userId) => {
-    const p = await fetchProfile(userId);
+    const { data: p, notFound } = await fetchProfile(userId);
+    if (notFound) {
+      await supabase.auth.signOut({ scope: 'local' });
+      return null;
+    }
     setProfile(p);
     return p;
   }, []);
@@ -121,7 +136,8 @@ export async function signOut() {
 export async function getCurrentProfile() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  return fetchProfile(user.id);
+  const { data } = await fetchProfile(user.id);
+  return data;
 }
 
 // Supabase lets a signed-in user set a new password without proving the old
