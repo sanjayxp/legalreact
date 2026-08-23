@@ -184,8 +184,12 @@ export async function adminDeleteUserAccount(userId) {
 }
 
 // ---------- CLIENTS (admin, read-only on profiles) ----------
+// role_confirmed excludes the placeholder row OAuth signups get before they
+// pick client/advocate on /choose-role — that row has to exist the instant
+// they authenticate (see AuthProvider's sign-out-on-missing-profile logic),
+// but it isn't a real client account yet and shouldn't show as one here.
 export async function listClients() {
-  const { data, error } = await supabase.from('profiles').select('*').eq('role', 'client').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('profiles').select('*').eq('role', 'client').eq('role_confirmed', true).order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];
 }
@@ -967,7 +971,9 @@ export async function requestSlot(advocateId, slotStart, slotEnd, { mode, client
 // than just static totals.
 export async function listRecentActivity(limit = 15) {
   const [signups, leads, questions, submissions] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, role, created_at').order('created_at', { ascending: false }).limit(limit),
+    // Excludes the pre-choice OAuth placeholder (role_confirmed: false) —
+    // it isn't really "signed up as client" yet, it's mid-signup.
+    supabase.from('profiles').select('id, full_name, role, created_at').eq('role_confirmed', true).order('created_at', { ascending: false }).limit(limit),
     supabase.from('leads').select('id, client_name, matter, source, created_at').order('created_at', { ascending: false }).limit(limit),
     supabase.from('questions').select('id, title, topic, created_at').order('created_at', { ascending: false }).limit(limit),
     supabase.from('advocate_profiles').select('id, submitted_at, profiles!advocate_profiles_id_fkey(full_name)').order('submitted_at', { ascending: false }).limit(limit),
@@ -1141,9 +1147,13 @@ export async function listAuditLog(limit = 50) {
 export async function getAnalyticsSummary() {
   const { data: tickets } = await supabase.from('support_tickets').select('*');
   const { data: leads } = await supabase.from('leads').select('*');
-  const { data: profiles } = await supabase.from('profiles').select('role');
+  const { data: profiles } = await supabase.from('profiles').select('role, role_confirmed');
   const { data: slots } = await supabase.from('booking_slots').select('status');
-  
+
+  // Only counts settled accounts — the pre-choice OAuth placeholder
+  // (role_confirmed: false) isn't a real client or advocate yet.
+  const confirmed = (profiles || []).filter((p) => p.role_confirmed);
+
   return {
     tickets: {
       total: tickets?.length || 0,
@@ -1156,9 +1166,9 @@ export async function getAnalyticsSummary() {
       converted: leads?.filter(l => l.status === 'converted').length || 0,
     },
     users: {
-      advocates: profiles?.filter(p => p.role === 'advocate').length || 0,
-      clients: profiles?.filter(p => p.role === 'client').length || 0,
-      total: profiles?.length || 0,
+      advocates: confirmed.filter(p => p.role === 'advocate').length,
+      clients: confirmed.filter(p => p.role === 'client').length,
+      total: confirmed.length,
     },
     consultations: {
       confirmed: slots?.filter(s => s.status === 'confirmed').length || 0,

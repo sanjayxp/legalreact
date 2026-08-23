@@ -47,7 +47,9 @@ export default function Overview() {
 
   async function refresh() {
     const [{ data: profiles }, pend, leads, feed] = await Promise.all([
-      can('people') ? supabase.from('profiles').select('role') : Promise.resolve({ data: [] }),
+      // role_confirmed excludes the pre-choice OAuth placeholder — not a
+      // real client or advocate yet, so it shouldn't count as one here.
+      can('people') ? supabase.from('profiles').select('role').eq('role_confirmed', true) : Promise.resolve({ data: [] }),
       can('people') ? listPendingAdvocates() : Promise.resolve([]),
       can('leads') ? listLeads() : Promise.resolve([]),
       listRecentActivity(15),
