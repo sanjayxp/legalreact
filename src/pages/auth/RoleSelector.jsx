@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Gavel } from 'lucide-react';
-import { getCurrentProfile, roleHomePath, hasAdvocateProfileRow, useAuth } from '../../lib/auth';
+import { getCurrentProfile, roleHomePath, hasAdvocateProfileRow, useAuth, signOut } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import { Toast } from '../../components/ui/Misc';
@@ -38,6 +38,17 @@ export default function RoleSelector() {
       setChecking(false);
     })();
   }, [session, loading, navigate]);
+
+  // The session created by OAuth is only a real account once a role is
+  // chosen — leaving this page any other way should mean walking away with
+  // nothing, not staying half-signed-in. Without this, browser back just
+  // bounces to /login, which immediately re-forwards here (Login.jsx redirects
+  // any unconfirmed session straight back to /choose-role), trapping the user.
+  async function handleNotNow() {
+    setBusy(true);
+    await signOut();
+    navigate('/');
+  }
 
   async function handleConfirm() {
     if (!role) return setMsg('Please select a role.');
@@ -122,11 +133,20 @@ export default function RoleSelector() {
 
         {msg && <Toast text={msg} kind="err" />}
 
-        <Button className="w-full mb-4" onClick={handleConfirm} disabled={busy}>
+        <Button className="w-full mb-3" onClick={handleConfirm} disabled={busy}>
           {busy ? 'Setting up…' : 'Continue'}
         </Button>
 
-        <p className="text-center text-[12px] text-ink-500">
+        <button
+          type="button"
+          onClick={handleNotNow}
+          disabled={busy}
+          className="mx-auto block text-center text-[13px] font-semibold text-ink-500 hover:text-ink-700 disabled:opacity-50"
+        >
+          Not right now — sign out
+        </button>
+
+        <p className="mt-4 text-center text-[12px] text-ink-500">
           Advocate accounts go through Bar Council verification before going live.
         </p>
       </div>

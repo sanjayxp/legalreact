@@ -114,7 +114,11 @@ export default function Login() {
           // pre-update snapshot and bounces goToRoleHome()'s navigate below.
           await refreshProfile();
         } else {
-          navigate('/choose-role');
+          // replace: true so /login doesn't sit in history underneath this —
+          // otherwise browser back lands back on /login, which immediately
+          // re-forwards here since the session is still unconfirmed, trapping
+          // the user in a loop instead of actually going back anywhere.
+          navigate('/choose-role', { replace: true });
           return;
         }
       }
