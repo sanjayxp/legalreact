@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, ShieldCheck, Check } from 'lucide-react';
 import { submitMatterLead } from '../../lib/cms';
 import { useAuth } from '../../lib/auth';
 import { MATTER_TYPES, findMatterType, summariseMatter } from '../../lib/matterTypes';
@@ -143,7 +143,12 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={done ? 'Matter received' : 'Post your matter'}>
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title={done ? 'Matter received' : 'Post your matter'}
+      width={!done && !type ? 'max-w-3xl' : 'max-w-lg'}
+    >
       {done ? (
         <>
           <Toast
@@ -157,27 +162,43 @@ export default function PostMatterModal({ open, onClose, preselect = '' }) {
         </>
       ) : (
         !type ? (
-          <div>
-            <p className="text-[13.5px] text-ink-500">
-              What do you need help with? Pick the closest one — you can explain in your own words next.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {MATTER_TYPES.map((t) => (
-                <button
-                  key={t.slug}
-                  type="button"
-                  onClick={() => pickType(t.slug)}
-                  className="group flex flex-col items-start gap-2 rounded-xl border border-ink-100 p-3 text-left transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-[var(--shadow-card)]"
-                >
-                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${TILE_TINTS[t.tint] || TILE_TINTS.brand}`}>
-                    <t.icon size={17} />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[13px] font-bold leading-tight text-ink-900">{t.label}</span>
-                    <span className="mt-0.5 block text-[11.5px] leading-snug text-ink-400">{t.blurb}</span>
-                  </span>
-                </button>
-              ))}
+          <div className="sm:grid sm:grid-cols-[34%_1fr] sm:-mx-6 sm:-mb-6">
+            {/* Reassurance panel — real product facts only, no fabricated stats.
+                Hidden on mobile, where there's no room for it. */}
+            <div className="relative hidden overflow-hidden rounded-bl-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-6 text-white sm:flex sm:flex-col sm:justify-between">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+              <div>
+                <ShieldCheck size={22} className="text-gold-300" />
+                <p className="mt-4 text-[14.5px] font-bold leading-snug">
+                  Describe what's going on — we'll match you with a Bar Council-verified advocate.
+                </p>
+              </div>
+              <div className="mt-6 flex flex-col gap-2 text-[12.5px] text-white/85">
+                <span className="flex items-center gap-2"><Check size={13} className="shrink-0 text-gold-300" /> Free to post</span>
+                <span className="flex items-center gap-2"><Check size={13} className="shrink-0 text-gold-300" /> Bar Council-verified advocates only</span>
+                <span className="flex items-center gap-2"><Check size={13} className="shrink-0 text-gold-300" /> Shared only with a matched advocate</span>
+              </div>
+            </div>
+
+            <div className="sm:py-6 sm:pl-5 sm:pr-6">
+              <p className="text-[13.5px] text-ink-500">
+                What do you need help with? Pick the closest one — you can explain in your own words next.
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {MATTER_TYPES.map((t) => (
+                  <button
+                    key={t.slug}
+                    type="button"
+                    onClick={() => pickType(t.slug)}
+                    className="flex items-center gap-2.5 rounded-xl border border-ink-100 px-3 py-2.5 text-left transition-colors hover:border-brand-300 hover:bg-brand-50"
+                  >
+                    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${TILE_TINTS[t.tint] || TILE_TINTS.brand}`}>
+                      <t.icon size={15} />
+                    </span>
+                    <span className="min-w-0 text-[12.5px] font-bold leading-tight text-ink-900">{t.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
