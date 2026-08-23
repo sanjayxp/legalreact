@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, FileWarning, Clock, UserX, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getComplianceSnapshot } from '../../lib/cms';
+import { useLiveRefresh } from '../../lib/realtime';
 import AdminShell from '../../components/layout/AdminShell';
 import Card, { CardHeading } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -22,12 +23,24 @@ export default function Compliance() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
 
-  useEffect(() => {
+  function load() {
     getComplianceSnapshot()
       .then(setData)
       .catch((e) => console.error(e))
       .finally(() => setLoading(false));
-  }, []);
+  }
+  useEffect(load, []);
+
+  // Without this, approving an advocate without a bar certificate (or any
+  // other compliance-relevant change) on another tab/page wouldn't show up
+  // here until the page was manually reloaded — the snapshot was fetched
+  // once on mount and never touched again.
+  useLiveRefresh('admin-compliance-live', [
+    { table: 'advocate_profiles' },
+    { table: 'support_tickets' },
+    { table: 'audit_log' },
+    { table: 'profiles' },
+  ], load);
 
   if (loading) return <AdminShell><Spinner /></AdminShell>;
 
