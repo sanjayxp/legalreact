@@ -105,10 +105,12 @@ export default function Login() {
       if (!profile) return;
 
       if (!profile.role_confirmed && profile.role !== 'admin') {
-        // They started OAuth from the register tab with "advocate" selected —
-        // that's an explicit choice, so honor it without re-asking.
-        if (intent === 'advocate') {
-          await supabase.from('profiles').update({ role: 'advocate', role_confirmed: true }).eq('id', profile.id);
+        // Both OAuth buttons now sit behind a client/advocate picker (see the
+        // role tabs above each "continue with" section), so intent is always
+        // set on the normal path — /choose-role below is just a safety net
+        // for the rare case it's missing (e.g. a stale/direct OAuth redirect).
+        if (intent === 'advocate' || intent === 'client') {
+          await supabase.from('profiles').update({ role: intent, role_confirmed: true }).eq('id', profile.id);
           // Same as RoleSelector: RequireRole reads AuthContext, not this
           // local profile fetch, so without this it still sees the
           // pre-update snapshot and bounces goToRoleHome()'s navigate below.
@@ -174,9 +176,9 @@ export default function Login() {
     }
   }
 
-  async function handleOAuth(provider, fromRegister) {
+  async function handleOAuth(provider) {
     try {
-      await oauthLogin(provider, fromRegister ? role : null);
+      await oauthLogin(provider, role);
     } catch (err) {
       say(err.message?.includes('not enabled') ? 'This sign-in method is not enabled yet — use email and password for now.' : err.message || 'Could not start social sign-in.');
     }
@@ -312,6 +314,11 @@ export default function Login() {
                   </Button>
 
                   <Divider text="or continue with" />
+                  <p className="mb-2.5 text-center text-[12px] font-semibold text-ink-500">New here? Choose how you'll use LegalConnects first:</p>
+                  <div className="mb-3 grid grid-cols-2 gap-2">
+                    <RoleTab active={role === 'client'} onClick={() => setRole('client')} icon={<Briefcase size={18} />} label="I need legal help" />
+                    <RoleTab active={role === 'advocate'} onClick={() => setRole('advocate')} icon={<Gavel size={18} />} label="I'm an advocate" />
+                  </div>
                   <OAuthButtons onGoogle={() => handleOAuth('google')} onLinkedIn={() => handleOAuth('linkedin_oidc')} />
 
                   <p className="mt-4 text-center text-[13px] text-ink-500">
@@ -350,7 +357,7 @@ export default function Login() {
                   </Button>
 
                   <Divider text="or sign up with" />
-                  <OAuthButtons onGoogle={() => handleOAuth('google', true)} onLinkedIn={() => handleOAuth('linkedin_oidc', true)} />
+                  <OAuthButtons onGoogle={() => handleOAuth('google')} onLinkedIn={() => handleOAuth('linkedin_oidc')} />
                   <p className="mt-2 text-center text-[11.5px] text-ink-600">
                     Signing up as: <b className="text-ink-700">{role}</b> — pick your role above first.
                   </p>
