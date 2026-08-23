@@ -22,7 +22,7 @@ import Logo from '../../components/brand/Logo';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session } = useAuth();
+  const { session, refreshProfile } = useAuth();
 
   // Carried over from the public "Post your matter" flow — never in the
   // URL, just router state, so no PII ends up in the address bar or history.
@@ -109,6 +109,10 @@ export default function Login() {
         // that's an explicit choice, so honor it without re-asking.
         if (intent === 'advocate') {
           await supabase.from('profiles').update({ role: 'advocate', role_confirmed: true }).eq('id', profile.id);
+          // Same as RoleSelector: RequireRole reads AuthContext, not this
+          // local profile fetch, so without this it still sees the
+          // pre-update snapshot and bounces goToRoleHome()'s navigate below.
+          await refreshProfile();
         } else {
           navigate('/choose-role');
           return;

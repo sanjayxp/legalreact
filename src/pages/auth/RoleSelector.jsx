@@ -11,7 +11,7 @@ import Logo from '../../components/brand/Logo';
 // Anyone whose role is already confirmed is sent straight to their dashboard.
 export default function RoleSelector() {
   const navigate = useNavigate();
-  const { session, loading } = useAuth();
+  const { session, loading, refreshProfile } = useAuth();
   const [role, setRole] = useState('client');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -51,6 +51,12 @@ export default function RoleSelector() {
         .update({ role, role_confirmed: true })
         .eq('id', profile.id);
       if (error) throw error;
+
+      // RequireRole reads profile from AuthContext, not from this component's
+      // local state — without this, it still sees the pre-choice snapshot
+      // (role: 'client', role_confirmed: false) and bounces the navigate below
+      // straight back out to the client dashboard.
+      await refreshProfile();
 
       if (role === 'advocate') {
         navigate('/dashboard/advocate/profile?welcome=1');
