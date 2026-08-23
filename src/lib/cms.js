@@ -1237,27 +1237,38 @@ export async function getMatterStats() {
 }
 
 // ---------- ADMIN: NOTIFICATIONS/ALERTS ----------
-export async function getAdminAlerts() {
-  const last24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const [pendingAdvocates, overdueLead, openTickets, newAccounts] = await Promise.all([
-    listPendingAdvocates(),
-    supabase.from('leads').select('*')
-      .eq('status', 'new')
-      .lt('created_at', last24h),
-    listSupportTickets({ status: 'open' }),
-    supabase.from('profiles').select('*')
-      .gt('created_at', last24h)
-      .order('created_at', { ascending: false })
-      .limit(50),
-  ]);
+// ---------- ADMIN: NOTIFICATIONS ----------
+// Real event feed, populated by database triggers on leads/profiles/
+// advocate_profiles/support_tickets — see migration add_admin_notifications_system.
+// This means every matter posted, account created, advocate profile
+// submitted, and support ticket opened lands here regardless of which
+// frontend path caused it (public forms, OAuth, email signup, etc).
+export async function listNotifications({ unreadOnly = false, type = '' } = {}) {
+  let q = supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(200);
+  if (unreadOnly) q = q.eq('read', false);
+  if (type) q = q.eq('type', type);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+}
 
-  return {
-    pendingAdvocates: pendingAdvocates?.length || 0,
-    overdueLeads: (overdueLead?.data || []).length,
-    openTickets: openTickets?.length || 0,
-    newAccounts: (newAccounts?.data || []).length,
-    recentSignups: (newAccounts?.data || []),
-  };
+export async function getUnreadNotificationCount() {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('read', false);
+  if (error) throw error;
+  return count || 0;
+}
+
+export async function markNotificationRead(id) {
+  const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function markAllNotificationsRead() {
+  const { error } = await supabase.from('notifications').update({ read: true }).eq('read', false);
+  if (error) throw error;
 }
 
 // ---------- ADMIN: BULK OPERATIONS ----------

@@ -6,7 +6,7 @@ import {
   LifeBuoy, History, Bell, TrendingUp, Briefcase, Mail, ShieldCheck,
 } from 'lucide-react';
 import { signOut, useAdminAccess } from '../../lib/auth';
-import { listPendingAdvocates, getAdminAlerts } from '../../lib/cms';
+import { listPendingAdvocates, getUnreadNotificationCount } from '../../lib/cms';
 import Logo from '../brand/Logo';
 
 const NAV_GROUPS = [
@@ -34,7 +34,7 @@ const NAV_GROUPS = [
     label: 'Operations',
     items: [
       { to: '/admin/support', label: 'Support Tickets', icon: LifeBuoy },
-      { to: '/admin/alerts', label: 'Alerts', icon: Bell },
+      { to: '/admin/alerts', label: 'Notifications', icon: Bell },
       { to: '/admin/compliance', label: 'Compliance', icon: ShieldCheck },
       { to: '/admin/audit', label: 'Audit Log', icon: History },
     ],
@@ -56,22 +56,31 @@ export default function AdminShell({ children }) {
   useEffect(() => {
     let mounted = true;
 
-    if (can('people')) {
+    function loadPending() {
+      if (!can('people')) return;
       listPendingAdvocates()
         .then((rows) => { if (mounted) setPendingCount(rows.length); })
         .catch(() => {});
     }
 
-    getAdminAlerts()
-      .then((alerts) => {
-        if (mounted) {
-          const total = (alerts.pendingAdvocates || 0) + (alerts.overdueLeads || 0) + (alerts.openTickets || 0);
-          setAlertCount(total);
-        }
-      })
-      .catch(() => {});
+    function loadUnread() {
+      getUnreadNotificationCount()
+        .then((count) => { if (mounted) setAlertCount(count); })
+        .catch(() => {});
+    }
 
-    return () => { mounted = false; };
+    loadPending();
+    loadUnread();
+    const interval = setInterval(() => { loadPending(); loadUnread(); }, 20000);
+    // Fired by NotificationsHub right after mark-as-read, so the sidebar
+    // badge clears immediately instead of waiting for the next poll.
+    window.addEventListener('lc-notifications-updated', loadUnread);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+      window.removeEventListener('lc-notifications-updated', loadUnread);
+    };
   }, [can]);
 
   return (
