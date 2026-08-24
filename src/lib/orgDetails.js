@@ -18,9 +18,9 @@ export const ORG = {
   registeredAddress: 'Gurgaon, Haryana, India',
 
   // Where the public can reach you.
-  supportEmail: 'support@legalconnects.in',
-  supportPhone: null,
-  supportHours: null,
+  supportEmail: 'suhana@legalconnects.in',
+  supportPhone: '+91 9971886999',
+  supportHours: 'Mon–Sat, 10 AM – 6 PM',
 
   // Data protection. Required to be named and reachable under the DPDP Act.
   privacyEmail: 'support@legalconnects.in',
