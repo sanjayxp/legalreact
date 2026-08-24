@@ -208,8 +208,8 @@ export default function Advocates() {
                   <motion.div key={a.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
                     <Link to={`/advocates/${a.id}`}>
                       <Card hover className="h-full">
-                        <div className="flex items-center gap-3">
-                          <Avatar src={a.photo_url} name={a.profiles?.full_name} size={52} />
+                        <div className="flex items-center gap-4">
+                          <Avatar src={a.photo_url} name={a.profiles?.full_name} size={84} />
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <span className="truncate text-[15.5px] font-bold text-ink-900">{a.profiles?.full_name}</span>
