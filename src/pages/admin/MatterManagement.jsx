@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Check, X, Eye, Trash2, Briefcase } from 'lucide-react';
-import { listAllMatters, updateLead, deleteLead } from '../../lib/cms';
+import { listAllMatters, updateLead, deleteLead, adminConvertLead } from '../../lib/cms';
+import { useLiveRefresh } from '../../lib/realtime';
 import { MATTER_TYPES, findMatterType } from '../../lib/matterTypes';
 import AdminShell from '../../components/layout/AdminShell';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -34,6 +35,9 @@ export default function MatterManagement() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Doesn't reset `loading` on every call — this also runs on live updates
+  // (e.g. an advocate accepting/declining a matter, or another admin tab),
+  // and flashing the whole list to a spinner mid-session would be jarring.
   async function load() {
     try {
       setMatters(await listAllMatters());
@@ -48,6 +52,7 @@ export default function MatterManagement() {
   useEffect(() => {
     load();
   }, []);
+  useLiveRefresh('admin-matters-live', [{ table: 'leads' }], load);
 
   // Derived from the same list the table shows, so tiles never drift
   // out of sync after Done / Decline / Delete.
@@ -79,6 +84,20 @@ export default function MatterManagement() {
       setMsg(`Matter marked as ${STATUS_LABELS[status].toLowerCase()}.`);
     } catch (e) {
       setMsg(e.message || 'Action failed.');
+    }
+  }
+
+  // "Done" has to create the same advocate_clients link a real advocate
+  // accept does, or the matter shows completed while the client exists
+  // nowhere in that advocate's register — so this goes through the RPC
+  // instead of a plain status update.
+  async function handleDone(matter) {
+    try {
+      const updated = await adminConvertLead(matter.id);
+      setMatters((ms) => ms.map((m) => (m.id === matter.id ? { ...m, ...updated } : m)));
+      setMsg('Matter marked completed and added to the advocate\'s client register.');
+    } catch (e) {
+      setMsg(e.message || 'Could not mark this matter completed.');
     }
   }
 
@@ -182,7 +201,13 @@ export default function MatterManagement() {
                 </div>
                 <div className="flex flex-wrap items-start gap-2 sm:shrink-0">
                   {m.status !== 'converted' && (
-                    <Button size="sm" variant="primary" onClick={(e) => { e.stopPropagation(); handleAction(m.id, 'converted'); }}>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      disabled={!m.advocate_id}
+                      title={!m.advocate_id ? 'Assign this matter to an advocate first' : undefined}
+                      onClick={(e) => { e.stopPropagation(); handleDone(m); }}
+                    >
                       <Check size={14} /> Done
                     </Button>
                   )}
@@ -269,7 +294,12 @@ export default function MatterManagement() {
             )}
             <div className="flex gap-2 border-t border-ink-100 pt-4">
               {viewing.status !== 'converted' && (
-                <Button size="sm" onClick={() => { handleAction(viewing.id, 'converted'); setViewing(null); }}>
+                <Button
+                  size="sm"
+                  disabled={!viewing.advocate_id}
+                  title={!viewing.advocate_id ? 'Assign this matter to an advocate first' : undefined}
+                  onClick={() => { handleDone(viewing); setViewing(null); }}
+                >
                   <Check size={14} /> Mark completed
                 </Button>
               )}

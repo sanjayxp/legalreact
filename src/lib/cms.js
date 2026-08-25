@@ -395,6 +395,15 @@ export async function updateLead(id, fields) {
   const { error } = await supabase.from('leads').update(fields).eq('id', id);
   if (error) throw error;
 }
+// Marking a matter "completed" from the admin side has to do what an
+// advocate's own accept does — create/link the advocate_clients row — or
+// the client ends up converted on paper but absent from that advocate's
+// client register. Requires the matter to already have an advocate assigned.
+export async function adminConvertLead(id) {
+  const { data, error } = await supabase.rpc('admin_convert_lead', { p_lead_id: id });
+  if (error) throw new Error(error.message || 'Could not mark this matter completed.');
+  return data;
+}
 export async function deleteLead(id) {
   const { error } = await supabase.from('leads').delete().eq('id', id);
   if (error) throw error;

@@ -14,6 +14,7 @@ import {
   listMyCases,
   linkCaseToClient,
 } from '../../lib/cms';
+import { useLiveRefresh } from '../../lib/realtime';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
 import StatTile from '../../components/ui/StatTile';
@@ -38,8 +39,10 @@ export default function ClientsBilling() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Doesn't reset `loading` on every call — this also runs on live updates
+  // (e.g. an admin-side action touching this same client register), and
+  // flashing the whole page to a spinner mid-session would be jarring.
   async function load() {
-    setLoading(true);
     const [cl, inv, cs] = await Promise.all([listMyClients(user.id), listMyInvoices(user.id), listMyCases(user.id)]);
     setClients(cl);
     setInvoices(inv);
@@ -47,6 +50,12 @@ export default function ClientsBilling() {
     setLoading(false);
   }
   useEffect(() => { if (user) load(); }, [user]);
+  useLiveRefresh(
+    'advocate-clients-live',
+    [{ table: 'advocate_clients', filter: `advocate_id=eq.${user?.id}` }],
+    load,
+    !!user,
+  );
 
   // Link/unlink a case from the client register. clientId null = unlink.
   async function handleLinkCase(caseId, clientId, refreshForClientId) {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Pencil, Trash2, Users, Mail, Phone, Calendar } from 'lucide-react';
 import { listClients, adminDeleteUserAccount } from '../../lib/cms';
+import { useLiveRefresh } from '../../lib/realtime';
 import { supabase } from '../../lib/supabase';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -20,12 +21,15 @@ export default function Clients() {
   const [deleting, setDeleting] = useState(false);
   const [err, setErr] = useState('');
 
+  // Doesn't toggle `loading` back to true on its own — this also runs on
+  // every live update, and flashing the whole table to a spinner mid-session
+  // (e.g. right after another tab deletes someone) would be jarring.
   async function load() {
-    setLoading(true);
     setClients(await listClients());
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+  useLiveRefresh('admin-clients-live', [{ table: 'profiles' }], load);
 
   const filtered = useMemo(() => {
     if (!search) return clients;

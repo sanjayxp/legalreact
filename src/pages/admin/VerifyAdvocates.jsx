@@ -12,6 +12,7 @@ import {
   getBarCertificateSignedUrl,
   uploadAdvocatePhoto,
 } from '../../lib/cms';
+import { useLiveRefresh } from '../../lib/realtime';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -37,14 +38,17 @@ export default function VerifyAdvocates() {
   const [deleting, setDeleting] = useState(false);
   const [err, setErr] = useState('');
 
+  // Doesn't reset `loading` on every call — this also runs on live updates,
+  // and re-flashing a spinner over the whole list after a deletion elsewhere
+  // (admin People, or another tab) would be jarring.
   async function load() {
-    setLoading(true);
     const [all, inc] = await Promise.all([listAllAdvocates(), listIncompleteAdvocateSignups()]);
     setAdvocates(all);
     setIncomplete(inc);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+  useLiveRefresh('admin-advocates-live', [{ table: 'advocate_profiles' }, { table: 'profiles' }], load);
 
   const counts = useMemo(() => ({
     all: advocates.length,
