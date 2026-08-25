@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { KeyRound, Phone, EyeOff, Trash2, ShieldAlert, Clock } from 'lucide-react';
-import { useAuth, changePassword, signedInWithPassword, signOut } from '../../lib/auth';
+import { useAuth, changePassword, signedInWithPassword } from '../../lib/auth';
 import {
   getAdvocateProfile, getAvailability, listTimeOff,
   updateOwnPhone, setListingPaused, deleteOwnAccount,
@@ -18,7 +18,7 @@ import { Spinner, Toast } from '../../components/ui/Misc';
 // Everything about the account itself. What the public sees lives on Profile;
 // nothing on this page is published.
 export default function Settings() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [advProfile, setAdvProfile] = useState(null);
   const [availability, setAvailabilityState] = useState([]);

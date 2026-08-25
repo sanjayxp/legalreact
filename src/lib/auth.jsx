@@ -1,7 +1,39 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from './supabase';
+import Logo from '../components/brand/Logo';
 
 const AuthContext = createContext(null);
+
+// Route guards react to session becoming null by hard-swapping to /login —
+// instant, no transition. This overlay sits above every route (rendered by
+// AuthProvider, which wraps the whole app) so it persists across that swap,
+// masking the abrupt cut with an actual fade instead of a static jump.
+function SignOutOverlay({ show }) {
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-white"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+            className="flex flex-col items-center gap-3"
+          >
+            <Logo />
+            <span className="text-[13.5px] font-semibold text-ink-500">Signing you out…</span>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 // notFound (Postgrest PGRST116, ".single()" got zero rows) means the id
 // itself is real but the row is gone — distinct from a transient fetch
@@ -20,6 +52,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = not checked yet
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
 
   // Deleting a user (e.g. from the Supabase dashboard) removes their
   // profiles row immediately, but doesn't revoke an access token already
@@ -65,15 +98,40 @@ export function AuthProvider({ children }) {
     };
   }, [refreshProfile]);
 
+  // scope:'local' ends the session in this browser only. The default is
+  // 'global', which revokes every refresh token for the user — that let a
+  // sign-out in one tab kill a session another tab had just created. Supabase
+  // still broadcasts SIGNED_OUT to other tabs, so this logs you out properly.
+  //
+  // The delays either side of the real sign-out are what make the overlay a
+  // transition rather than a flash: fade in, THEN swap the session (which
+  // triggers the guard's hard cut underneath the now-opaque overlay), THEN
+  // hold briefly so the destination page's own entrance animation isn't
+  // fighting this fade-out for the same 300ms.
+  const doSignOut = useCallback(async () => {
+    setSigningOut(true);
+    await new Promise((r) => setTimeout(r, 320));
+    await supabase.auth.signOut({ scope: 'local' });
+    await new Promise((r) => setTimeout(r, 380));
+    setSigningOut(false);
+  }, []);
+
   const value = {
     session,
     profile,
     loading,
+    signingOut,
     user: session?.user ?? null,
     refreshProfile: () => refreshProfile(session?.user?.id),
+    signOut: doSignOut,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <SignOutOverlay show={signingOut} />
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
@@ -123,14 +181,6 @@ export async function loginUser({ email, password }) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data;
-}
-
-// scope:'local' ends the session in this browser only. The default is
-// 'global', which revokes every refresh token for the user — that let a
-// sign-out in one tab kill a session another tab had just created. Supabase
-// still broadcasts SIGNED_OUT to other tabs, so this logs you out properly.
-export async function signOut() {
-  await supabase.auth.signOut({ scope: 'local' });
 }
 
 export async function getCurrentProfile() {

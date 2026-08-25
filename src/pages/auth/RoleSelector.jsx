@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Gavel } from 'lucide-react';
-import { getCurrentProfile, roleHomePath, hasAdvocateProfileRow, useAuth, signOut } from '../../lib/auth';
+import { getCurrentProfile, roleHomePath, hasAdvocateProfileRow, useAuth } from '../../lib/auth';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import { Toast } from '../../components/ui/Misc';
@@ -11,7 +11,7 @@ import Logo from '../../components/brand/Logo';
 // Anyone whose role is already confirmed is sent straight to their dashboard.
 export default function RoleSelector() {
   const navigate = useNavigate();
-  const { session, loading, refreshProfile } = useAuth();
+  const { session, loading, refreshProfile, signOut } = useAuth();
   const [role, setRole] = useState('client');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');

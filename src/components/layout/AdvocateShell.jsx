@@ -15,7 +15,6 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { signOut } from '../../lib/auth';
 import { listMySlots, listMyLeads, listOpenLeads, getAdvocateProfile } from '../../lib/cms';
 import { Avatar } from '../ui/Misc';
 import Logo from '../brand/Logo';
@@ -31,7 +30,7 @@ const NAV = [
 ];
 
 export default function AdvocateShell({ children }) {
-  const { profile, user } = useAuth();
+  const { profile, user, signOut } = useAuth();
   const name = profile?.full_name || user?.email || '';
   const [leadCount, setLeadCount] = useState(0);
   const [photoUrl, setPhotoUrl] = useState(null);

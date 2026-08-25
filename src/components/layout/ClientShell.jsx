@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogOut, Search, MessageCircleQuestion, Gavel, Globe } from 'lucide-react';
-import { useAuth, signOut } from '../../lib/auth';
+import { useAuth } from '../../lib/auth';
 import { Avatar } from '../ui/Misc';
 import Logo from '../brand/Logo';
 
@@ -12,7 +12,7 @@ const NAV = [
 ];
 
 export default function ClientShell({ children }) {
-  const { profile, user } = useAuth();
+  const { profile, user, signOut } = useAuth();
   const name = profile?.full_name || user?.email || '';
 
   return (

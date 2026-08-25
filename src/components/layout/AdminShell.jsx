@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Inbox, MessageCircleQuestion, GraduationCap, Users,
   LifeBuoy, History, Bell, TrendingUp, Briefcase, Mail, ShieldCheck,
 } from 'lucide-react';
-import { signOut, useAdminAccess } from '../../lib/auth';
+import { useAuth, useAdminAccess } from '../../lib/auth';
 import { listPendingAdvocates, getUnreadNotificationCount } from '../../lib/cms';
 import Logo from '../brand/Logo';
 
@@ -51,6 +51,7 @@ export default function AdminShell({ children }) {
   const [pendingCount, setPendingCount] = useState(0);
   const [alertCount, setAlertCount] = useState(0);
   const { can, isSuper } = useAdminAccess();
+  const { signOut } = useAuth();
   const canSee = (item) => !item.section || can(item.section);
 
   useEffect(() => {

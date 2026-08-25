@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
-import { useAuth, signOut } from '../../lib/auth';
+import { useAuth } from '../../lib/auth';
 import Logo from '../brand/Logo';
 import Button from '../ui/Button';
 import { Avatar } from '../ui/Misc';
@@ -18,7 +18,7 @@ const DASHBOARD_PATH = { client: '/dashboard/client', advocate: '/dashboard/advo
 
 export default function PublicNav() {
   const [open, setOpen] = useState(false);
-  const { session, profile, user } = useAuth();
+  const { session, profile, user, signOut } = useAuth();
   const isLoggedIn = !!session;
   const dashboardPath = DASHBOARD_PATH[profile?.role] || '/dashboard/client';
   const name = profile?.full_name || user?.email || '';
