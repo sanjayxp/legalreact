@@ -71,7 +71,7 @@ export default function Home() {
                 </Button>
               </Link>
               <Link to="/login#register">
-                <Button size="lg" variant="ghost">
+                <Button size="lg" variant="ghost" className="!border-brand-300 !text-brand-600 hover:!bg-brand-50">
                   I'm an advocate
                 </Button>
               </Link>
