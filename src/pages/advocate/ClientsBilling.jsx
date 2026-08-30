@@ -8,12 +8,14 @@ import {
   deleteClient,
   listClientCases,
   listClientUpdates,
+  listClientMatters,
   listMyInvoices,
   addInvoice,
   setInvoiceStatus,
   listMyCases,
   linkCaseToClient,
 } from '../../lib/cms';
+import { findMatterType } from '../../lib/matterTypes';
 import { useLiveRefresh } from '../../lib/realtime';
 import AdvocateShell from '../../components/layout/AdvocateShell';
 import Card, { CardHeading } from '../../components/ui/Card';
@@ -24,13 +26,17 @@ import Badge from '../../components/ui/Badge';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
 
+// Matches the labels used in the admin Matters view, so a status reads the
+// same whichever side of the platform you see it from.
+const MATTER_STATUS_LABELS = { new: 'New', contacted: 'Contacted', converted: 'Completed', dropped: 'Declined' };
+
 export default function ClientsBilling() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [expanded, setExpanded] = useState(null);
-  const [expandedData, setExpandedData] = useState({ cases: [], updates: [] });
+  const [expandedData, setExpandedData] = useState({ cases: [], updates: [], matters: [] });
   const [allCases, setAllCases] = useState([]);
 
   const [cForm, setCForm] = useState({ full_name: '', phone: '', email: '' });
@@ -66,7 +72,7 @@ export default function ClientsBilling() {
         listClientCases(user.id, refreshForClientId),
         listClientUpdates(refreshForClientId),
       ]);
-      setExpandedData({ cases, updates });
+      setExpandedData((prev) => ({ ...prev, cases, updates }));
       setMsg('');
     } catch (e) {
       setMsg(e.message || 'Could not update that case link.');
@@ -76,8 +82,8 @@ export default function ClientsBilling() {
   async function toggleExpand(id) {
     if (expanded === id) { setExpanded(null); return; }
     setExpanded(id);
-    const [cases, updates] = await Promise.all([listClientCases(user.id, id), listClientUpdates(id)]);
-    setExpandedData({ cases, updates });
+    const [cases, updates, matters] = await Promise.all([listClientCases(user.id, id), listClientUpdates(id), listClientMatters(id)]);
+    setExpandedData({ cases, updates, matters });
   }
 
   async function handleAddClient() {
@@ -172,7 +178,21 @@ export default function ClientsBilling() {
                 </button>
                 {expanded === c.id && (
                   <div className="border-t border-ink-100 bg-ink-50/50 p-4">
-                    <div className="mb-3 text-[12px] font-bold uppercase text-ink-400">Linked cases</div>
+                    <div className="mb-3 text-[12px] font-bold uppercase text-ink-400">Matters</div>
+                    {expandedData.matters.length === 0 && <div className="mb-3 text-[13px] text-ink-400">No matters from this client yet.</div>}
+                    {expandedData.matters.map((m) => (
+                      <div key={m.id} className="mb-1.5 flex items-center justify-between gap-3 text-[13px] text-ink-700">
+                        <span className="min-w-0 truncate">{findMatterType(m.matter_type)?.label || m.matter || 'General enquiry'}</span>
+                        <span className="flex shrink-0 items-center gap-2">
+                          <Badge tone={m.status === 'converted' ? 'green' : m.status === 'dropped' ? 'red' : m.status === 'new' ? 'amber' : 'blue'}>
+                            {MATTER_STATUS_LABELS[m.status] || m.status}
+                          </Badge>
+                          <span className="text-[11.5px] text-ink-400">{new Date(m.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</span>
+                        </span>
+                      </div>
+                    ))}
+
+                    <div className="mb-3 mt-4 text-[12px] font-bold uppercase text-ink-400">Linked cases</div>
                     {expandedData.cases.length === 0 && <div className="mb-3 text-[13px] text-ink-400">None linked yet.</div>}
                     {expandedData.cases.map((cs) => (
                       <div key={cs.id} className="mb-1.5 flex items-center justify-between gap-3 text-[13px] text-ink-700">

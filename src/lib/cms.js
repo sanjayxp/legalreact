@@ -756,6 +756,18 @@ export async function listClientCases(advocateId, registerClientId) {
   if (error) throw error;
   return data || [];
 }
+// Matters/enquiries that became this client — accepting a lead links it via
+// advocate_client_id, so a returning client's new matter shows up here
+// instead of only being visible as a one-off row in the admin Matters list.
+export async function listClientMatters(registerClientId) {
+  const { data, error } = await supabase
+    .from('leads')
+    .select('id, matter, matter_type, status, source, created_at')
+    .eq('advocate_client_id', registerClientId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
 export async function logClientUpdate(advocateId, clientId, caseId, message, channel) {
   const { error } = await supabase.from('client_updates').insert({ advocate_id: advocateId, client_id: clientId, case_id: caseId || null, message, channel });
   if (error) throw error;
