@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Briefcase, GraduationCap, MapPin, Clock, IndianRupee, ExternalLink, Landmark, BookOpen, ArrowRight,
   Search, X, SlidersHorizontal,
 } from 'lucide-react';
-import { listJobsPublic, listCoursesPublic, listPublishedActs, submitJobApplication, submitCourseEnrollment, uploadResume } from '../../lib/cms';
+import { listJobsPublic, listCoursesPublic, listPublishedActs } from '../../lib/cms';
 import { colorFor } from '../../lib/colorFor';
 import PublicNav from '../../components/marketing/PublicNav';
 import Footer from '../../components/marketing/Footer';
 import HeroBanner from '../../components/marketing/HeroBanner';
+import ApplyModal from '../../components/marketing/ApplyModal';
+import EnrollModal from '../../components/marketing/EnrollModal';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Tabs from '../../components/ui/Tabs';
-import { Input, Textarea, Label } from '../../components/ui/Field';
-import { EmptyState, Spinner, Toast } from '../../components/ui/Misc';
+import { Input } from '../../components/ui/Field';
+import { EmptyState, Spinner } from '../../components/ui/Misc';
 
 function timeAgo(dateStr) {
   if (!dateStr) return null;
@@ -48,6 +50,7 @@ function optionCounts(rows, key) {
 }
 
 export default function Jobs() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'library';
   const [loading, setLoading] = useState(true);
@@ -266,7 +269,7 @@ export default function Jobs() {
                   <div className="space-y-3">
                     {filteredJobs.map((j, i) => (
                       <motion.div key={j.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }}>
-                        <Card hover className="!p-5">
+                        <Card hover className="!p-5 cursor-pointer" onClick={() => navigate(`/jobs/${j.id}`)}>
                           <div className="flex items-start gap-3">
                             {j.logo_url ? (
                               <img src={j.logo_url} alt="" className="h-11 w-11 shrink-0 rounded-lg object-cover" />
@@ -302,7 +305,7 @@ export default function Jobs() {
 
                           <div className="mt-3.5 flex items-center justify-between border-t border-ink-50 pt-3">
                             <span className="text-[11.5px] text-ink-300">{timeAgo(j.created_at)}</span>
-                            <Button size="sm" onClick={() => setApplyJob(j)}>Apply now</Button>
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); setApplyJob(j); }}>Apply now</Button>
                           </div>
                         </Card>
                       </motion.div>
@@ -401,7 +404,7 @@ export default function Jobs() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {filteredCourses.map((c, i) => (
                       <motion.div key={c.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (i % 6) * 0.05 }}>
-                        <Card hover className="flex h-full flex-col !p-0 overflow-hidden">
+                        <Card hover className="flex h-full flex-col !p-0 overflow-hidden cursor-pointer" onClick={() => navigate(`/courses/${c.id}`)}>
                           <div className="h-28 w-full" style={{ background: c.image_url ? `url(${c.image_url}) center/cover` : c.band_color || colorFor(c.title) }} />
                           <div className="flex flex-1 flex-col p-5">
                             <div className="flex items-center justify-between gap-2">
@@ -421,19 +424,20 @@ export default function Jobs() {
                                 <Landmark size={12} className="shrink-0 text-ink-400" />
                                 <span className="truncate">Issued by {c.college_name}</span>
                                 {c.college_website && (
-                                  <a href={c.college_website} target="_blank" rel="noreferrer" className="ml-auto shrink-0 text-ink-300 hover:text-brand-600">
+                                  <a href={c.college_website} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="ml-auto shrink-0 text-ink-300 hover:text-brand-600">
                                     <ExternalLink size={11} />
                                   </a>
                                 )}
                               </div>
                             )}
                             <div className="mt-4 flex items-center gap-2">
-                              <Button size="sm" className="flex-1" onClick={() => setEnrollCourse(c)}>{c.cta_label || 'Enroll now'}</Button>
+                              <Button size="sm" className="flex-1" onClick={(e) => { e.stopPropagation(); setEnrollCourse(c); }}>{c.cta_label || 'Enroll now'}</Button>
                               {c.course_url && (
                                 <a
                                   href={c.course_url}
                                   target="_blank"
                                   rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
                                   className="flex items-center gap-1 rounded-lg border border-ink-100 px-3 py-2 text-[12.5px] font-semibold text-ink-500 hover:border-brand-300 hover:text-brand-600"
                                 >
                                   Details <ExternalLink size={11} />
@@ -578,113 +582,5 @@ function LibraryGrid({ acts }) {
         </div>
       )}
     </div>
-  );
-}
-
-function ApplyModal({ job, onClose }) {
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', cover_note: '' });
-  const [file, setFile] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [done, setDone] = useState(false);
-
-  useEffect(() => { setForm({ full_name: '', email: '', phone: '', cover_note: '' }); setFile(null); setMsg(''); setDone(false); }, [job]);
-  if (!job) return null;
-
-  async function handleSubmit() {
-    if (!form.full_name.trim() || !form.email.trim() || !form.phone.trim()) { setMsg('Please fill in your name, email, and phone.'); return; }
-    setBusy(true);
-    setMsg('');
-    try {
-      let resume_path = null;
-      if (file) resume_path = await uploadResume(job.id, file);
-      await submitJobApplication({ job_id: job.id, ...form, resume_path, applied_at: new Date().toISOString() });
-      setDone(true);
-    } catch (e) {
-      setMsg(e.message || 'Could not submit your application.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Modal open={!!job} onClose={onClose} title={`Apply — ${job.title}`}>
-      {done ? (
-        <Toast text="Application submitted! The firm will reach out if there's a fit." kind="ok" />
-      ) : (
-        <>
-          {job.company_url && (
-            <a href={job.company_url} target="_blank" rel="noreferrer" className="mb-4 flex items-center gap-1.5 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700">
-              Visit {job.firm_name}'s website <ExternalLink size={12} />
-            </a>
-          )}
-          <Label required>Full name</Label>
-          <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-          <Label required>Email</Label>
-          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <Label required>Phone</Label>
-          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          <Label>Cover note</Label>
-          <Textarea rows={3} value={form.cover_note} onChange={(e) => setForm({ ...form, cover_note: e.target.value })} />
-          <Label>Resume</Label>
-          <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files[0])} className="text-[13px]" />
-          {msg && <div className="mt-3"><Toast text={msg} kind="err" /></div>}
-          <Button className="mt-5 w-full" onClick={handleSubmit} disabled={busy}>{busy ? 'Submitting…' : 'Submit application'}</Button>
-        </>
-      )}
-    </Modal>
-  );
-}
-
-function EnrollModal({ course, onClose }) {
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '' });
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [done, setDone] = useState(false);
-
-  useEffect(() => { setForm({ full_name: '', email: '', phone: '' }); setMsg(''); setDone(false); }, [course]);
-  if (!course) return null;
-
-  async function handleSubmit() {
-    if (!form.full_name.trim() || !form.email.trim() || !form.phone.trim()) { setMsg('Please fill in your name, email, and phone.'); return; }
-    setBusy(true);
-    setMsg('');
-    try {
-      await submitCourseEnrollment({ course_id: course.id, ...form, enrolled_at: new Date().toISOString() });
-      setDone(true);
-    } catch (e) {
-      setMsg(e.message || 'Could not submit your enrollment.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Modal open={!!course} onClose={onClose} title={`Enroll — ${course.title}`}>
-      {done ? (
-        <Toast text="You're enrolled! Details will be sent to your email." kind="ok" />
-      ) : (
-        <>
-          {(course.course_url || course.college_website) && (
-            <a
-              href={course.course_url || course.college_website}
-              target="_blank"
-              rel="noreferrer"
-              className="mb-4 flex items-center gap-1.5 text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
-            >
-              View full course details <ExternalLink size={12} />
-            </a>
-          )}
-          <Label required>Full name</Label>
-          <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-          <Label required>Email</Label>
-          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <Label required>Phone</Label>
-          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-          {msg && <div className="mt-3"><Toast text={msg} kind="err" /></div>}
-          <Button className="mt-5 w-full" onClick={handleSubmit} disabled={busy}>{busy ? 'Submitting…' : 'Confirm enrollment'}</Button>
-        </>
-      )}
-    </Modal>
   );
 }

@@ -804,6 +804,29 @@ export async function listCoursesPublic() {
   if (error) throw error;
   return data || [];
 }
+// Detail pages — fetched by id regardless of status, so a direct link to a
+// since-closed listing still renders (with an "no longer active" state)
+// instead of a dead 404.
+export async function getJobPublic(id) {
+  const { data, error } = await supabase.from('jobs').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function listJobsByFirm(firmName, excludeId) {
+  const { data, error } = await supabase.from('jobs').select('*').eq('firm_name', firmName).eq('status', 'active').neq('id', excludeId).order('created_at', { ascending: false }).limit(4);
+  if (error) throw error;
+  return data || [];
+}
+export async function getCoursePublic(id) {
+  const { data, error } = await supabase.from('courses').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+export async function listCoursesByInstructor(instructor, excludeId) {
+  const { data, error } = await supabase.from('courses').select('*').eq('instructor', instructor).eq('status', 'active').neq('id', excludeId).order('created_at', { ascending: false }).limit(4);
+  if (error) throw error;
+  return data || [];
+}
 export async function submitJobApplication(app) {
   const { error } = await supabase.from('job_applications').insert(app);
   if (error) throw error;

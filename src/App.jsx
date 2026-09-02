@@ -13,6 +13,8 @@ import Home from './pages/marketing/Home';
 import PublicQA from './pages/marketing/QA';
 import QuestionDetail from './pages/marketing/QuestionDetail';
 import PublicJobs from './pages/marketing/Jobs';
+import JobDetail from './pages/marketing/JobDetail';
+import CourseDetail from './pages/marketing/CourseDetail';
 import LegalActReader from './pages/marketing/LegalActReader';
 import TrackCase from './pages/marketing/TrackCase';
 import ForAdvocates from './pages/marketing/ForAdvocates';
@@ -137,6 +139,8 @@ export default function App() {
       <Route path="/qa" element={<PublicQA />} />
       <Route path="/qa/:id" element={<QuestionDetail />} />
       <Route path="/jobs" element={<PublicJobs />} />
+      <Route path="/jobs/:id" element={<JobDetail />} />
+      <Route path="/courses/:id" element={<CourseDetail />} />
       <Route path="/library/:slug" element={<LegalActReader />} />
       <Route path="/track-case" element={<TrackCase />} />
       <Route path="/for-advocates" element={<ForAdvocates />} />

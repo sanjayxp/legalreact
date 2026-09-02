@@ -11,7 +11,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
-const EMPTY = { title: '', tag_type: 'Certificate Course', mode: 'Online', instructor: '', duration: '', schedule_text: '', price: '', cta_label: '', course_url: '', college_name: '', college_website: '', college_contact: '', status: 'active' };
+const EMPTY = { title: '', tag_type: 'Certificate Course', mode: 'Online', instructor: '', duration: '', schedule_text: '', price: '', description: '', cta_label: '', course_url: '', college_name: '', college_website: '', college_contact: '', status: 'active' };
 
 export default function Courses() {
   const [loading, setLoading] = useState(true);
@@ -159,6 +159,8 @@ function CourseEditor({ course, onClose, onSave }) {
       </FormRow>
       <Label>Schedule text</Label>
       <Input value={form.schedule_text} onChange={(e) => setForm({ ...form, schedule_text: e.target.value })} />
+      <Label hint="(optional) — shown on the course detail page">Description</Label>
+      <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
       <FormRow>
         <div><Label>Price (₹, blank = free)</Label><Input type="number" value={form.price ?? ''} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
         <div><Label>CTA label</Label><Input value={form.cta_label} onChange={(e) => setForm({ ...form, cta_label: e.target.value })} /></div>

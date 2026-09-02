@@ -11,7 +11,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Input, Textarea, Label, Select, FormRow } from '../../components/ui/Field';
 import { EmptyState, Spinner } from '../../components/ui/Misc';
 
-const EMPTY = { title: '', firm_name: '', firm_initials: '', logo_url: '', company_url: '', employment_type: 'Full-time', location_type: 'On-site', experience_level: '', salary_range: '', description: '', status: 'active' };
+const EMPTY = { title: '', firm_name: '', firm_initials: '', logo_url: '', company_url: '', employment_type: 'Full-time', location_type: 'On-site', experience_level: '', salary_range: '', description: '', key_skills: [], status: 'active' };
 
 export default function Jobs() {
   const [loading, setLoading] = useState(true);
@@ -142,8 +142,16 @@ export default function Jobs() {
 function JobEditor({ job, onClose, onSave }) {
   const [form, setForm] = useState(job || EMPTY);
   const [logoFile, setLogoFile] = useState(null);
-  useEffect(() => { setForm(job || EMPTY); setLogoFile(null); }, [job]);
+  // Edited as a comma-separated string for a simpler input; stored as the
+  // text[] the DB column actually is.
+  const [skillsText, setSkillsText] = useState((job?.key_skills || []).join(', '));
+  useEffect(() => { setForm(job || EMPTY); setLogoFile(null); setSkillsText((job?.key_skills || []).join(', ')); }, [job]);
   if (!job) return null;
+
+  function handleSave() {
+    const key_skills = skillsText.split(',').map((s) => s.trim()).filter(Boolean);
+    onSave({ ...form, key_skills }, logoFile);
+  }
 
   return (
     <Modal open={!!job} onClose={onClose} title={job.id ? 'Edit job' : 'New job'} width="max-w-2xl">
@@ -169,13 +177,15 @@ function JobEditor({ job, onClose, onSave }) {
       </FormRow>
       <Label>Description</Label>
       <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+      <Label hint="comma-separated — shown as chips on the job detail page">Key skills</Label>
+      <Input placeholder="e.g. Contract review, Litigation, Drafting" value={skillsText} onChange={(e) => setSkillsText(e.target.value)} />
       <Label>Status</Label>
       <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
         <option value="active">Active</option><option value="closed">Closed</option>
       </Select>
       <div className="mt-5 flex justify-end gap-2">
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button onClick={() => onSave(form, logoFile)} disabled={!form.title || !form.firm_name}>Save</Button>
+        <Button onClick={handleSave} disabled={!form.title || !form.firm_name}>Save</Button>
       </div>
     </Modal>
   );
