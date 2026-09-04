@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
 
   /* ApplyBoard-inspired palette */
   --color-brand-50: #f5f8ff;
